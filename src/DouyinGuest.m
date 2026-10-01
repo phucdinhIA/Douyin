@@ -373,7 +373,8 @@ __attribute__((constructor)) static void DGStart(void) {
         if (![words isKindOfClass:NSDictionary.class] || ![specs isKindOfClass:NSArray.class]) return;
         translations = words; translatedValues = [NSSet setWithArray:translations.allValues]; hookSpecs = specs;
         compactLabels = @{@"Settings":@"Setup", @"Watch history":@"History", @"Creator tools":@"Creators",
-                          @"Live cache":@"Live saves", @"My QR code":@"QR code", @"Screen time":@"Usage"};
+                          @"Live cache":@"Live saves", @"My QR code":@"QR code", @"Screen time":@"Usage",
+                          @"Check your connection and retry":@"Check connection"};
         counters = [NSMutableDictionary new]; installed = [NSMutableDictionary new]; overwritten = [NSMutableSet new];
         [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES}];
         atomic_init(&guestEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGGuestEnabled"]);

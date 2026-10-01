@@ -153,13 +153,15 @@ static NSUInteger countText(UIView *view, NSString *text) {
     BOOL allWords=YES, widthOK=YES;
     UILabel *probe=label(parent,nil,340); probe.frame=CGRectMake(20,340,120,30);
     for (NSString *word in words) {
+        probe.frame=CGRectMake(20,340,320,30);
         probe.text=word;
         if (![probe.text isEqualToString:words[word]]) allWords=NO;
+        probe.frame=CGRectMake(20,340,120,30);[probe setNeedsLayout];[probe layoutIfNeeded];
         CGFloat width=[probe.text sizeWithAttributes:@{NSFontAttributeName:probe.font}].width;
         if (width*probe.minimumScaleFactor>probe.bounds.size.width+1) widthOK=NO;
     }
     check(allWords,@"all configured labels pass through actual UIKit hooks in a settings context");
-    check(widthOK,@"configured labels can fit a 120pt fixture control at 16pt font");
+    check(widthOK,@"configured labels or their compact variants fit a 120pt control at 16pt font");
     probe.text=@"更多功能";
     AWELeftSideBarFixtureView *sidebar=[[AWELeftSideBarFixtureView alloc] initWithFrame:CGRectMake(0,0,300,300)];
     [parent addSubview:sidebar];
@@ -182,6 +184,11 @@ static NSUInteger countText(UIView *view, NSString *text) {
           @"narrow Settings control uses a compact title and survives app fitting resets");
     narrow.frame=CGRectMake(0,0,120,28);[narrow setNeedsLayout];[narrow layoutIfNeeded];
     check([narrow.text isEqualToString:@"Settings"],@"widening a compact label restores its full English title");
+    UILabel *adaptive=[[UILabel alloc] initWithFrame:CGRectMake(0,0,120,35)];
+    adaptive.font=[UIFont systemFontOfSize:16];adaptive.text=@"设置";[sidebar addSubview:adaptive];
+    adaptive.font=[UIFont systemFontOfSize:30];[adaptive setNeedsLayout];[adaptive layoutIfNeeded];
+    check(fabs(adaptive.font.pointSize-30)<1e-6 && [adaptive.text isEqualToString:@"Settings"],
+          @"plain label preserves a font change after translation and window attachment");
     narrow.text=@"ordinary text";[narrow layoutIfNeeded];
     check([narrow.text isEqualToString:@"ordinary text"] && !narrow.adjustsFontSizeToFitWidth,@"reusing a compact control clears translation state");
     narrow.attributedText=[[NSAttributedString alloc] initWithString:@"设置" attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16],NSForegroundColorAttributeName:UIColor.systemBlueColor}];
