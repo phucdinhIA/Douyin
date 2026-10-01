@@ -1,0 +1,10 @@
+build/
+dist/
+*.ipa
+*.dylib
+*.bin
+*.zip
+*.log
+__pycache__/
+.DS_Store
+local-validation.json

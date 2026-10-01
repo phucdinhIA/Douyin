@@ -1,0 +1,39 @@
+name: Build and verify guest library
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Python packaging regressions
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Foundation policy and hook regressions
+        run: |
+          mkdir -p build
+          clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
+            src/DGPolicy.m src/DGHook.m tests/policy_tests.m \
+            -framework Foundation -o build/policy_tests
+          build/policy_tests
+      - name: Build iOS arm64
+        run: bash scripts/build.sh
+      - name: Record source and toolchain
+        run: |
+          git rev-parse HEAD > build/SOURCE_COMMIT
+          xcodebuild -version > build/TOOLCHAIN.txt
+          xcrun --sdk iphoneos --show-sdk-version >> build/TOOLCHAIN.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: DouyinGuest-arm64
+          path: |
+            build/DouyinGuest.dylib
+            build/SHA256SUMS
+            build/SOURCE_COMMIT
+            build/TOOLCHAIN.txt
+          if-no-files-found: error
+          retention-days: 14

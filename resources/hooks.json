@@ -1,0 +1,272 @@
+[
+  {
+    "class": "AWEForceLoginGuideAlertManager",
+    "selector": "canShow",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "guest",
+    "evidence_imp": "0x13f3b1b8"
+  },
+  {
+    "class": "AWEForceLoginGuideAlertManager",
+    "selector": "shouldShowHalfLogin",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "guest",
+    "evidence_imp": "0x1c88ca74"
+  },
+  {
+    "class": "AWEPreLoginAlertManager",
+    "selector": "canShow",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "guest",
+    "evidence_imp": "0x14bcbbf4"
+  },
+  {
+    "class": "AWEPreLoginAlertManager",
+    "selector": "canShowNow",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "guest",
+    "evidence_imp": "0x1c8bdb74"
+  },
+  {
+    "class": "AWEUserService",
+    "selector": "enableShowPreLoginAlertManager",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "guest",
+    "evidence_imp": "0x13a1270c"
+  },
+  {
+    "class": "AWEPlayInteractionBottomButtonLoginGuideViewModel",
+    "selector": "canShowLoginGuideBtn",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "guest",
+    "evidence_imp": "0x179f1444"
+  },
+  {
+    "class": "AWEForceLoginGuideAlertManager",
+    "selector": "isForceLogin",
+    "types": "B16@0:8",
+    "class_method": true,
+    "operation": "false0",
+    "feature": "guest",
+    "evidence_imp": "0x151eea78"
+  },
+  {
+    "class": "AWEMVForceLoginGuideInFlowController",
+    "selector": "disableFeature",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "true0",
+    "feature": "guest",
+    "evidence_imp": "0x1660b39c"
+  },
+  {
+    "class": "AWEMVForceLoginGuideOutFlowController",
+    "selector": "disableFeature",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "true0",
+    "feature": "guest",
+    "evidence_imp": "0x1660b988"
+  },
+  {
+    "class": "AWEUserDetailLoginGuideAlertManager",
+    "selector": "canShowWithContext:",
+    "types": "B24@0:8@16",
+    "class_method": false,
+    "operation": "falseObject1",
+    "feature": "guest",
+    "evidence_imp": "0x1cea6b34"
+  },
+  {
+    "class": "AWEPlayInteractionBottomButtonLoginGuideViewModel",
+    "selector": "shouldShowButtonForModel:context:",
+    "types": "B32@0:8@16@24",
+    "class_method": true,
+    "operation": "falseObject2",
+    "feature": "guest",
+    "evidence_imp": "0x179f1028"
+  },
+  {
+    "class": "AWEAwemeResponseModel",
+    "selector": "awemeList",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "filterGetter",
+    "feature": "ads",
+    "evidence_imp": "0x132040c8"
+  },
+  {
+    "class": "AWEAwemeResponseModel",
+    "selector": "setAwemeList:",
+    "types": "v24@0:8@16",
+    "class_method": false,
+    "operation": "filterSetter",
+    "feature": "ads",
+    "evidence_imp": "0x132b2978"
+  },
+  {
+    "class": "AWEAwemeListCommonResponseModel",
+    "selector": "awemeList",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "filterGetter",
+    "feature": "ads",
+    "evidence_imp": "0x1093e978"
+  },
+  {
+    "class": "AWEAwemeListCommonResponseModel",
+    "selector": "setAwemeList:",
+    "types": "v24@0:8@16",
+    "class_method": false,
+    "operation": "filterSetter",
+    "feature": "ads",
+    "evidence_imp": "0x1093e984"
+  },
+  {
+    "class": "AWEAwemeMultiResponseModel",
+    "selector": "awemeList",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "filterGetter",
+    "feature": "ads",
+    "evidence_imp": "0x154b153c"
+  },
+  {
+    "class": "AWEAwemeMultiResponseModel",
+    "selector": "setAwemeList:",
+    "types": "v24@0:8@16",
+    "class_method": false,
+    "operation": "filterSetter",
+    "feature": "ads",
+    "evidence_imp": "0x154a6580"
+  },
+  {
+    "class": "AWESplashManager",
+    "selector": "willShowNormalSplash",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "ads",
+    "evidence_imp": "0x1328db08"
+  },
+  {
+    "class": "AWESplashManager",
+    "selector": "shouldShowTopMallSplash",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "ads",
+    "evidence_imp": "0x137477bc"
+  },
+  {
+    "class": "AWESplashManager",
+    "selector": "safeShouldShowTopMallSplash",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "ads",
+    "evidence_imp": "0x1332093c"
+  },
+  {
+    "class": "AWESplashManager",
+    "selector": "selectedChannelCanInsertSplash",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "ads",
+    "evidence_imp": "0x1948b3e8"
+  },
+  {
+    "class": "AWEAwesomeSplashManager",
+    "selector": "shouldShowAwesomeSplash",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "ads",
+    "evidence_imp": "0x12f6cf80"
+  },
+  {
+    "class": "AWEAwesomeSplashManager",
+    "selector": "p_shouldShowAwesomeSplash",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "ads",
+    "evidence_imp": "0x12f6d0a0"
+  },
+  {
+    "class": "AWEAwesomeSplashManager",
+    "selector": "canShowTopMallSplash",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "ads",
+    "evidence_imp": "0x19486800"
+  },
+  {
+    "class": "AWEAwesomeBiddingSplashManager",
+    "selector": "canCurrentFeedVCShowBiddingSplash",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "ads",
+    "evidence_imp": "0x194626e4"
+  },
+  {
+    "class": "AWEAwesomeBiddingSplashManager",
+    "selector": "shouldShowBiddingSplash",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "false0",
+    "feature": "ads",
+    "evidence_imp": "0x19463d08"
+  },
+  {
+    "class": "AWESplashManager",
+    "selector": "checkCanShowSplash:",
+    "types": "B20@0:8B16",
+    "class_method": false,
+    "operation": "falseBool1",
+    "feature": "ads",
+    "evidence_imp": "0x1331c09c"
+  },
+  {
+    "class": "AWESplashManager",
+    "selector": "checkCanShowSplash:isRealtime:",
+    "types": "B24@0:8B16B20",
+    "class_method": false,
+    "operation": "falseBool2",
+    "feature": "ads",
+    "evidence_imp": "0x137534fc"
+  },
+  {
+    "class": "AWEAwesomeSplashManager",
+    "selector": "canShowSplashWithID:ttModel:",
+    "types": "B32@0:8@16@24",
+    "class_method": false,
+    "operation": "falseObject2",
+    "feature": "ads",
+    "evidence_imp": "0x1947e034"
+  },
+  {
+    "class": "AWESplashManager",
+    "selector": "tryToShowSplash",
+    "types": "v16@0:8",
+    "class_method": false,
+    "operation": "noop0",
+    "feature": "ads",
+    "evidence_imp": "0x1346b340"
+  }
+]

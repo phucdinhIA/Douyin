@@ -1,0 +1,8 @@
+#import <Foundation/Foundation.h>
+
+NS_ASSUME_NONNULL_BEGIN
+NSString *DGTranslate(NSString *text, NSDictionary<NSString *, NSString *> *translations);
+NSAttributedString *DGTranslateAttributed(NSAttributedString *text,
+                                          NSDictionary<NSString *, NSString *> *translations);
+id _Nullable DGFilterAds(id _Nullable items, NSUInteger * _Nullable removed);
+NS_ASSUME_NONNULL_END
