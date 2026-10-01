@@ -17,7 +17,8 @@
       "category_count": 5061,
       "class_parse_errors": 0,
       "cfstring_count": 468223,
-      "cfstring_errors": 2700
+      "cfstring_errors": 2700,
+      "cfstring_errors_explanation": "2700 eligible CFString character pointers are outside file-backed segments (e.g. 0x3a80e1f8 in the zero-fill tail of __DATA); these constants are unavailable in the static file, not UTF decoding failures."
     },
     "AWESearchFramework": {
       "class_count": 2850,
@@ -4584,5 +4585,742 @@
     "methods_verified_in_source_metadata": true,
     "runtime_ABI_checked": true,
     "runtime_on_iPhone_verified": false
+  },
+  "resource_scan": {
+    "files_scanned": 104,
+    "parse_errors": [],
+    "unique_chinese_values": 1085,
+    "dictionary_matches": 37,
+    "note": "Includes localization of third-party SDKs and string catalogs, not all values are visible app controls. Plural format templates are not rewritten.",
+    "files": [
+      {
+        "path": "Payload/Aweme.app/byted_cert.bundle/BytedCertLocalizationZh.strings",
+        "parse_mode": "plist",
+        "string_values": 71,
+        "unique_chinese_values": 71,
+        "dictionary_matches": 5
+      },
+      {
+        "path": "Payload/Aweme.app/byted_cert.bundle/BytedCertLocalizationJa.strings",
+        "parse_mode": "plist",
+        "string_values": 70,
+        "unique_chinese_values": 59,
+        "dictionary_matches": 1
+      },
+      {
+        "path": "Payload/Aweme.app/byted_cert.bundle/BytedCertLocalizationEn.strings",
+        "parse_mode": "plist",
+        "string_values": 98,
+        "unique_chinese_values": 14,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/zh-Hans-CN.lproj/InfoPlist.strings",
+        "parse_mode": "plist",
+        "string_values": 7,
+        "unique_chinese_values": 7,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/zh-Hans-CN.lproj/Localizable.stringsdict",
+        "parse_mode": "plist",
+        "string_values": 12,
+        "unique_chinese_values": 3,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/en.lproj/InfoPlist.strings",
+        "parse_mode": "plist",
+        "string_values": 8,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/en.lproj/Localizable.stringsdict",
+        "parse_mode": "plist",
+        "string_values": 15,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/APBToygerFacade.bundle/id.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 63,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/APBToygerFacade.bundle/zh-Hant.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 63,
+        "unique_chinese_values": 53,
+        "dictionary_matches": 3
+      },
+      {
+        "path": "Payload/Aweme.app/APBToygerFacade.bundle/en.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 63,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/APBToygerFacade.bundle/zh-HK.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 63,
+        "unique_chinese_values": 53,
+        "dictionary_matches": 4
+      },
+      {
+        "path": "Payload/Aweme.app/APBToygerFacade.bundle/ja.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 63,
+        "unique_chinese_values": 39,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/APBToygerFacade.bundle/zh-Hans.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 67,
+        "unique_chinese_values": 55,
+        "dictionary_matches": 6
+      },
+      {
+        "path": "Payload/Aweme.app/APBToygerFacade.bundle/ko.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 63,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_pl.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_zh-Hant-HK.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 297,
+        "unique_chinese_values": 280,
+        "dictionary_matches": 3
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_cs.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_th.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_ja.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_de.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_he.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_uk.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_en.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 297,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_ru.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_es.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_zh-Hans.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 297,
+        "unique_chinese_values": 283,
+        "dictionary_matches": 17
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_id.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 297,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_it.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_ar.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_vi.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_tr.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_az.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_ko.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_ms.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_pt.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AMap.bundle/localization.bundle/Localizable_fr.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/IESLiveResource_douyin_local.bundle/color/liveRoom.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 421,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/IESLiveResource_douyin_local.bundle/color/douyin_dark.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 92,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/IESLiveResource_douyin_local.bundle/pageurl/pageurl.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 8,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/IESLiveResource_douyin_local.bundle/string/liveRoom.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 112,
+        "unique_chinese_values": 92,
+        "dictionary_matches": 7
+      },
+      {
+        "path": "Payload/Aweme.app/BDWebKit.bundle/en.lproj/BDWebKit.strings",
+        "parse_mode": "plist",
+        "string_values": 4,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/BDWebKit.bundle/zh.lproj/BDWebKit.strings",
+        "parse_mode": "plist",
+        "string_values": 4,
+        "unique_chinese_values": 4,
+        "dictionary_matches": 1
+      },
+      {
+        "path": "Payload/Aweme.app/Base.lproj/InfoPlist.strings",
+        "parse_mode": "plist",
+        "string_values": 7,
+        "unique_chinese_values": 7,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/MJRefresh.bundle/en.lproj/Localizable.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 13,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/MJRefresh.bundle/zh-Hant.lproj/Localizable.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 13,
+        "unique_chinese_values": 11,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/MJRefresh.bundle/zh-Hans.lproj/Localizable.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 13,
+        "unique_chinese_values": 11,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/de.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/he.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/ar.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/el.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/ja.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 6,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/en.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/uk.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/nb.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/pt_PT.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/es.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/da.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/es_MX.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/it.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/sk.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/zh_CN.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 11,
+        "dictionary_matches": 4
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/pt_BR.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/ms.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/sv.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/cs.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/ko.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/hu.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/tr.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/pl.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/fr_CA.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/vi.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/ru.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/en_GB.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/fr.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/fi.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/id.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/nl.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/th.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/pt.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/ro.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/hr.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/hi.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/ca.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/GoogleSignIn.bundle/zh_TW.lproj/GoogleSignIn.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 11,
+        "dictionary_matches": 1
+      },
+      {
+        "path": "Payload/Aweme.app/EnvPlatformSDK.bundle/zh-Hans.lproj/EnvPlatform.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 21,
+        "unique_chinese_values": 21,
+        "dictionary_matches": 2
+      },
+      {
+        "path": "Payload/Aweme.app/EnvPlatformSDK.bundle/English.lproj/EnvPlatform.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 21,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AWELive.bundle/color/liveRoom.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 1,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AWELive.bundle/pageurl/pageurl.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 1,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/AWELive.bundle/string/liveRoom.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 1,
+        "unique_chinese_values": 1,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/BDTuringLocalized-zh.bundle/zh.lproj/Localizable.strings",
+        "parse_mode": "plist",
+        "string_values": 9,
+        "unique_chinese_values": 9,
+        "dictionary_matches": 2
+      },
+      {
+        "path": "Payload/Aweme.app/Languages/zh-Hans-CN.stringsdict",
+        "parse_mode": "plist",
+        "string_values": 276,
+        "unique_chinese_values": 64,
+        "dictionary_matches": 5
+      },
+      {
+        "path": "Payload/Aweme.app/FlowAdaptorLocalizationResource.bundle/Resources/zh-Hant/iOS.stringsdict",
+        "parse_mode": "plist",
+        "string_values": 148,
+        "unique_chinese_values": 36,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/FlowAdaptorLocalizationResource.bundle/Resources/zh/iOS.stringsdict",
+        "parse_mode": "plist",
+        "string_values": 144,
+        "unique_chinese_values": 36,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/CreativeAlbumKit.bundle/color/color_template.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 294,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/CJPayOCR.bundle/CJPayOCRLocalization.strings",
+        "parse_mode": "plist",
+        "string_values": 9,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/SAMKeychain.bundle/en.lproj/SAMKeychain.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 11,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/DanceUIExtensionResources.bundle/en.lproj/Localizable.strings",
+        "parse_mode": "plist",
+        "string_values": 0,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/DanceUIExtensionResources.bundle/zh-Hans.lproj/Localizable.strings",
+        "parse_mode": "plist",
+        "string_values": 1,
+        "unique_chinese_values": 1,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/CameraResource_douyin.bundle/color/color_template.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 315,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/CameraResource_douyin.bundle/color/color_biz.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 9,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/DanceUIComposeResources.bundle/en.lproj/Localizable.strings",
+        "parse_mode": "plist",
+        "string_values": 0,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/DanceUIComposeResources.bundle/zh-Hans.lproj/Localizable.strings",
+        "parse_mode": "plist",
+        "string_values": 1,
+        "unique_chinese_values": 1,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/IESWebViewMonitor.bundle/webviewMonitor.strings",
+        "parse_mode": "plist",
+        "string_values": 1,
+        "unique_chinese_values": 0,
+        "dictionary_matches": 0
+      },
+      {
+        "path": "Payload/Aweme.app/BDPlatformSDKLocalizableResource.bundle/zh/Passport.strings",
+        "parse_mode": "text quoted values",
+        "string_values": 17,
+        "unique_chinese_values": 17,
+        "dictionary_matches": 4
+      }
+    ]
   }
 }

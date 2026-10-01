@@ -281,6 +281,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     NSData *wordsData=[NSData dataWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"translations" withExtension:@"json" subdirectory:@"DouyinGuest.bundle"]];
     NSDictionary *words=[NSJSONSerialization JSONObjectWithData:wordsData options:0 error:NULL];
     BOOL allWords=YES, widthOK=YES;
+    NSMutableArray *overflowLabels=[NSMutableArray new];
     UILabel *probe=label(parent,nil,340); probe.frame=CGRectMake(20,340,120,30);
     for (NSString *word in words) {
         probe.frame=CGRectMake(20,340,320,30);
@@ -288,7 +289,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
         if (![probe.text isEqualToString:words[word]]) allWords=NO;
         probe.frame=CGRectMake(20,340,120,30);[probe setNeedsLayout];[probe layoutIfNeeded];
         CGFloat width=[probe.text sizeWithAttributes:@{NSFontAttributeName:probe.font}].width;
-        if (width*probe.minimumScaleFactor>probe.bounds.size.width+1) { widthOK=NO; NSLog(@"Width overflow: %@ -> %@, %.1f",word,probe.text,width); }
+        if (width*probe.minimumScaleFactor>probe.bounds.size.width+1) { widthOK=NO; [overflowLabels addObject:@{@"source":word,@"display":probe.text,@"width":@(width)}]; }
     }
     check(allWords,@"all configured labels pass through actual UIKit hooks in a settings context");
     check(widthOK,@"configured labels or their compact variants fit a 120pt control at 16pt font");
@@ -356,6 +357,9 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([custom.text isEqualToString:@"Setup"] && custom.font.pointSize>=16*0.65-0.01 && custom.font.pointSize<16,@"custom YYLabel translates before attachment and fits narrow controls above the minimum scale");
     custom.frame=CGRectMake(0,0,160,30);[custom setNeedsLayout];[custom layoutIfNeeded];
     check([custom.text isEqualToString:@"Settings"] && fabs(custom.font.pointSize-16)<1e-6,@"custom label widens back to full title and original font");
+    custom.frame=CGRectMake(0,0,32,60);custom.numberOfLines=2;[custom setNeedsLayout];[custom layoutIfNeeded];
+    check([custom.text isEqualToString:@"Settings"] && fabs(custom.font.pointSize-16)<1e-6,@"custom multiline label restores full text and leaves wrapping to its own renderer");
+    custom.frame=CGRectMake(0,0,160,30);custom.numberOfLines=1;
     custom.font=[UIFont systemFontOfSize:24];[custom setNeedsLayout];[custom layoutIfNeeded];
     check(fabs(custom.font.pointSize-24)<1e-6,@"custom label preserves a later app font change");
     custom.frame=CGRectMake(0,0,32,30);[custom setNeedsLayout];[custom layoutIfNeeded];custom.text=@"ordinary text";
@@ -372,6 +376,10 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(custom.text==nil && custom.attributedText==nil,@"custom nil/reused labels clear without a crash");
     check([AWESearchBaseUtility aAWESearchModuleServiceDOUYINSSAdaperClass]==FixtureGuestAdapter.class && [FixtureGuestAdapter enableGuestSearch] && [FixtureGuestAdapter hasRemainingGuestSearchCount],@"configured search gateway installs actual runtime adapter methods in fixture");
     check([DGSearchAdapterSnapshot()[@"installed"] unsignedIntegerValue]==2 && [DGSearchAdapterSnapshot()[@"active"] unsignedIntegerValue]==2,@"search adapter diagnostics distinguish dynamic methods from fixed native hooks");
+    NSBundle *sdkCatalog=[NSBundle bundleWithPath:[NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:@"AWEFixtureSDK.bundle/zh.lproj"]];
+    check([[sdkCatalog localizedStringForKey:@"known" value:nil table:@"Fixture"] isEqualToString:@"SDK fixture label"],@"SDK lookup selects the bundled English value for the original key");
+    check([[sdkCatalog localizedStringForKey:@"missing" value:nil table:@"Fixture"] isEqualToString:@"未找到英文测试文字"],@"missing SDK English entry preserves original text rather than exposing a key");
+    check([[sdkCatalog localizedStringForKey:@"format" value:nil table:@"Fixture"] isEqualToString:@"%ld SDK notices"],@"bundled SDK English format entry retains its numeric placeholder");
     [results removeFromSuperview];[profileTabs removeFromSuperview];[commentContainer removeFromSuperview];[swift removeFromSuperview];
     self.window.overrideUserInterfaceStyle=UIUserInterfaceStyleDark;
     check([home.text isEqualToString:@"Home"] && home.adjustsFontSizeToFitWidth,@"dark appearance preserves text and fitting");
@@ -391,7 +399,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
         [sheet dismissViewControllerAnimated:NO completion:nil];
         [self showVisualSamples];
         BOOL success=YES; for (NSDictionary *item in checks) if (![item[@"passed"] boolValue]) success=NO;
-        NSDictionary *report=@{@"scope":@"UIKit fixture only; original Douyin app and network were not executed",@"ios":UIDevice.currentDevice.systemVersion,@"device":UIDevice.currentDevice.model,@"checks":checks,@"passed":@(success),@"count":@(checks.count),@"fitting_observation":fittingObservation};
+        NSDictionary *report=@{@"scope":@"UIKit fixture only; original Douyin app and network were not executed",@"ios":UIDevice.currentDevice.systemVersion,@"device":UIDevice.currentDevice.model,@"checks":checks,@"passed":@(success),@"count":@(checks.count),@"fitting_observation":fittingObservation,@"overflow_labels":overflowLabels,@"translation_entries_tested":@(words.count)};
         NSData *result=[NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:NULL];
         NSURL *documents=[NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
         [result writeToURL:[documents URLByAppendingPathComponent:@"ui-results.json"] atomically:YES];

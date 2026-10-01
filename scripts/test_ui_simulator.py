@@ -23,6 +23,13 @@ info={'CFBundleIdentifier':IDENTIFIER,'CFBundleExecutable':'FixtureApp','CFBundl
 (APP/'Info.plist').write_bytes(plistlib.dumps(info))
 resources=APP/'DouyinGuest.bundle';resources.mkdir(exist_ok=True)
 for name in ['hooks.json','translations.json']:shutil.copy2(ROOT/'resources'/name,resources/name)
+sdk_fixture=APP/'AWEFixtureSDK.bundle'
+sdk_fixture.mkdir(exist_ok=True)
+(sdk_fixture/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':'local.fixture.sdk','CFBundlePackageType':'BNDL'}))
+for language,values in {'zh':{'known':'测试独有文字','missing':'未找到英文测试文字','format':'%ld 条 SDK 提示'},
+                        'en':{'known':'SDK fixture label','format':'%ld SDK notices'}}.items():
+    localized=sdk_fixture/(language+'.lproj');localized.mkdir(exist_ok=True)
+    (localized/'Fixture.strings').write_bytes(plistlib.dumps(values))
 run('codesign','--force','--sign','-','--timestamp=none',str(APP))
 runtimes=json.loads(run('xcrun','simctl','list','runtimes','--json'))['runtimes']
 available=[r for r in runtimes if r.get('isAvailable') and r['identifier'].startswith('com.apple.CoreSimulator.SimRuntime.iOS-')]

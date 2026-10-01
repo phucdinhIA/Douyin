@@ -285,6 +285,26 @@ static void DGInstallCustomEnglish(void) {
     DGCount(@"YYLabel translation installed", 1);
 }
 
+static BOOL DGHasChinese(NSString *text) {
+    static NSCharacterSet *characters;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ characters = [NSCharacterSet characterSetWithRange:NSMakeRange(0x4e00, 0x9fff-0x4e00+1)]; });
+    return text && [text rangeOfCharacterFromSet:characters].location != NSNotFound;
+}
+
+static NSBundle *DGEnglishCatalog(NSBundle *bundle) {
+    static NSCache<NSString *, id> *cache;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ cache = [NSCache new]; cache.countLimit = 128; });
+    NSString *root = bundle.bundlePath;
+    if ([root.pathExtension isEqualToString:@"lproj"]) root = root.stringByDeletingLastPathComponent;
+    id known = [cache objectForKey:root];
+    if (known) return known == NSNull.null ? nil : known;
+    NSBundle *english = [NSBundle bundleWithPath:[root stringByAppendingPathComponent:@"en.lproj"]];
+    [cache setObject:english ?: NSNull.null forKey:root];
+    return english;
+}
+
 static void DGInstallEnglish(void) {
     DGSwizzle(UILabel.class, @selector(setText:), ^id(IMP original) {
         return ^(UILabel *label, NSString *text) {
@@ -380,9 +400,21 @@ static void DGInstallEnglish(void) {
         return ^NSString *(NSBundle *bundle, NSString *key, NSString *value, NSString *table) {
             NSString *text = ((id (*)(id, SEL, id, id, id))original)(bundle, @selector(localizedStringForKey:value:table:), key, value, table);
             NSString *appRoot = NSBundle.mainBundle.bundlePath;
-            if (atomic_load(&englishEnabled) && [bundle.bundlePath hasPrefix:[appRoot stringByAppendingString:@"/"]])
-                return DGTranslate(text, translations);
-            if (bundle == NSBundle.mainBundle && atomic_load(&englishEnabled)) return DGTranslate(text, translations);
+            BOOL ownBundle = bundle == NSBundle.mainBundle || [bundle.bundlePath hasPrefix:[appRoot stringByAppendingString:@"/"]];
+            if (atomic_load(&englishEnabled) && ownBundle) {
+                NSString *translated = DGTranslate(text, translations);
+                if (![translated isEqualToString:text]) return translated;
+                // Prefer the SDK's bundled English entry for the same key and
+                // table. A missing entry must keep the original, not show the key.
+                NSBundle *english = key && DGHasChinese(text) ? DGEnglishCatalog(bundle) : nil;
+                if (english && english != bundle) {
+                    NSString *missing = @"\uFFFFDG_MISSING_EN\uFFFF";
+                    NSString *candidate = ((id (*)(id, SEL, id, id, id))original)(english, @selector(localizedStringForKey:value:table:), key, missing, table);
+                    if (candidate.length && ![candidate isEqualToString:missing] && !DGHasChinese(candidate)) {
+                        DGCount(@"Bundled English entries selected", 1); return candidate;
+                    }
+                }
+            }
             return text;
         };
     });
@@ -520,7 +552,13 @@ __attribute__((constructor)) static void DGStart(void) {
         translations = words; translatedValues = [NSSet setWithArray:translations.allValues]; hookSpecs = specs;
         compactLabels = @{@"Settings":@"Setup", @"Watch history":@"History", @"Creator tools":@"Creators",
                           @"Live cache":@"Live saves", @"My QR code":@"QR code", @"Screen time":@"Usage",
-                          @"Check your connection and retry":@"Check connection"};
+                          @"Check your connection and retry":@"Check connection",
+                          @"Check connection; refresh":@"Check connection", @"Messages from strangers":@"Message requests",
+                          @"Content personalization":@"Personalization", @"Microphone permission":@"Microphone",
+                          @"Bluetooth permission":@"Bluetooth", @"System permissions":@"Permissions",
+                          @"Important alerts only":@"Important only", @"Original audio language":@"Audio language",
+                          @"Selected videos deleted":@"Videos deleted", @"Settings failed to load":@"Settings unavailable",
+                          @"Log in for more results":@"Log in for more", @"Offline; check connection":@"Check connection"};
         counters = [NSMutableDictionary new]; installed = [NSMutableDictionary new]; overwritten = [NSMutableSet new];
         [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES, @"DGSearchEnabled":@YES}];
         atomic_init(&guestEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGGuestEnabled"]);
