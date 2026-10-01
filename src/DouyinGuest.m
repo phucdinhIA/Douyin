@@ -15,7 +15,7 @@ static NSMutableDictionary<NSString *, NSValue *> *installed;
 static NSMutableSet<NSString *> *overwritten;
 static NSMutableDictionary<NSString *, NSNumber *> *counters;
 static os_unfair_lock counterLock = OS_UNFAIR_LOCK_INIT;
-static char fontStateKey, gestureKey, labelSourceKey, labelUpdateKey;
+static char fontStateKey, gestureKey, labelSourceKey, labelUpdateKey, labelRichKey;
 
 static void DGCount(NSString *event, NSUInteger amount) {
     os_unfair_lock_lock(&counterLock);
@@ -134,7 +134,9 @@ static void DGSwizzle(Class cls, SEL selector, id (^factory)(IMP)) {
 static void DGTranslateLabel(UILabel *label) {
     if (!DGIsChrome(label)) return;
     if (objc_getAssociatedObject(label, &labelSourceKey)) { DGApplyLabelLayout(label); return; }
-    if (label.attributedText.length) {
+    // UILabel can synthesize attributedText for plain text. Track which public
+    // setter the app used so that attachment does not freeze its original font.
+    if ([objc_getAssociatedObject(label, &labelRichKey) boolValue] && label.attributedText.length) {
         NSAttributedString *value = DGTranslateAttributed(label.attributedText, translations);
         if (value != label.attributedText || [translatedValues containsObject:value.string]) { label.attributedText = value; }
     } else if (label.text.length) {
@@ -151,6 +153,7 @@ static void DGInstallEnglish(void) {
                 ((void (*)(id, SEL, id))original)(label, @selector(setText:), text); return;
             }
             NSString *value = text && DGIsChrome(label) ? DGTranslate(text, translations) : text;
+            objc_setAssociatedObject(label, &labelRichKey, @NO, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             BOOL changed = text && ![value isEqualToString:text];
             BOOL chrome = value && DGIsChrome(label) && [translatedValues containsObject:value];
             objc_setAssociatedObject(label, &labelSourceKey, chrome ? value : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -168,6 +171,7 @@ static void DGInstallEnglish(void) {
                 ((void (*)(id, SEL, id))original)(label, @selector(setAttributedText:), text); return;
             }
             NSAttributedString *value = text && DGIsChrome(label) ? DGTranslateAttributed(text, translations) : text;
+            objc_setAssociatedObject(label, &labelRichKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             BOOL chrome = value && DGIsChrome(label) && [translatedValues containsObject:value.string];
             objc_setAssociatedObject(label, &labelSourceKey, chrome ? value : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             objc_setAssociatedObject(label, &labelUpdateKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
