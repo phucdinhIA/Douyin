@@ -1,6 +1,7 @@
 // Runs only in a purpose-built Simulator fixture. It is not the Douyin app.
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#include <math.h>
 #import "DGPolicy.h"
 
 @interface AWESettingsFixtureViewController : UIViewController
@@ -98,7 +99,12 @@ static NSUInteger countText(UIView *view, NSString *text) {
     home.text=nil; check(home.text==nil || home.text.length==0,@"nil label text does not crash");
     home.text=@"首页";
     UILabel *fit=label(parent,@"更多功能",134);
-    check([fit.text isEqualToString:@"More options"] && fit.adjustsFontSizeToFitWidth && fit.minimumScaleFactor>=0.65,
+    NSDictionary *fittingObservation=@{@"text":fit.text ?: @"",@"adjusts":@(fit.adjustsFontSizeToFitWidth),
+        @"minimum_scale":@(fit.minimumScaleFactor),@"lines":@(fit.numberOfLines)};
+    NSLog(@"Fitting observation: text=%@ adjusts=%d minimumScale=%.17g lines=%ld",fit.text,
+          fit.adjustsFontSizeToFitWidth,(double)fit.minimumScaleFactor,(long)fit.numberOfLines);
+    // UIKit may store this CGFloat property with float precision internally.
+    check([fit.text isEqualToString:@"More options"] && fit.adjustsFontSizeToFitWidth && fabs(fit.minimumScaleFactor-0.65)<=1e-6,
           @"translated label fitting survives UIKit internal setters");
     fit.text=@"More options";
     check(fit.adjustsFontSizeToFitWidth,@"repeated translated text retains fitting");
@@ -163,7 +169,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
         check([sheet isKindOfClass:UIAlertController.class] && [sheet.title isEqualToString:@"Douyin Guest"],@"diagnostics sheet can actually be presented on legacy window");
         check(sheet.actions.count==5,@"diagnostics sheet exposes three switches, copy and close");
         BOOL success=YES; for (NSDictionary *item in checks) if (![item[@"passed"] boolValue]) success=NO;
-        NSDictionary *report=@{@"scope":@"UIKit fixture only; original Douyin app and network were not executed",@"ios":UIDevice.currentDevice.systemVersion,@"device":UIDevice.currentDevice.model,@"checks":checks,@"passed":@(success),@"count":@(checks.count)};
+        NSDictionary *report=@{@"scope":@"UIKit fixture only; original Douyin app and network were not executed",@"ios":UIDevice.currentDevice.systemVersion,@"device":UIDevice.currentDevice.model,@"checks":checks,@"passed":@(success),@"count":@(checks.count),@"fitting_observation":fittingObservation};
         NSData *result=[NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:NULL];
         NSURL *documents=[NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
         [result writeToURL:[documents URLByAppendingPathComponent:@"ui-results.json"] atomically:YES];
