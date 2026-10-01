@@ -5,4 +5,5 @@ NSString *DGTranslate(NSString *text, NSDictionary<NSString *, NSString *> *tran
 NSAttributedString *DGTranslateAttributed(NSAttributedString *text,
                                           NSDictionary<NSString *, NSString *> *translations);
 id _Nullable DGFilterAds(id _Nullable items, NSUInteger * _Nullable removed);
+BOOL DGIsAdModel(id model);
 NS_ASSUME_NONNULL_END

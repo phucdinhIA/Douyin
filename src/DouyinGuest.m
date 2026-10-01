@@ -7,6 +7,7 @@
 
 static atomic_bool guestEnabled, adsEnabled, englishEnabled;
 static NSDictionary<NSString *, NSString *> *translations;
+static NSSet<NSString *> *translatedValues;
 static NSArray<NSDictionary *> *hookSpecs;
 static NSMutableSet<NSString *> *installed;
 static NSMutableDictionary<NSString *, NSNumber *> *counters;
@@ -47,6 +48,14 @@ static BOOL DGIsChrome(UIView *view) {
             [node isKindOfClass:UITextField.class]) return NO;
         if ([node isKindOfClass:UINavigationBar.class] || [node isKindOfClass:UITabBar.class])
             chrome = YES;
+        if ([node isKindOfClass:UINavigationBar.class]) {
+            id delegate = ((UINavigationBar *)node).delegate;
+            if ([delegate isKindOfClass:UINavigationController.class]) {
+                NSString *owner = NSStringFromClass(((UINavigationController *)delegate).topViewController.class);
+                if (DGIsContentClass(owner) || [owner containsString:@"Profile"] || [owner containsString:@"UserDetail"])
+                    return NO;
+            }
+        }
         if ([name hasPrefix:@"AWE"] || [name hasPrefix:@"DUI"] || [name hasPrefix:@"IES"]) {
             for (NSString *part in @[@"Navigation", @"TabBar", @"TabButton", @"Menu", @"Setting",
                                      @"Toolbar", @"ToolBar", @"Control", @"ActionButton", @"Channel",
@@ -96,6 +105,7 @@ static void DGTranslateLabel(UILabel *label) {
         NSString *value = DGTranslate(label.text, translations);
         if (![value isEqualToString:label.text]) { label.text = value; DGFitLabel(label, YES); }
     }
+    DGFitLabel(label, label.text && [translatedValues containsObject:label.text]);
 }
 
 static void DGInstallEnglish(void) {
@@ -103,16 +113,17 @@ static void DGInstallEnglish(void) {
         return ^(UILabel *label, NSString *text) {
             NSString *value = text && DGIsChrome(label) ? DGTranslate(text, translations) : text;
             BOOL changed = text && ![value isEqualToString:text];
-            DGFitLabel(label, changed);
             ((void (*)(id, SEL, id))original)(label, @selector(setText:), value);
+            // UIKit may call another text setter internally. Fit after its work finishes.
+            DGFitLabel(label, value && DGIsChrome(label) && [translatedValues containsObject:value]);
             if (changed) DGCount(@"Labels translated", 1);
         };
     });
     DGSwizzle(UILabel.class, @selector(setAttributedText:), ^id(IMP original) {
         return ^(UILabel *label, NSAttributedString *text) {
             NSAttributedString *value = text && DGIsChrome(label) ? DGTranslateAttributed(text, translations) : text;
-            DGFitLabel(label, value != text);
             ((void (*)(id, SEL, id))original)(label, @selector(setAttributedText:), value);
+            DGFitLabel(label, value && DGIsChrome(label) && [translatedValues containsObject:value.string]);
             if (value != text) DGCount(@"Attributed labels translated", 1);
         };
     });
@@ -139,16 +150,17 @@ static void DGInstallEnglish(void) {
         return ^(UIButton *button) {
             ((void (*)(id, SEL))original)(button, @selector(didMoveToWindow));
             if (!DGIsChrome(button)) return;
-            for (NSNumber *state in @[@(UIControlStateNormal), @(UIControlStateHighlighted), @(UIControlStateSelected), @(UIControlStateDisabled)]) {
-                UIControlState value = state.unsignedIntegerValue;
-                NSAttributedString *rich = [button attributedTitleForState:value];
-                if (rich.length) [button setAttributedTitle:rich forState:value];
-                else { NSString *title = [button titleForState:value]; if (title.length) [button setTitle:title forState:value]; }
-            }
+            // Do not materialize fallback titles for disabled/highlighted states.
+            // Otherwise changing the normal title later leaves a stale state override.
+            NSAttributedString *rich = [button attributedTitleForState:UIControlStateNormal];
+            if (rich.length) [button setAttributedTitle:rich forState:UIControlStateNormal];
+            else { NSString *title = [button titleForState:UIControlStateNormal]; if (title.length) [button setTitle:title forState:UIControlStateNormal]; }
             DGTranslateLabel(button.titleLabel);
         };
     });
-    for (Class cls in @[UINavigationItem.class, UITabBarItem.class]) {
+    // Navigation titles may be creator names. Translate their attached labels with
+    // the owning controller context instead of rewriting every navigation item.
+    for (Class cls in @[UITabBarItem.class]) {
         DGSwizzle(cls, @selector(setTitle:), ^id(IMP original) {
             return ^(id item, NSString *title) {
                 NSString *value = title && atomic_load(&englishEnabled) ? DGTranslate(title, translations) : title;
@@ -189,7 +201,9 @@ static void DGInstallNative(void) {
 @interface DGSettings : NSObject <UIGestureRecognizerDelegate>
 + (instancetype)shared;
 - (void)attachWindows;
+- (void)attachWindow:(UIWindow *)window;
 - (void)open:(UITapGestureRecognizer *)gesture;
+- (void)presentSettingsInWindow:(UIWindow *)window;
 @end
 
 @implementation DGSettings
@@ -201,18 +215,27 @@ static void DGInstallNative(void) {
     for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
         if (![scene isKindOfClass:UIWindowScene.class]) continue;
         for (UIWindow *window in ((UIWindowScene *)scene).windows) {
-            if (!window.isKeyWindow || objc_getAssociatedObject(window, &gestureKey)) continue;
-            UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(open:)];
-            tap.numberOfTouchesRequired = 2; tap.numberOfTapsRequired = 3;
-            tap.cancelsTouchesInView = NO; tap.delegate = self;
-            [window addGestureRecognizer:tap];
-            objc_setAssociatedObject(window, &gestureKey, tap, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            [self attachWindow:window];
         }
     }
+    // The audited IPA has no UIApplicationSceneManifest and can use a legacy window.
+    id<UIApplicationDelegate> delegate = UIApplication.sharedApplication.delegate;
+    if ([delegate respondsToSelector:@selector(window)]) [self attachWindow:delegate.window];
+}
+- (void)attachWindow:(UIWindow *)window {
+    if (!window || !window.isKeyWindow || objc_getAssociatedObject(window, &gestureKey)) return;
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(open:)];
+    tap.numberOfTouchesRequired = 2; tap.numberOfTapsRequired = 3;
+    tap.cancelsTouchesInView = NO; tap.delegate = self;
+    [window addGestureRecognizer:tap];
+    objc_setAssociatedObject(window, &gestureKey, tap, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 - (void)open:(UITapGestureRecognizer *)gesture {
-    if (gesture.state != UIGestureRecognizerStateRecognized) return;
-    UIViewController *presenter = ((UIWindow *)gesture.view).rootViewController;
+    if (gesture.state != UIGestureRecognizerStateRecognized || ![gesture.view isKindOfClass:UIWindow.class]) return;
+    [self presentSettingsInWindow:(UIWindow *)gesture.view];
+}
+- (void)presentSettingsInWindow:(UIWindow *)window {
+    UIViewController *presenter = window.rootViewController;
     while (presenter.presentedViewController) presenter = presenter.presentedViewController;
     if (!presenter || [presenter isKindOfClass:UIAlertController.class]) return;
     NSString *message = [NSString stringWithFormat:@"Test build • 40.6.0 (406019)\nNative hooks: %lu/%lu\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)installed.count, (unsigned long)hookSpecs.count];
@@ -231,7 +254,7 @@ static void DGInstallNative(void) {
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.1.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        NSMutableDictionary *report = [@{@"patch_version": @"0.2.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled))};
         NSData *data = [NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:NULL];
         if (data) UIPasteboard.generalPasteboard.string = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
@@ -257,7 +280,7 @@ __attribute__((constructor)) static void DGStart(void) {
             ![[bundle objectForInfoDictionaryKey:@"CFBundleVersion"] isEqualToString:@"406019"]) return;
         id words = DGReadJSON(@"translations"), specs = DGReadJSON(@"hooks");
         if (![words isKindOfClass:NSDictionary.class] || ![specs isKindOfClass:NSArray.class]) return;
-        translations = words; hookSpecs = specs;
+        translations = words; translatedValues = [NSSet setWithArray:translations.allValues]; hookSpecs = specs;
         counters = [NSMutableDictionary new]; installed = [NSMutableSet new];
         [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES}];
         atomic_init(&guestEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGGuestEnabled"]);
@@ -266,8 +289,9 @@ __attribute__((constructor)) static void DGStart(void) {
         DGInstallNative(); DGInstallEnglish();
         NSNotificationCenter *notifications = NSNotificationCenter.defaultCenter;
         for (NSString *name in @[UIApplicationDidFinishLaunchingNotification, UIApplicationDidBecomeActiveNotification, UIWindowDidBecomeKeyNotification]) {
-            [notifications addObserverForName:name object:nil queue:NSOperationQueue.mainQueue usingBlock:^(__unused NSNotification *note) {
+            [notifications addObserverForName:name object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
                 DGInstallNative(); [[DGSettings shared] attachWindows];
+                if ([note.object isKindOfClass:UIWindow.class]) [[DGSettings shared] attachWindow:note.object];
             }];
         }
         for (NSNumber *delay in @[@1, @3, @8]) {

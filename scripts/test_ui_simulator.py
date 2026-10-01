@@ -1,0 +1,50 @@
+"""Build/run a UIKit hook fixture. This does not run or certify the original IPA."""
+import json,pathlib,plistlib,shutil,subprocess,time
+
+ROOT=pathlib.Path(__file__).resolve().parents[1]
+OUT=ROOT/'build/ui-fixture';OUT.mkdir(parents=True,exist_ok=True)
+APP=OUT/'DGFixture.app';APP.mkdir(exist_ok=True)
+IDENTIFIER='com.ss.iphone.ugc.Aweme.fixture'
+
+def run(*args,timeout=180):
+    return subprocess.check_output(list(args),text=True,timeout=timeout).strip()
+
+sdk=run('xcrun','--sdk','iphonesimulator','--show-sdk-path')
+sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DouyinGuest.m']]
+sources.append(str(ROOT/'tests/ui_fixture.m'))
+run('xcrun','--sdk','iphonesimulator','clang','-target','arm64-apple-ios15.0-simulator',
+    '-isysroot',sdk,'-fobjc-arc','-fblocks','-O1','-Wall','-Wextra','-Werror','-I'+str(ROOT/'src'),
+    *sources,'-framework','Foundation','-framework','UIKit','-o',str(APP/'FixtureApp'))
+info={'CFBundleIdentifier':IDENTIFIER,'CFBundleExecutable':'FixtureApp','CFBundlePackageType':'APPL',
+      'CFBundleName':'DGFixture','CFBundleDisplayName':'UIKit Fixture',
+      'CFBundleShortVersionString':'40.6.0','CFBundleVersion':'406019','MinimumOSVersion':'15.0',
+      'LSRequiresIPhoneOS':True,'UIDeviceFamily':[1],'UILaunchScreen':{},
+      'UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait','UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight']}
+(APP/'Info.plist').write_bytes(plistlib.dumps(info))
+resources=APP/'DouyinGuest.bundle';resources.mkdir(exist_ok=True)
+for name in ['hooks.json','translations.json']:shutil.copy2(ROOT/'resources'/name,resources/name)
+run('codesign','--force','--sign','-','--timestamp=none',str(APP))
+runtimes=json.loads(run('xcrun','simctl','list','runtimes','--json'))['runtimes']
+available=[r for r in runtimes if r.get('isAvailable') and r['identifier'].startswith('com.apple.CoreSimulator.SimRuntime.iOS-')]
+if not available:raise RuntimeError('No available iOS Simulator runtime; UIKit validation cannot run')
+runtime=max(available,key=lambda r:tuple(int(n) for n in r['version'].split('.')))
+device=run('xcrun','simctl','create','Douyin Guest UIKit fixture','com.apple.CoreSimulator.SimDeviceType.iPhone-15',runtime['identifier'])
+print('Fixture runtime:',runtime['name'],'device: iPhone 15',flush=True)
+try:
+    run('xcrun','simctl','boot',device)
+    run('xcrun','simctl','bootstatus',device,'-b',timeout=240)
+    run('xcrun','simctl','install',device,str(APP))
+    run('xcrun','simctl','launch',device,IDENTIFIER)
+    container=pathlib.Path(run('xcrun','simctl','get_app_container',device,IDENTIFIER,'data'))
+    result=container/'Documents/ui-results.json'
+    deadline=time.monotonic()+90
+    while not result.exists() and time.monotonic()<deadline:time.sleep(1)
+    if not result.exists():raise RuntimeError('UIKit fixture did not finish; it may have crashed')
+    shutil.copy2(result,OUT/'ui-results.json')
+    run('xcrun','simctl','io',device,'screenshot',str(OUT/'ui-fixture.png'))
+    report=json.loads(result.read_text())
+    print(json.dumps(report,ensure_ascii=True,indent=2),flush=True)
+    if not report['passed']:raise RuntimeError('UIKit fixture regressions failed')
+finally:
+    subprocess.run(['xcrun','simctl','shutdown',device],capture_output=True,timeout=60)
+    subprocess.run(['xcrun','simctl','delete',device],capture_output=True,timeout=60)

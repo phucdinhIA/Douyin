@@ -14,6 +14,19 @@
 @implementation WrongModel
 - (NSString *)isAds { return @"Do not call me as BOOL"; }
 @end
+@interface AWEAwemeModel : TestModel
+@property BOOL checkIsAd;
+@property BOOL isHardAdModel;
+@property BOOL isHardAd;
+@end
+@implementation AWEAwemeModel
+@end
+@interface UnrelatedModel : NSObject
+- (BOOL)checkIsAd;
+@end
+@implementation UnrelatedModel
+- (BOOL)checkIsAd { return YES; }
+@end
 @interface TestParent : NSObject
 - (BOOL)canShow;
 @end
@@ -66,6 +79,12 @@ int main(void) {
         id filtered = DGFilterAds(mutable, NULL);
         check([filtered isKindOfClass:NSMutableArray.class] && mutable.count == 6, @"mutable contract without mutating source");
         check([DGFilterAds(@[ad,ad], NULL) count] == 0, @"all-ad page produces valid empty array");
+        AWEAwemeModel *soft = [AWEAwemeModel new], *hard = [AWEAwemeModel new], *hardModel = [AWEAwemeModel new];
+        soft.checkIsAd = YES; hard.isHardAd = YES; hardModel.isHardAdModel = YES;
+        UnrelatedModel *unrelated = [UnrelatedModel new];
+        check([DGFilterAds(@[video,soft,hard,hardModel,unrelated], &count) isEqual:@[video,unrelated]] && count == 3,
+              @"additional verified ad flags without removing unrelated models");
+        check(!DGIsAdModel([AWEAwemeModel new]), @"ordinary Aweme model stays visible");
         NSDictionary *words = @{@"首页":@"Home", @"更多功能":@"More options"};
         check([DGTranslate(@"首页", words) isEqual:@"Home"], @"exact label translation");
         check([DGTranslate(@"这是首页的视频", words) isEqual:@"这是首页的视频"], @"no substring rewriting of content");
@@ -88,6 +107,10 @@ int main(void) {
         NSDictionary *bad = @{@"class":@"TestParent",@"selector":@"canShow",@"types":@"@16@0:8",@"operation":@"false0"};
         check(!DGInstallHook(bad, ^BOOL {return YES;}, ^(NSString *event, NSUInteger n){(void)event; (void)n;}), @"signature mismatch rejected");
         check([[TestParent new] canShow] && events >= 2, @"failed hook preserves parent");
+        Method wrongReturn = class_getInstanceMethod(WrongModel.class,@selector(isAds));
+        NSDictionary *wrongOperation = @{@"class":@"WrongModel",@"selector":@"isAds",@"types":[NSString stringWithUTF8String:method_getTypeEncoding(wrongReturn)],@"operation":@"false0"};
+        check(!DGInstallHook(wrongOperation,^BOOL {return YES;},^(NSString *event,NSUInteger n){(void)event;(void)n;}),@"matching metadata does not allow an ABI-incompatible operation");
+        check(!DGInstallHook(@{@"class":NSNull.null},^BOOL {return YES;},^(NSString *event,NSUInteger n){(void)event;(void)n;}),@"malformed hook spec rejected without a crash");
         NSArray *ops = @[
             @[@"defaultFalse",@"true0"], @[@"oneObject:",@"falseObject1"],
             @[@"twoObjects:second:",@"falseObject2"], @[@"oneBool:",@"falseBool1"],

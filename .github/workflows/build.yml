@@ -22,6 +22,8 @@ jobs:
           build/policy_tests
       - name: Build iOS arm64
         run: bash scripts/build.sh
+      - name: UIKit fixture on iPhone 15 Simulator
+        run: python3 scripts/test_ui_simulator.py
       - name: Record source and toolchain
         run: |
           git rev-parse HEAD > build/SOURCE_COMMIT
@@ -36,4 +38,13 @@ jobs:
             build/SOURCE_COMMIT
             build/TOOLCHAIN.txt
           if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: UIKit-fixture-results
+          path: |
+            build/ui-fixture/ui-results.json
+            build/ui-fixture/ui-fixture.png
+          if-no-files-found: warn
           retention-days: 14

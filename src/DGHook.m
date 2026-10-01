@@ -3,15 +3,51 @@
 #import <objc/runtime.h>
 #include <string.h>
 
+static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
+    NSString *returnType;
+    NSArray<NSString *> *arguments;
+    NSString *boolean = [NSString stringWithUTF8String:@encode(BOOL)];
+    if ([kind isEqualToString:@"false0"] || [kind isEqualToString:@"true0"]) {
+        returnType = boolean; arguments = @[@"@", @":"];
+    } else if ([kind isEqualToString:@"falseObject1"]) {
+        returnType = boolean; arguments = @[@"@", @":", @"@"];
+    } else if ([kind isEqualToString:@"falseObject2"]) {
+        returnType = boolean; arguments = @[@"@", @":", @"@", @"@"];
+    } else if ([kind isEqualToString:@"falseBool1"]) {
+        returnType = boolean; arguments = @[@"@", @":", boolean];
+    } else if ([kind isEqualToString:@"falseBool2"]) {
+        returnType = boolean; arguments = @[@"@", @":", boolean, boolean];
+    } else if ([kind isEqualToString:@"noop0"]) {
+        returnType = @"v"; arguments = @[@"@", @":"];
+    } else if ([kind isEqualToString:@"filterGetter"]) {
+        returnType = @"@"; arguments = @[@"@", @":"];
+    } else if ([kind isEqualToString:@"filterSetter"]) {
+        returnType = @"v"; arguments = @[@"@", @":", @"@"];
+    } else return NO;
+    char type[64] = {0};
+    method_getReturnType(method, type, sizeof(type));
+    if (strcmp(type, returnType.UTF8String) || method_getNumberOfArguments(method) != arguments.count) return NO;
+    for (NSUInteger i = 0; i < arguments.count; ++i) {
+        memset(type, 0, sizeof(type)); method_getArgumentType(method, (unsigned)i, type, sizeof(type));
+        if (strcmp(type, arguments[i].UTF8String)) return NO;
+    }
+    return YES;
+}
+
 BOOL DGInstallHook(NSDictionary *spec, DGEnabled enabled, DGRecord record) {
+    if (![spec isKindOfClass:NSDictionary.class] || !enabled || !record) return NO;
     NSString *name = spec[@"class"], *selectorName = spec[@"selector"];
     NSString *kind = spec[@"operation"], *types = spec[@"types"];
+    for (id value in @[name ?: NSNull.null, selectorName ?: NSNull.null, kind ?: NSNull.null, types ?: NSNull.null])
+        if (![value isKindOfClass:NSString.class] || ![value length]) return NO;
+    id methodKind = spec[@"class_method"];
+    if (methodKind && ![methodKind isKindOfClass:NSNumber.class]) return NO;
     Class cls = NSClassFromString(name);
     if (!cls) return NO;
     if ([spec[@"class_method"] boolValue]) cls = object_getClass(cls);
     SEL sel = NSSelectorFromString(selectorName);
     Method method = class_getInstanceMethod(cls, sel);
-    if (!method || strcmp(method_getTypeEncoding(method), types.UTF8String) != 0) {
+    if (!method || strcmp(method_getTypeEncoding(method), types.UTF8String) != 0 || !DGOperationMatchesMethod(kind, method)) {
         record([NSString stringWithFormat:@"Signature mismatch: %@ %@", name, selectorName], 1);
         return NO;
     }
