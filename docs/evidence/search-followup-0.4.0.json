@@ -1,0 +1,158 @@
+{
+  "checked_at_utc": "2026-10-01T13:02:11.754536+00:00",
+  "scope": "GitHub issue searches; search results are unverified reports, not fixes or proof of runtime root cause",
+  "queries": [
+    {
+      "query": "repo:huami1314/DYYY 搜索",
+      "url": "https://api.github.com/search/issues?q=repo%3Ahuami1314%2FDYYY+%E6%90%9C%E7%B4%A2&per_page=5",
+      "total": 2,
+      "items": [
+        {
+          "url": "https://github.com/huami1314/DYYY/pull/16",
+          "title": "修复问题、添加一些隐藏",
+          "body_excerpt": "修复隐藏视频定位（漏了代码）、增加隐藏视频下方的“去汽水听”“相关搜索”“热点提示”"
+        },
+        {
+          "url": "https://github.com/huami1314/DYYY/pull/15",
+          "title": "#隐藏视频定位、隐藏首页右上搜索、隐藏“我的”页面下方作品页面",
+          "body_excerpt": "如题"
+        }
+      ]
+    },
+    {
+      "query": "repo:pxx917144686/DYYY 搜索",
+      "url": "https://api.github.com/search/issues?q=repo%3Apxx917144686%2FDYYY+%E6%90%9C%E7%B4%A2&per_page=5",
+      "total": 1,
+      "items": [
+        {
+          "url": "https://github.com/pxx917144686/DYYY/pull/4",
+          "title": "refactor: 源码模块化拆分与设置页分类重构",
+          "body_excerpt": "## 目录与模块化\r\n\r\n- 源码由仓库根迁入 Sources/{Audio,Core,Diagnostics,Features,Headers, Hooks,Manager,Settings,Views}，Makefile 与 include path 同步\r\n- 8 个大文件按功能域拆为 42 个模块文件：\r\n  - DYYYUtils.m → 主文件 + Config/Traversal/AdFilter/Media 四分类\r\n    + DYYYUtilsPrivate.h\r\n  - DYYYUtils+Audio.mm → DYYYAudioTap/DYYYAudioReport/DYYYAudioAnalysis\r\n    + DYYYAudioTapPrivate.h（实时写入侧/只读导出侧/离线分析侧分离， 渲染线程无分配约束原样保留）\r\n  - DYYYSettingViewController.m → 主文件 + Appearance/Backup/Table/ Presentation 四分类 + Private.h\r\n  - AWEModernLongPressPanelTableViewController.xm → PanelHooks(3 hook)\r\n    + CellHooks(5 hook) + Support\r\n  - DYYYSocialStats.xm → SocialStatsHooks + VideoStatsHooks + VideoStats Menu/Editor（该文件 hook 原本无 %init，拆分后保持原状未擅自激活）\r\n  - AWEPlayInteractionViewController.xm（6881 行 158 方法）→ Views/DYYYMenuComponents + DoubleTap/Menu/Visual 三 hook 文件\r\n    + DYYYPlayInteractionAdditions.h，方法多重集逐一比对零遗漏\r\n  - DYYY.xm（46 hook）→ DYYYMainSupport + MainHooksShared.h + 13 个 功能 hook 文件（倍速/设置手势/故事流/全屏评论/评论面板/广告过滤/ 底栏/信息流布局/长按面板/播放器交互/城市时间戳/无痕服务/自动播放）， 每个文件自带局部 %ctor，%group 与 %init 同文件闭合\r\n  - AwemeHeaders.h → umbrella + 8 个领域头（Feed/Comment/Live/Playback/ Service/Model/UI/Panel），249 个接口原样迁移并补 @class 前向声明\r\n- 拆分不变性：%hook 唯一目标数 241、重复目标类数 22 与拆分前一致 （%hook 总数 273→275 为播放交互单 hook 拆 3 文件的结构性 +2）； nm 基线 759 个符号零缺失，仅 14 个内部状态符号 static→extern； FLEX 零改动\r\n\r\n## 设置页重构\r\n\r\n- 8 分区重组为 6 大分区 × 26 子分组 × 302 条目： 播放 / 手势与快捷 / 页面设置 / 内容与过滤 / 互动 / 数据与维护\r\n- 新增 DYYYSettingItemTypeGroupHeader 子分组标题行：大标题展开后 子分组默认折叠、点击子分组展开条目（chevron 指示），三级逐级细分\r\n- 全部行级逻辑改走 visibleItemsForSection: 可见行映射（cell/行高/ 点选/长按/开关 tag/输入框/DYYYSwitchManager 联动/备份按钮挂载）， 折叠态下开关联动与长按重置不误伤\r\n- 搜索模式：命中条目恒显示并保留所属子分组标题；分区头不参与折叠 切换，避免污染普通模式状态\r\n- 合并 3 个重复 key 条目（DYYYHideTemplatePlaylet/DYYYEnableNoiseFilter/ DYYYHideSpeed），302 个 key 零重复，全部配置 key 未变\r\n\r\n## 玻璃与开关语义\r\n\r\n- 玻璃 16 项统一集中到「页面设置 → 液态玻璃"
+        }
+      ]
+    },
+    {
+      "query": "抖音 游客 搜索 登录",
+      "url": "https://api.github.com/search/issues?q=%E6%8A%96%E9%9F%B3+%E6%B8%B8%E5%AE%A2+%E6%90%9C%E7%B4%A2+%E7%99%BB%E5%BD%95&per_page=5",
+      "total": 98,
+      "items": [
+        {
+          "url": "https://github.com/liliMozi/openhanako/issues/2547",
+          "title": "[Feature] 浏览器登录态跨会话共享 / 持久化",
+          "body_excerpt": "### 功能描述\nHanaAgent 的浏览器实例目前按会话隔离（每个主会话独立 profile，cookie 存储互不共享）。希望支持**登录态跨会话共享**，让一次扫码登录（如抖音、小红书、知乎、B站等）在多个会话间复用，无需每个会话重新扫码。\n\n### 使用场景\n我在做多平台信息采集时，需要访问多个要求登录态的站点（抖音评论/搜索、小红书、知乎评论、B站评论区、X 等，约 5 个平台）。现有行为是：\n\n- 每个主会话的浏览器实例使用独立 profile（已实测：新会话同域接口返回 status_code:8 未登录，document.cookie 仅含游客级 cookie，无登录凭据）\n- 因此每新建一个会话，都要对每个需登录平台**重新扫码一次**，扫码成本 = 平台数 × 会话数\n\n实际影响：一段时间内开 1 个主会话密集调研，需登录信源 × 需登录平台 ≈ 5 次扫码/会话；每次扫码 + 短信验证约 1 分钟。对于需要连续调研多个课题、频繁开新会话的场景，这个成本明显拖慢节奏。\n\n### 期望成效\n登录态可跨会话复用后，一个账号扫码一次即可在多个会话内稳定使用，扫码成本从「平台 × 会话」降为「平台 × 1」，调研流程不再被频繁扫码打断。\n\n### 可能的实现方式\n（任选一种或组合，供作者参考评估）\n\n1. **浏览器 profile 持久化/复用**：为浏览器实例暴露可配置的 user-data-dir（或 Electron 的 persist: 分区），让不同会话共用同一份持久化存储。这是最彻底的方案（cookie/localStorage/缓存全共享）。注意：Chromium 的 user-data-dir 有 SingletonLock，同一目录同一时刻一般只能被一个进程占用。\n\n2. **cookie/会话快照导入导出 API**：暴露 storageState 式能力（读/写 cookie 集合，含 HttpOnly），让 agent 可导出、跨会话注入。需要处理 cookie 环境绑定（设备指纹/IP 变化可能触发站点风控）这一已知限制。\n\n3. **会话级登录态管理**：提供一个「登录凭据库」——登录一次加密落盘，各会话按需加载注入。适合不想改浏览器实例生命周期的场景。\n\n### 背景与依据\n- 实测复现：会话 A 完成抖音扫码登录（接口 status_code:0），会话 B（独立新会话）同域接口返回 status_code:8 用户未登录，document.cookie 仅含游客 cookie；会话 B 的浏览器对站点本身可正常渲染（纯 cookie 隔离）。\n- 已知限制：Electron/Chromium cookie 在 Windows 上用 DPAPI 加密（v10 前缀 AES-256-GCM），跨会话迁移如需走文件需作者评估解密与安全。\n- 需求方为多 Agent 团队（Hanako 主导，子代理承接信息采集），同一主会话内子代理共享浏览器实例（已实测），故核心诉求集中在「跨主会话」这一层。"
+        },
+        {
+          "url": "https://github.com/Sakeroux168/video_bug/pull/6",
+          "title": "fix: 统一登录与验证码识别，显示平台状态和暂停原因",
+          "body_excerpt": "登录弹窗与跨域验证码以前共用含糊的暂停提示：抖音空正文的「验证码中间页」会漏检，快手搜索页的登录提示也没有规则。现在三平台共用页面信号表，验证码走 `stalled_verify`，未登录走 `login_required`，任务行直接给出原因、打开平台窗口的入口以及处理后点「继续」的指引。\n\n基线：`origin/master` 的 `6ee897e`；分支：`fix/page-block-detection`；目标：`master`。本 PR 保持 Draft，不合并。\n\n## 实现\n\n- `pageSignals.ts` 集中配置三平台地址、标题、iframe 和文字信号。主进程先读页面 URL / 标题，再读 `webContents.mainFrame.framesInSubtree` 的 URL，并在父页面确认对应 iframe 可见；最后才查本页文字。没有读取跨域 iframe 的 DOM。\n- 保留小红书和抖音已有登录用例；抖音登录框的「验证码登录」「获取验证码」「发送验证码」不会被当成滑块。真实滑块提示即使同时存在登录入口，仍按验证码处理。\n- 排除隐藏 iframe、常驻 `rmc-nocaptcha` 静态资源、普通空对话框，以及搜索关键词 `captcha` 对地址检测的干扰。识别脚本有执行超时。\n- 调度器继续使用原来的两个暂停分支，补充中文识别记录；主窗口在两类暂停时均显示当前平台浏览器。验证码沿用原来的队列暂停规则，未登录沿用原来的队列规则。\n- 新增只读登录状态 IPC：查询各平台登录分区与当前页面，不创建窗口、不切平台、不发登录请求。页面明确要求登录优先于可能失效的 Cookie；认证 Cookie 必须非空且未过期；缺证据、游客 Cookie 或查询失败显示「未知」。已观察的页面状态仅在分区 Cookie 指纹未变时复用，Cookie 指纹只存在内存，不输出 Cookie 值。\n- 概览顶部、任务表单的平台选择旁、内置浏览器页显示状态灯，每 5 秒和窗口重新获得焦点时更新。创建任务前现查：明确未登录时先给「去登录」「仍然继续」两个选择，未知允许继续。\n- 主任务行直接显示「某平台没登录／需要验证 → 打开某平台窗口，处理后点继续」；停滞原因提示先检查登录和验证。找回当前平台窗口时保留原页面，避免把登录或验证码页导航回首页。\n- 内置浏览器第 3 步改为确认登录状态；使用说明补充「没登录／有验证」，同时更新对应文档表格。\n- `.ai/coordinator/` 未修改；抓取、下载、快手接口解析和自动重搜逻辑未改。\n\n## 先红后绿与自动检查\n\n先新增回归测试并确认失败：仅标题验证码中间页、可见跨域验证 iframe、快手登录文案 3 项失败；登录状态灯、未登录建任务提示、任务主行暂停原因 4 项失败。另确认了找回平台窗口会错误导航，以及切平台后状态证据丢失的失败用例。真机发现「获取验证码」误报后再次新增失败用例，再修正实现。\n\n最终 `npm install` 完成；`npm run verify` 全通过：\n\n- TypeScript 类型检查通过。\n- Vitest：**92 个文件 / 1105 项全通过**。\n- Electron/Vite 构建通过。\n- CSS：47 个关键类通过，5 个旧类已清除。\n- 许可检查通过。\n- `git diff --check` 通过。\n\n测试覆盖主进程地址/标题优先级与帧 URL、iframe 可见性、普通搜索页和后台资源不误报、登录与验证码区分、三种登录状态、分区 Cookie / 过期 Cookie / 游客 Cookie、状态证据失效、建任务前现查、未登录提示和显式继续、暂停原因在主任务行、打开原窗口不导航，以及原有调度器和小红书测试。原有表格跨列断言保留，浏览器引导断言更新为新的登录状态文案并增加旧误导文案不存在的断言。\n\n## 真机证据\n\n档案：`E:\\项目文件\\视频爬取\\codex工作区\\小红书验收\\user-data`。通过 Electron 真实窗口和 CDP 只读页面信息核对；本机接口建任务使用 Node 的 UTF-8 JSON。诊断任务目标为 1、关键词「猫咪」，关闭自动下载。\n\n### 快手零条原因：页面要求登录\n\n修改前诊断任务"
+        },
+        {
+          "url": "https://github.com/meierlink88/tidewise-ai/pull/538",
+          "title": "feat: 公司资料检索与用户级公司跟踪",
+          "body_excerpt": "公司版跟踪页此前只有设计原型。现在用户可以按股票代码、简称或拼音首字母搜索公司，添加后跨会话保留，并在列表上确认取消跟踪。页面以公司全称为标题，行业和主题为标签，股票简称/代码为补充；资料缺失时使用真实简称，不生成虚构内容。\n\nCloses #535\n\n### 责任与实现\n\n- **Data Service**：Stock 领域搜索、批量 ID 读取、可空公司资料；schema 96 增加派生 `name_initials`。`stock-initialize -reindex` 显式回填全量简称，`stock-profiles` 校验并原子导入提供的 v4 样本，保留 null/空数组、负比例、来源顺序与稳定 ID，拒绝过时/同日冲突。\n- **User Service**：独立用户库 schema 7 的 `user_watchlist(user_id, stock_id, added_at)`。会话/用户锁定、授权和关系操作在同一事务内完成；用户隔离、重复添加/取消幂等、稳定游标分页，不接受调用方 user_id。\n- **Miniapp Service**：通过两个领域服务的版本化 API 组合公司标题、行业展示、主题与跟踪状态；批量读取资料，添加先校验 stock，取消不依赖 Data 可用性。个人响应 no-store；下游故障不伪装成空列表。\n- **小程序**：定稿紧凑公司列表、250ms 搜索联想、分页、直接添加/取消确认、全部主题资料弹层；请求序号、会话代次与同步写入互斥防止旧响应和重复提交。保留游客搜索和已有登录入口。\n- 同步三个 OpenAPI、Context、运维命令、Docker 入口和迁移风险清单；没有共享数据库或跨服务源码依赖。\n\n### 验证\n\n- 隔离 PostgreSQL 完整 Data/User 迁移账本和重放通过；5,565 条目录初始化/首字母回填、提供的 300 条公司资料导入及重放通过。\n- User 真实持久化与 race：双用户隔离、并发唯一性、重复操作、游标、重新添加置顶、撤销/禁用/过期/AppID 授权。\n- BFF HTTP 完整流程、错误/身份合同；三个真实服务在隔离数据库中完成搜索→添加→读取→隔离检查→取消。使用临时合成会话，不代表真实微信登录验证。\n- Frontend 140 项测试、typecheck、lint；weapp/tt 构建及产物检查通过。当前 weapp 输出 1,090,060 bytes（约 1.04 MiB），tt 1,029,471 bytes。\n- 实际 H5 编译页面在 393/320 宽度检查：搜索、添加计数、详情、取消弹窗、取消后刷新持久化通过。修复误淡化按钮的 disabled 属性选择器及弹层内容滚动；真机微信/抖音视觉尚未验收。\n- Go vet、相关服务测试、架构边界门禁、Data Docker 构建与镜像内样本 check-only、Prettier/diff 检查通过。\n- 按规范与 Issue 两轴本地审查完成；依仓库要求未派生任务或委派子代理。\n\n### 发布与范围\n\n本次未部署 UAT，也未向现有用户库写入示例关系。测试数据库/会话已清理。300 条样本仅用于隔离验证，未提交/扩展源数据。\n\n发布顺序：Data schema 96 → 显式首字母回填及所选资料包发布 → Data → User schema 7 与 runtime 表权限 → User → Miniapp Service → 小程序。没有扩展的公司资料按缺失处理。回退保留 additive schema 和用户关系；Data 回退镜像必须认识当前 Goose ledger。\n\n参考：Taro 4/React 18 的 [Input 合同](https://docs.taro.zone/docs/components/forms/input)，项目既有原生 showModal/RootPortal 用法；沿用自有 UI，不引入网页手机外壳或额外组件库。服务端新增固定版本 [go-pinyin v0.21.0](https://github.com/mozillazg/go-pinyin/tree/v0.21.0)（MIT），用于全目录首字母转换，受控处"
+        },
+        {
+          "url": "https://github.com/SilkageNet/mygardenworld/issues/112",
+          "title": "[Feature] 希望增加抖音渠道服",
+          "body_excerpt": "### 提交前确认\n\n- [x] 我已搜索现有 Issue 和文档，确认没有相同建议。\n- [x] 该建议不依赖绕过广告、支付、平台鉴权或其他高风险流程。\n\n### 涉及范围\n\n账号、存储与 API\n\n### 要解决的问题\n\n希望可以增加抖音渠道服务器的登录支持\n\n### 建议方案\n\n希望可以实现如同支付宝渠道服的支持抖音服的扫码登录\n\n### 替代方案\n\n_No response_\n\n### 协议观测或参考信息\n\n_No response_"
+        },
+        {
+          "url": "https://github.com/meierlink88/tidewise-ai/pull/541",
+          "title": "feat(miniapp): Tidetell 2.0 改版、五项导航与真实账号入口",
+          "body_excerpt": "## 改变后的体验\n\n将现有小程序按定稿 Tidetell 2.0 改版为五项原生导航：要闻解读、宏观指数、产业透析、公司洞察、我的。要闻、分析详情和事件时间线采用紧凑蓝白样式及固定头部/独立正文滚动；事件仍为语义标签、摘要、关键词三部分。\n\n“我的”接入现有真实账号功能：游客直接显示欢迎登录页，登录后支持个人资料编辑、头像、登出与真实我的跟踪。三个新栏目采用独立静态原型数据并标识模拟；模拟跟踪不会写入账号。公司报告样例保留原有布局和完整内容，只有对应公司拥有入口。\n\n## 边界与兼容\n\n- 后端、API Port、取数参数、解析、认证会话、跟踪业务与既有枚举配色均未修改。\n- 内部滚动后仍复用原 refresh；微信支持下拉，tt/H5 提供刷新入口。\n- 微信保留 RootPortal，tt/H5 通过同接口平台文件使用固定弹层。\n- 更新 Miniapp Context 与构建产物校验器的五项导航合同；媒体预算不放宽。\n- 未纳入用户未跟踪原型目录或其他无关文件。无数据库迁移、部署或自动合并。\n\n## 验证\n\n- Miniapp：143 项测试（23 文件）、类型检查、ESLint、格式和 diff 检查通过。\n- weapp / tt 构建和产物校验通过：10 个路由，5 项菜单，媒体 198950 / 200000 bytes。Webpack 保留 common.js 463 KiB 体积建议警告。\n- H5 使用既有合成报告 fixture，在 390×844 核对详情滚动、事件弹层、导航、公司跟踪标签、报告入口与欢迎登录页；320×740 公司列表无横向溢出。\n- 按仓库要求由当前任务完成 Standards / Issue 双轴审阅，修复按钮样式、布局、资源预算、校验器和跨端弹层问题。\n- **尚需设备验收**：微信授权/手机号/头像选择、原生菜单安全区和真机滚动；未执行真实后端或 UAT 集成验证，浏览器检查不代表真机验收。\n\n框架参考：[Taro tabBar](https://docs.taro.zone/docs/app-config#tabbar)、[switchTab](https://docs.taro.zone/docs/apis/route/switchTab)、[ScrollView](https://docs.taro.zone/docs/components/viewContainer/scroll-view)、[多端文件](https://docs.taro.zone/docs/envs)。\n\nCloses #540\n\n\n## 我的与公司洞察视觉修正 · 2026-09-27\n\n接续原会话未提交的“我的”修改，并完成用户追加的公司洞察列表验收，范围为 Miniapp 展示层。\n\n- 我的：蓝色安全区、圆角白色连续主体、头像与欢迎语、我的研究/账户与支持分组、原型同源 Radix 线形图标、红色退出。保留真实头像与资料编辑、登出及导航回调。\n- 我的跟踪辅助文案采用“查看已跟踪公司”；当前页面没有真实总数，不复制原型数字，不增加账号请求。删除原型体验账号提示。保留原生 Tab 与微信胶囊安全区。\n- 公司洞察：搜索框移回蓝色头部，补同源搜索图标及垂直对齐，列表恢复圆角白色表面，调整公司全称字号、行距、标签间距和跟踪按钮尺寸。静态数据、过滤算法、模拟跟踪与报告入口保持原合同。\n- 修正 H5 `disabled=\"false\"` 误中禁用样式的问题，以及框架选择器覆盖取消文字颜色的问题。\n\n验收：144 项测试/23 文件、类型检查、ESLint、格式与 diff 检查通过；weapp/tt 使用仓库既有 UAT API 地址构建，产物校验通过；微信原生 WXSS 编译通过。构建仍有既有 bundle 体积建议警告。\n\n浏览器本轮使用独立 localhost fixture 服务验证登录态，不连接真实账号：390×844 与 320×740 两页首屏无整页横向溢出，独立个人资料编辑/放弃、隐私政策、公司拼音筛选、无匹配结果和模拟跟踪均通过。未验证真实微信登录、头像选择、设备键盘及微信/抖音原生滚动；不能将浏览器结果视为真机验收。未部署或合并。\n\n本轮在当前任务按 code-review 的 Sta"
+        }
+      ]
+    },
+    {
+      "query": "douyin \"2483\"",
+      "url": "https://api.github.com/search/issues?q=douyin+%222483%22&per_page=5",
+      "total": 17327,
+      "items": [
+        {
+          "url": "https://github.com/openshift/origin/issues/2483",
+          "title": "Project create page should be updated",
+          "body_excerpt": "Due to this PR(https://github.com/openshift/origin/pull/2351), project name rules has been changed.\nAnd better to let the Create button is disabled when the input can not pass validation.\nFor the current codebase,  the create button is active when I just type one char.\n"
+        },
+        {
+          "url": "https://github.com/elastic/elasticsearch/issues/2483",
+          "title": "Use Explain in AllocationDecider's Decisions",
+          "body_excerpt": "Currently the Decision class already supports an explain parameter. It would be helpful for development, debugging and for certain error messages like in MoveAllocationCommand to log the actual reasoning behind the decision.\n"
+        },
+        {
+          "url": "https://github.com/heartcombo/devise/issues/2483",
+          "title": "Is devise thread-safe?",
+          "body_excerpt": "Please include that to the documentation.\n"
+        },
+        {
+          "url": "https://github.com/astropy/astropy/issues/2483",
+          "title": "test failures with numpy-dev: elementwise comparison failed",
+          "body_excerpt": "I'm seeing the following failure in astropy.coordinates with numpy-dev:\n\n```\ndef test_frame_init():\n        \"\"\"\n        Different ways of providing the frame.\n        \"\"\"\n        sc = SkyCoord(RA, DEC, frame='icrs')\n        assert sc.frame_name == 'icrs'\n\n        sc = SkyCoord(RA, DEC, frame=ICRS)\n        assert sc.frame_name == 'icrs'\n\n        sc = SkyCoord(RA, DEC, 'icrs')\n        assert sc.frame_name == 'icrs'\n\n>       sc = SkyCoord(RA, DEC, ICRS)\n\nastropy/coordinates/tests/test_sky_coord.py:192: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <[RuntimeError(\"maximum recursion depth exceeded\") raised in repr()] SafeRepr object at 0x106f706c8>\nargs = [<Quantity 1.0 deg>, <Quantity 2.0 deg>, <class 'astropy.coordinates.builtin_frames.ICRS'>]\nkwargs = {}\n\n    def __init__(self, *args, **kwargs):\n\n        # Parse the args and kwargs to assemble a sanitized and validated\n        # kwargs dict for initializing attributes for this object and for\n        # creating the internal self._sky_coord_frame object\n        args = list(args)  # Make it mutable\n>       kwargs = self._parse_inputs(args, kwargs)\n\nastropy/coordinates/sky_coordinate.py:79: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <[RuntimeError(\"maximum recursion depth exceeded\") raised in repr()] SafeRepr object at 0x106e6eea8>\nargs = [<Quantity 1.0 deg>, <Quantity 2.0 deg>, <class 'astropy.coordinates.builtin_frames.ICRS'>]\nkwargs = {}\n\n    def _parse_inputs(self, args, kwargs):\n        \"\"\"\n            Assemble a validated and sanitized keyword args dict for instantiating a\n            SkyCoord and coordinate object from the provided `args`, and `kwargs`.\n            \"\"\"\n        valid_kwargs = {}\n\n        # Put the SkyCoord attribu"
+        },
+        {
+          "url": "https://github.com/silverstripe/silverstripe-framework/issues/2483",
+          "title": "using Member -> $Name in a template isn't escaped (XSS vulnerable?!)",
+          "body_excerpt": "Using the Name function from the Member object is vulnerable for XSS. It isn't escaped when output to a template.\nWouldn't it be better to use this instead of having to use .XML everywhere in the templates:\n\n```\nreturn ($this->Surname) ? Convert::raw2xml(trim($this->FirstName . ' ' . $this->Surname)) : Convert::raw2xml($this->FirstName);\n```\n"
+        }
+      ]
+    },
+    {
+      "query": "\"Douyin\" \"guest search\"",
+      "url": "https://api.github.com/search/issues?q=%22Douyin%22+%22guest+search%22&per_page=5",
+      "total": 4,
+      "items": [
+        {
+          "url": "https://github.com/epiral/bb-sites/pull/41",
+          "title": "feat(short-video): add douyin and kuaishou adapters",
+          "body_excerpt": "## Summary\r\n- add a `douyin/search` adapter for guest-accessible public search results on Douyin general and video pages\r\n- add a `kuaishou/feed` adapter for the public recommended feed on the `new-reco` page\r\n- document both adapters in the English and Chinese README adapter lists with usage examples\r\n\r\n## Test plan\r\n- [x] `bb-browser site douyin/search AI --json`\r\n- [x] `bb-browser site douyin/search AI video 5 --json`\r\n- [x] `bb-browser --tab <healthy-new-reco> site kuaishou/feed 5 --json`\r\n- [x] `python C:\\Register\\code\\workspace\\dialogues\\20260326-1005-bb-browser-adapters\\adapter-regression-report.py`"
+        },
+        {
+          "url": "https://github.com/NousResearch/hermes-agent/pull/47689",
+          "title": "fix(desktop): guard preview webview protocols",
+          "body_excerpt": "## Summary\n\n- add a shared Electron guard for preview `<webview>` guest navigation\n- block custom/executable schemes such as `bitbrowser://`, `intent://`, `javascript:`, and `data:` from preview navigations, frame navigations, redirects, and `window.open`\n- keep in-webview preview navigation limited to `http:`, `https:`, `file:`, and `hermes-media:`, while only allowing `http(s)` new windows to leave via the existing `openExternalUrl` path\n- wire the new guard into every desktop window through `did-attach-webview`\n\n## Related\n\nAddresses the custom-protocol-handler path in #47500.\nComplements #41565: that PR gates remote URL preview auto-open; this PR handles a page that is already inside the preview webview trying to escape to a custom OS protocol.\nRelated to #41111, but this is not the background title/artifact download dialog path.\n\n## Testing\n\n- `node --test apps/desktop/electron/preview-navigation.test.cjs`\n- `node --check apps/desktop/electron/main.cjs && node --check apps/desktop/electron/preview-navigation.cjs && node --check apps/desktop/electron/preview-navigation.test.cjs`\n- `../../node_modules/.bin/eslint electron/main.cjs electron/preview-navigation.cjs electron/preview-navigation.test.cjs` (from `apps/desktop`)\n- `../../node_modules/.bin/prettier --check electron/preview-navigation.cjs electron/preview-navigation.test.cjs package.json` (from `apps/desktop`)\n- `npm run --workspace apps/desktop typecheck`\n- `node --test electron/bootstrap-platform.test.cjs electron/hardening.test.cjs electron/backend-env.test.cjs electron/backend-probes.test.cjs electron/bootstrap-runner.test.cjs electron/connection-config.test.cjs electron/dashboard-token.test.cjs electron/gateway-ws-probe.test.cjs electron/oauth-net-request.test.cjs electron/desktop-uninstall.test.cjs elect"
+        },
+        {
+          "url": "https://github.com/EngDawood/download-media/pull/27",
+          "title": "chore(main): release download-media-bot 1.0.0",
+          "body_excerpt": ":robot: I have created a release *beep* *boop*\n---\n\n\n## 1.0.0 (2026-09-22)\n\n\n### Features\n\n* add .claude/settings.json to .gitignore ([adc1bad](https://github.com/EngDawood/download-media/commit/adc1bad170cd5c599405e92d9662afb8c92ce652))\n* add /allowlist command and admin bypass for blocked domains ([f8498a7](https://github.com/EngDawood/download-media/commit/f8498a708b8775f02d7fb188a6c70a0d0fd81377))\n* add adult domain blocking, domain allowlist/reporting, and document file support ([b43b672](https://github.com/EngDawood/download-media/commit/b43b672b684f6db162168c7f8a36e8ce519ba51e))\n* Add Instagram story downloads, custom footers, and RSSHub support ([e64b36a](https://github.com/EngDawood/download-media/commit/e64b36aa1e25ea170daa3f6ad72edbd31c1e63e5))\n* Add RSSHub dependency and remove commitlint packages ([70dc2c5](https://github.com/EngDawood/download-media/commit/70dc2c5ba2a574dfb54b4338a33de9aa1d0aaf03))\n* add support for MediaFire, CapCut, and SnackVideo platforms with corresponding downloader implementations and update documentation ([6ac1ac1](https://github.com/EngDawood/download-media/commit/6ac1ac1572e56be08dbbfac9e54a951c39d926a0))\n* add urls.json for platform URL configurations ([6f24674](https://github.com/EngDawood/download-media/commit/6f246743b0d6754374ddd490f87ed8ae3aa87db7))\n* adult domain blocking, allowlist reporting, and document file support ([b8c9983](https://github.com/EngDawood/download-media/commit/b8c9983aa4fa9c3fa075bc07b66d256b4c5c817d))\n* **api:** add documentation for download-media-bot API integration ([e53e4f7](https://github.com/EngDawood/download-media/commit/e53e4f7b607fabc841d4a7dbd89b16f43eeee9bc))\n* block X posts flagged sensitive for guests ([#35](https://github.com/EngDawood/download-media/issues/35)) ([0dfbba7](https://github"
+        },
+        {
+          "url": "https://github.com/jh1nresh/SAV-E/pull/30",
+          "title": "feat: add bounded related-place source discovery",
+          "body_excerpt": "## Summary\n\n- define the Clue -> confirmed Map Stamp -> related sources -> Trip Manifest open-core boundary\n- add Privy bearer-only POST /v0/places/:id/related-sources with owner scoping, Google public-venue verification, coverage receipts, and candidate-only results\n- reuse the existing safe public-index fetcher for Instagram, TikTok, YouTube, Xiaohongshu, Douyin, Threads, and X\n- keep TREK as an external planner adapter; no TREK source, persistence, iOS UI, or Trip mutation is included\n\n## Safety\n\n- replace client-authored identity with bounded Google Places Details before public search\n- reject guests, caller aliases, residential/address-only places, wrong hosts, wrong cities/branches, and direct saves\n- cap account requests at 6 per 10 minutes, cache/coalesce venue verification for 24 hours, and cap search at 3 concurrent requests with a 20-second aggregate deadline\n- return private no-store responses; provider errors and credentials are not exposed\n\n## Verification\n\n- npm test: 351 passed, 0 failed\n- npm run check:source-recovery: ready=true, no errors or warnings\n- git diff --check: passed\n- independent blocker re-review: no blocking findings\n\n## Follow-up\n\nThe iOS Map Stamp related-sources panel and the reusable Skill/CLI/MCP extraction remain separate follow-up slices after real fixture precision is measured."
+        }
+      ]
+    },
+    {
+      "query": "\"抖音\" \"搜索\" \"网络错误\"",
+      "url": "https://api.github.com/search/issues?q=%22%E6%8A%96%E9%9F%B3%22+%22%E6%90%9C%E7%B4%A2%22+%22%E7%BD%91%E7%BB%9C%E9%94%99%E8%AF%AF%22&per_page=5",
+      "total": 38,
+      "items": [
+        {
+          "url": "https://github.com/Sakeroux168/video_bug/pull/4",
+          "title": "feat: add validated segmented downloads",
+          "body_excerpt": "## Summary\n\n- Add validated concurrent byte-range downloading for one video, with a user setting of 1–4 segments (default 3); `1` preserves the original single-stream path and remains independent from task download concurrency.\n- Probe support with `Range: bytes=0-0` and only enable segmentation after a strict `206` plus a valid total in `Content-Range`; otherwise downgrade to the original single download.\n- Download each range into an independent `.part`, validate status/range/declared and actual byte counts, retry only the failed segment (maximum 3 attempts), then merge in byte order and verify the exact total.\n- Apply an idle watchdog per segment. Pause aborts all in-flight requests while retaining completed valid segments for same-run resume; cancel aborts all requests and removes every segment part.\n- Reject HTML/JSON fake-success responses, while keeping missing `Content-Length` compatible.\n\n## Settings and compatibility\n\n- `downloadSegments` defaults to `3` and is clamped to `1..4` in shared types, settings persistence, and the settings UI.\n- Existing callers that do not provide the new setting continue through the single-stream path.\n- Existing source-candidate fallback, final validation, outer retry, and scheduler/task concurrency behavior remain intact.\n\n## Source and license boundary\n\n- **Adapted under Apache-2.0:** `HFrost0/bilix`, `bilix/download/base_downloader_part.py`, revision `bb5b234cdfe3fafc4db9d992b91091f2edf791e5`. The Range segmentation design is registered in `NOTICE`; local code adds strict probing, validation, bounded per-segment retry, watchdogs, pause/resume bookkeeping, merge checks, and cleanup.\n- **Idea-only, no code copied:**\n  - `NanmiCoder/MediaCrawler` — `media_downloader/downloader.py`\n  - `JoeanAmier/XHS-Downloader` — `source/applica"
+        },
+        {
+          "url": "https://github.com/ihmily/StreamCap/issues/368",
+          "title": "🐛[BUG] 录制抖音直播出现录制错误",
+          "body_excerpt": "### ⚠️ 确认是否已存在类似问题\n\n- [x] 我已经搜索过issues，没有找到类似问题\n\n### 🔧 运行方式\n\n使用源代码运行\n\n### 🐍 如果是使用源代码运行，请选择你的Python环境版本\n\nOther (请在问题中说明)\n\n### 💻 请选择你的系统环境\n\nWindows 10\n\n### ⚠️ 确认是否已经重试多次\n\n- [x] 我已经尝试过多次，仍然出现问题\n\n### 🕹 复现步骤\n\n1.直播间格式：https://v.douyin.com/UOZi1l18MT4/\n2.录制格式 TS\n3.循环检测频率150S\n\n### 😯 问题描述\n\n1.用过windows 10版本和Mac版本，均会出现批量错误的情况。\n\n2.采用docker部署web运行，也会出现批量录制错误的情况，均在检测过程中复现，但是下次检测后有几率恢复正常。\n上述环境中，没有开启VPN，属于正常国内家宽网络。\n\n### 📜 错误信息\n\n<img width=\"1381\" height=\"567\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/77e4cbed-d425-4630-be2f-046ec826eda5\" />报错截图附上"
+        },
+        {
+          "url": "https://github.com/perfectuser21/zenithjoy-workspace/pull/2016",
+          "title": "feat(phone-adb): 对标链接获客·发现——主页deeplink+作品网格抽卡+discover-benchmark.sh(338e3ec7)",
+          "body_excerpt": "## 做了什么\n对标链接获客 discovery 活动四步落地（决策 7f842d12，Brain 任务 338e3ec7）。\n\n| 件 | 说明 |\n|---|---|\n| `open-user-profile <链接/短链/sec_uid> <eid> [期望抖音号]` | 解析 sec_uid（短链 curl -sI 读 302）→ 先 ensure_feed 归位 → `snssdk1128://user/profile/?sec_uid=` 直开 → 树校验「他人主页」（排除被吞回「我」页、私密/注销=TARGET_ABSENT）；输出 sec_uid/douyin_id/nickname/works_count |\n| `profile-video-cards <eid>` | 主页作品网格按几何抽卡（格子无文字无 desc），输出 `X\\tY\\tDUR\\tTITLE`，DUR/TITLE 留空列齐 |\n| `back-to-profile [MAX]` | 对标版归位（back-to-results 只认搜索结果页，主页上会把人退出抖音）；看见 feed/splash 立刻停 |\n| `discover-benchmark.sh PROFILE SOURCE_ENC MAXV TAG LOC` | runner 约定接口；首屏不够 MAXV 时慢滑一次让作品 tab 吸顶（真机 6→12 格） |\n| 纯判定 `profile-check` / `profile-grid-cards` / `on-user-profile` / `resolve-sec-uid` | CI 对真机 fixture 跑 |\n\n契约 `benchmark_link_acquisition` discovery 四步 → implemented；deploy.sh 纳入 discover-benchmark.sh（部署到 ~/bin-harvest/）。\n\n## 真机证据（xian-m4 legacy 机）\n- deeplink 直开 瑶瑶ai训练师 / Ai训练师大宇 主页，抖音号回读一致；短链 `v.douyin.com/ihr7Bb4kalg` 302 反解 sec_uid 与请求一致\n- discover-benchmark.sh 真跑输出 10 张卡；点卡进 UltraDetailActivity → back → 回 UserProfileActivity 且网格坐标不变\n\n## 测试\n- `__tests__/benchmark-profile-discovery.test.mjs`（17 条，真机 fixture + 假 adb/curl）\n- `__tests__/discover-benchmark.test.mjs`（8 条，假控制器）\n\nGP-Anchor: line02/benchmark_link_acquisition#step2\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+        },
+        {
+          "url": "https://github.com/ihmily/DouyinLiveRecorder/issues/1254",
+          "title": "❓[Question] 关于最近抖音风控问题，请在这里讨论",
+          "body_excerpt": "### ⚠️ 搜索是否存在类似问题\n\n- [x] 我已经搜索过issues，没有找到相似的问题\n\n### 🔧 运行方式\n\n直接运行的exe文件\n\n### 🐍 如果是使用源代码运行，请选择你的Python环境版本\n\nNone\n\n### 💻 请选择你的系统环境\n\nWindows 10\n\n### 🤔 问题详情\n\n最新版4.0.7已发布，针对抖音风控进行了更新， 可以试一下最新版 https://github.com/ihmily/DouyinLiveRecorder/releases/tag/v4.0.7\n\n目前是否还会出现风控，有待测试。\n\n推荐优先使用网页版地址：https://live.douyin.com/769086526470"
+        },
+        {
+          "url": "https://github.com/ikenxuan/amagi/pull/188",
+          "title": "feat(douyin): 新增免鉴权接口，修复风控与 webid 相关问题",
+          "body_excerpt": "## 改了什么\n\n### 新增：四条免鉴权 methodType\n\n不需要 cookie、不算签名、不经 Argus，走的仍是 `fetchDouyinInternal`，因此事件、超时与错误信封与其他接口一致。返回原样 JSON，字段怎么读留给调用方。\n\n| methodType | 端点 |\n|---|---|\n| `guestUserInfo` | `iesdouyin.com/web/api/v2/user/info/` |\n| `guestMusicInfo` | `…/v2/music/info/` |\n| `guestMusicAwemeList` | `…/v2/music/list/aweme/` |\n| `emojiResourceMeta` | `api.amemv.com/aweme/v1/im/resources/emoji/` |\n\n`guestUserInfo` 是目前**唯一免签名的抖音号转 `sec_uid` 途径**（`searchContent` 要 a_bogus、会被按概率拦，而且是模糊匹配）。\n\n### 修复：`webid` 与会话对不上导致的静默空响应\n\n各 URL builder 里写死了 **13 处 `webid`、6 个不同值**。抖音会拿 `webid` 与 cookie 的会话交叉校验，**对不上就 HTTP 200 + body 长度 0** —— 不是 403、不是业务码，就是空。于是撞上对空 body 的 `INVALID_COOKIE` 判定，把排查方向带到 cookie 上，而 cookie 其实完全正常。\n\n最明显的受害者是 `aweme/favorite`（喜欢列表）：\n\n```\nwebid = 浏览器真实值   → HTTP 200  1116615B  19 条\nwebid = 写死的那个     → HTTP 200        0B  空\n不传 webid            → HTTP 200  1116776B  19 条\n```\n\n改法：删掉写死值，改为读抖音每个响应都会下发的 `cookie_ttwidinfo_webid` 响应头、**按 `ttwid` 分键缓存**（换 cookie 时自动跟着换，否则会原样复现同一个 bug）。零额外请求、不解析任何 HTML；冷启动没有缓存时**不传** —— 不传安全，传错致命。\n\n顺带说明：填别人的 `webid` 不会拿到别人的数据。`sec_user_id` 决定「看谁」，`webid` 只是设备一致性校验，账号身份来自 cookie 的 `sessionid`。\n\n### 修复：`x-secsdk-web-signature` 未实现\n\n`music/detail` 之前 100% 打不通（连打 3 次、每次含 5 轮换参重试，15/15 全部 `Blocked by ArgusSecurityPlugin Uifid Not Found`）。缺的不是常规参数，是 **`x-secsdk-web-signature`**：32 位小写 hex，**在 query 里**，原本由 secsdk JS 在页面里现算。\n\n`douyinSign.SecSdk()` 把它在 Node 侧纯算出来。它与 `AB` / `XB` 的差别调用方需要知道：**改写整条 URL 而不是回一个参数值**（签名算的是规范化后的 query，服务端也按收到的 query 校验），**只对 SDK 策略表内的 path 生效**（14 条 GET / 6 条 POST），其余原样返回，所以可以无条件套用；**必须是最后一步**（webid → a_bogus → 本签名，三者都覆盖 query）。\n\n### 修复：抖音分支的失败信封恒为 500\n\n`createErrorResponse(error, message, code = 500, data)` 的第三个参数有默认值，而抖音分支调它时不传 —— 风控拦截、cookie 失效、网络错误、内容过滤出来全是同一个 500，不携带任何信息（B站分支会把真实业务码透传进去）。现在带上真实 `status_code` 与文案；风控那类字符串码只放进事件的 `error"
+        }
+      ]
+    }
+  ]
+}

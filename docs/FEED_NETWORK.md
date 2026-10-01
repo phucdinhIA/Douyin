@@ -51,3 +51,5 @@ Cài candidate hiện tại 0.4.0 (gộp observer 0.3.0), giữ hai tùy chọn 
 Hiện **chưa sửa được root cause Network error** vì thiếu mã lỗi trên iPhone. Bản dịch và fitting được xử lý độc lập; bản mới là candidate có chẩn đoán bổ sung, không phải cam kết feed đã hoạt động.
 
 Bản 0.3.0 chưa được người dùng thử. 0.4.0 gộp phần dịch/fitting/observer này và bổ sung tìm kiếm khách; chưa có bằng chứng mới rằng Network error đã được sửa. [Tìm kiếm khách](GUEST_SEARCH.md).
+
+Người dùng bổ sung: tìm kiếm trên 0.2.0 thành công một trong bốn lần, ba lần không ra kết quả. Chưa xác nhận ba lần đó là màn Network error, login prompt hay empty results. Vì vậy phạm vi **Network error đã xác nhận vẫn là Featured/Tips**, còn Search có lỗi không ổn định cần phân loại riêng. Featured là kênh tuyển chọn có ảnh hưởng trực tiếp đến mục tiêu xem video; Tips là kênh kinh nghiệm/hướng dẫn. Không coi hai mục là nút thừa hoặc lỗi vô hại; LIVE/Nearby hoạt động chỉ xác nhận đường phát ở các kênh đó.

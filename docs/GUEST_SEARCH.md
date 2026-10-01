@@ -36,3 +36,16 @@ Không sửa `shouldLoginLimit`, `hitLimit` hay `needsLogin` của response. N�
 Cài candidate 0.4.0, bật **Guest search** và **English controls**, đóng hẳn/mở lại app. Thử hai từ khóa không nhạy cảm; thử tab All/Videos/Users/LIVE, cuộn kết quả, đổi từ khóa và Back. Ghi thời điểm nếu popup còn xuất hiện. Sau đó mở bảng Douyin Guest bằng hai ngón tay chạm ba lần, Copy diagnostics. Mong đợi `patch_version: 0.4.0-test`, 39 fixed hooks và `search_adapter_hooks` riêng. Không cần đăng nhập để làm vòng thử này.
 
 Kiểm tra Search/filters/Settings/sidebar/menu player ở font mặc định và font lớn; các chuỗi caption, tên tác giả và từ khóa vừa nhập phải giữ nguyên. Featured/Tips vẫn giữ, lỗi Network error trước đó chưa được xác định nguyên nhân; diagnostics feed của 0.3.0 tiếp tục có trong 0.4.0.
+
+## Bổ sung: tìm được một trong bốn lần trên 0.2.0
+
+Người dùng xác nhận đã thử bốn lần tìm kiếm trên **0.2.0**, một lần có kết quả, ba lần không ra kết quả. Chưa có diagnostics hoặc thông báo cụ thể của ba lần thất bại. 0.2.0 chưa có gateway/adapter Guest search và observer search-status của 0.4.0. Không dùng kết quả đó để kết luận 0.4.0 thất bại hoặc máy chủ chỉ cho một lượt tìm kiếm.
+
+Đã mở rộng sáu truy vấn GitHub issues; các kết quả DYYY liên quan ẩn control hoặc refactor, chưa có bằng chứng sửa tìm kiếm khách cho iOS 40.6.0. Truy vấn ban đầu `douyin "2483"` trả cả issue số 2483 không liên quan; đã thu hẹp `in:title,body`, không dùng kết quả nhiễu làm bằng chứng. [Truy vấn và kết quả](evidence/search-followup-0.4.0.json).
+
+Hai hướng có thông tin cụ thể:
+
+- [bb-sites PR 41](https://github.com/epiral/bb-sites/pull/41), chưa merge tại thời điểm đọc: đã đọc toàn bộ `douyin/search.js` tại commit `f290f4ec1e83eabaf967f814abe3a42c8f2e996a`, SHA-256 `03ba9f6b75bfc7963cd45ec1441b8402cf6fb903431b469347b9bb77ee4c8cc0`. Nó thao tác trang web và đọc DOM của kết quả công khai, hỗ trợ general/video; chính mã ghi user search có thể rỗng và báo lỗi nếu không có kết quả công khai. Không phải patch native hoặc bằng chứng tìm kiếm vô hạn; không thực thi hay đưa mã này vào IPA.
+- [VideoGet PR 4](https://github.com/Loccao102/VideoGet/pull/4) mô tả ghi nhận response web và báo rõ cần cookie đăng nhập khi gặp 2483. [Báo cáo cũ python-spider issue 35](https://github.com/Jack-Cherish/python-spider/issues/35) có response 2483 kèm thông báo yêu cầu đăng nhập. Đây là báo cáo bên ngoài ở web/phiên bản khác, chưa xác nhận response của iPhone hiện tại. Đối chiếu với disassembly chỉ làm giả thuyết giới hạn guest đáng kiểm tra hơn, không chứng minh có cách vượt giới hạn.
+
+Chưa có giải pháp được kiểm chứng để buộc máy chủ cấp tìm kiếm không giới hạn cho mẫu hiện tại. Bước phân biệt là thử IPA 0.4.0 đã giao với Guest search ON, xem số adapter active và numeric search status sau một lần thất bại. Nếu adapter chưa cài, xem đường client; nếu có status 2483, phân biệt yêu cầu server với lỗi kết nối. Đổi một lỗi thành success hoặc bỏ popup không tạo ra kết quả thiếu. Chưa sửa thêm mã production hoặc tạo IPA mới theo phỏng đoán.
