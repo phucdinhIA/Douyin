@@ -1,10 +1,10 @@
 # Kiểm tra thiết bị — iPhone 15 / iOS 18.5 / Sideloadly
 
-Bản 0.2.0 đã được người dùng cài/mở trên iPhone 15/iOS 18.5, gửi diagnostics 30/30 hook active và báo LIVE/Nearby phát. Các ca đầy đủ chưa được xác nhận; Featured/经验 lỗi kể cả khi tắt hai nhóm ad/login. Toàn bộ ca dưới đây cho **candidate 0.3.0** vẫn cần chạy lại trên iPhone; Simulator không thay thế app thật.
+Bản 0.2.0 đã được người dùng cài/mở trên iPhone 15/iOS 18.5, gửi diagnostics 30/30 hook active và báo LIVE/Nearby phát. Các ca đầy đủ chưa được xác nhận; Featured/经验 lỗi kể cả khi tắt hai nhóm ad/login. Bản 0.3.0 chưa được người dùng cài/thử. Toàn bộ ca dưới đây cho **candidate 0.4.0** vẫn cần chạy lại trên iPhone; Simulator không thay thế app thật.
 
 ## Chuẩn bị
 
-Giữ IPA gốc và dữ liệu cần thiết. Dùng candidate `Douyin-40.6.0-Guest-0.3.0-iPhone15-TEST.ipa`, ký bằng Sideloadly và cài. Không bật thêm tweak khác trong vòng kiểm tra này để xác định nguyên nhân lỗi. Bundle ID có hậu tố được hỗ trợ; không đổi hẳn sang tên khác. Diagnostics phải báo `patch_version: 0.3.0-test` để tránh thử nhầm bản 0.1.0. Bản mới giữ sửa thinning và có iPhone15 trong tên file. Trong Sideloadly chọn lại đúng IPA mới, không Retry tác vụ đang giữ file cũ.
+Giữ IPA gốc và dữ liệu cần thiết. Dùng candidate `Douyin-40.6.0-Guest-0.4.0-iPhone15-TEST.ipa`, ký bằng Sideloadly và cài. Không bật thêm tweak khác trong vòng kiểm tra này để xác định nguyên nhân lỗi. Bundle ID có hậu tố được hỗ trợ; không đổi hẳn sang tên khác. Diagnostics phải báo `patch_version: 0.4.0-test` để tránh thử nhầm bản 0.1.0. Bản mới giữ sửa thinning và có iPhone15 trong tên file. Trong Sideloadly chọn lại đúng IPA mới, không Retry tác vụ đang giữ file cũ.
 
 Nếu Sideloadly báo lỗi, lưu nguyên văn mã lỗi. Nếu app đóng ngay, lấy crash report có tên Aweme tại **Settings → Privacy & Security → Analytics & Improvements → Analytics Data**. Trước khi gửi, bỏ thông tin cá nhân không cần thiết. Nếu lỗi liên quan ký hoặc extension/provisioning, phải xử lý riêng trước khi kết luận hook sai.
 
@@ -13,7 +13,7 @@ Nếu Sideloadly báo lỗi, lưu nguyên văn mã lỗi. Nếu app đóng ngay,
 | ID | Thao tác | Kết quả cần đạt |
 |---|---|---|
 | D01 | Mở app sau khi đóng hoàn toàn, chưa đăng nhập | App vào được luồng nội dung công khai, không crash/đứng ở splash. Không tự bỏ qua màn consent/tuổi. |
-| D02 | Chạm hai ngón ba lần; Copy diagnostics ngay sau mở và sau cuộn lâu | Bảng Douyin Guest mở; cả `native_hooks_installed` và `native_hooks_active` đối chiếu với 33, không có signature mismatch hoặc hook overwritten. |
+| D02 | Chạm hai ngón ba lần; Copy diagnostics ngay sau mở và sau cuộn lâu | Bảng Douyin Guest mở; cả `native_hooks_installed` và `native_hooks_active` đối chiếu với 39, không có signature mismatch hoặc hook overwritten. |
 | D03 | Xem/cuộn ít nhất 200 video hoặc 30 phút | Không popup nhắc login tự động gây gián đoạn. Ghi số video/thời điểm nếu máy chủ dừng cấp nội dung. |
 | D04 | Mở video từ tìm kiếm/profile công khai; xem collection | Video máy chủ cho phép xem vẫn phát; không hỏng điều hướng quay lại. |
 | D05 | Cold start ít nhất 5 lần, quay lại app từ background 5 lần | Không quảng cáo splash thuộc các đường đã sửa; không màn đen/lớp phủ không đóng. |
@@ -37,6 +37,18 @@ Chỉ chốt phạm vi đã thực hiện khi các ca bắt buộc đạt và l�
 
 ## Vòng chẩn đoán Featured / Tips
 
-Trong bảng Douyin Guest (hai ngón tay chạm ba lần), giữ Filter feed / startup ads OFF và Hide login reminders OFF để so sánh. Sau khi cài candidate 0.3.0, đóng hẳn/mở lại app, chọn Featured, Retry một lần; chọn Tips (经验), Retry một lần, rồi Copy diagnostics. Gửi cả mã lỗi và bước tái hiện. Observer vẫn bật khi hai tùy chọn này OFF. Nếu cần tách từng kênh, thử mỗi kênh trong một lần mở app và sao chép diagnostics ngay sau đó. [Cách diễn giải và giới hạn](FEED_NETWORK.md).
+Trong bảng Douyin Guest (hai ngón tay chạm ba lần), giữ Filter feed / startup ads OFF và Hide login reminders OFF để so sánh. Sau khi cài candidate 0.4.0, đóng hẳn/mở lại app, chọn Featured, Retry một lần; chọn Tips (经验), Retry một lần, rồi Copy diagnostics. Gửi cả mã lỗi và bước tái hiện. Observer vẫn bật khi hai tùy chọn này OFF. Nếu cần tách từng kênh, thử mỗi kênh trong một lần mở app và sao chép diagnostics ngay sau đó. [Cách diễn giải và giới hạn](FEED_NETWORK.md).
 
 Kiểm tra các tiêu đề/menu mới, nút Settings/Setup không bị cắt, các mục Tools & services/Quick tools/Creator tools/Lifestyle cân đối; coupon/booking/QR/teen controls dịch đúng. Xác nhận caption/username bên phải feed giữ nguyên. Các chức năng cần tài khoản vẫn có thể yêu cầu đăng nhập chủ động.
+
+## Vòng thử tìm kiếm và giao diện 0.4.0
+
+Không cần cài 0.3.0 trước. Sau cài 0.4.0, mở bảng Douyin Guest, bật Guest search và English controls, đóng hẳn/mở lại app. Giữ hai tùy chọn ad/login theo trải nghiệm muốn thử; Guest search có công tắc riêng.
+
+| ID | Thao tác | Kết quả cần đạt |
+|---|---|---|
+| D15 | Tìm hai từ khóa công khai khác nhau; thử All/Videos/Users/LIVE, cuộn/tải thêm, đổi từ khóa, Back | Client không chặn trước request bằng popup login thuộc đường guest đã sửa; kết quả thực sự tải/phát. Nếu máy chủ từ chối, ghi nguyên lỗi và diagnostics, không coi là đã vượt được hạn chế. |
+| D16 | Copy diagnostics sau Search; tắt Guest search, đóng/mở và thử lại để đối chiếu nếu cần | 0.4.0-test, fixed hooks kỳ vọng 39. search_adapter_hooks installed/active kỳ vọng 2 cho một adapter đã resolve; không có ABI mismatch. OFF gọi method gốc. |
+| D17 | Rà Search/filter/sidebar/Settings/privacy/notifications/player/subtitles/cache/offline/LIVE/profile tabs; font mặc định/lớn | Labels được dịch không tràn/chồng, nút bấm/Back hoạt động; tên tác giả, nội dung video/comment/result và từ khóa giữ nguyên. |
+
+Gửi JSON Copy diagnostics sau tìm kiếm và sau Retry Featured/Tips. Nếu một màn còn lỗi chữ/layout, ghi màn/chuỗi cụ thể và ảnh của chỗ đó. [Chi tiết tìm kiếm và giới hạn kiểm chứng](GUEST_SEARCH.md).

@@ -46,6 +46,8 @@ Các mã URL thường gặp giúp chọn kiểm tra tiếp: `-1009` không có 
 
 ## Bước cần làm trên thiết bị
 
-Cài bản 0.3.0, giữ hai tùy chọn ad/login OFF trong vòng chẩn đoán đầu. Mở Featured, nhấn Retry một lần; mở Tips, nhấn Retry một lần, rồi Copy diagnostics. Báo mục vừa thử để ghép với các mã; diagnostics không lưu nội dung đang xem hoặc tên kênh đang chọn. Thử một kênh trong một lần mở app nếu cần phân biệt callback chính xác hơn. Nếu mã nghiêng về kết nối, thử Wi-Fi so với dữ liệu di động để đối chiếu, không cần tài khoản.
+Cài candidate hiện tại 0.4.0 (gộp observer 0.3.0), giữ hai tùy chọn ad/login OFF trong vòng chẩn đoán đầu. Mở Featured, nhấn Retry một lần; mở Tips, nhấn Retry một lần, rồi Copy diagnostics. Báo mục vừa thử để ghép với các mã; diagnostics không lưu nội dung đang xem hoặc tên kênh đang chọn. Thử một kênh trong một lần mở app nếu cần phân biệt callback chính xác hơn. Nếu mã nghiêng về kết nối, thử Wi-Fi so với dữ liệu di động để đối chiếu, không cần tài khoản.
 
 Hiện **chưa sửa được root cause Network error** vì thiếu mã lỗi trên iPhone. Bản dịch và fitting được xử lý độc lập; bản mới là candidate có chẩn đoán bổ sung, không phải cam kết feed đã hoạt động.
+
+Bản 0.3.0 chưa được người dùng thử. 0.4.0 gộp phần dịch/fitting/observer này và bổ sung tìm kiếm khách; chưa có bằng chứng mới rằng Network error đã được sửa. [Tìm kiếm khách](GUEST_SEARCH.md).

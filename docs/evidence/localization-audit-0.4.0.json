@@ -5322,5 +5322,11 @@
         "dictionary_matches": 4
       }
     ]
+  },
+  "sdk_english_fallback": {
+    "source": "Existing en.lproj catalogs inside the app",
+    "scope": "Original key and table in main/app-owned bundles; preserve original if the English key is missing",
+    "external_translation_service": false,
+    "runtime_device_verified": false
   }
 }

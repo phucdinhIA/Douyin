@@ -14,7 +14,7 @@
 
 DYYY và DYAll được GitHub API khai báo MIT tại thời điểm đọc. Mã implementation trong repository này được viết riêng; không lấy framework đóng sẵn hoặc các khối code của dự án tham khảo. Workflow pin checkout và upload-artifact tới commit SHA cụ thể.
 
-Bằng chứng quyết định cuối cùng là metadata của mẫu đã kiểm tra, không phải tên hàm trong tài liệu internet. `resources/hooks.json` chứa đúng 30 mục đã đối chiếu với metadata, gồm type encoding và địa chỉ tĩnh. Địa chỉ dùng làm bằng chứng; runtime lookup theo tên nên không phụ thuộc ASLR. Có method không đồng nghĩa đã chứng minh toàn bộ call path thực tế; hook counts và hành vi trên thiết bị phải được kiểm tra tiếp.
+Bằng chứng quyết định cuối cùng là metadata của mẫu đã kiểm tra, không phải tên hàm trong tài liệu internet. Ở vòng triển khai đầu, `resources/hooks.json` chứa 30 mục đã đối chiếu với metadata, gồm type encoding và địa chỉ tĩnh. Địa chỉ dùng làm bằng chứng; runtime lookup theo tên nên không phụ thuộc ASLR. Có method không đồng nghĩa đã chứng minh toàn bộ call path thực tế; hook counts và hành vi trên thiết bị phải được kiểm tra tiếp.
 
 ## Vòng nghiên cứu bổ sung cho 0.2.0-test
 
@@ -48,3 +48,9 @@ Disassembly được giới hạn bằng `LC_FUNCTION_STARTS`, tránh đọc tr�
 Vòng mới sửa fitting sau UIKit setter, giữ fallback state của UIButton khi thay normal title, bảo vệ tiêu đề profile/creator, thêm đường lấy `delegate.window` và notification key window cho bảng chẩn đoán. Registry lưu IMP để phân biệt hook đã cài với hook còn active; khi implementation khác ghi đè thì ghi chẩn đoán, không tự chồng thêm hook.
 
 App fixture riêng trên Simulator dùng UIKit thật với lớp AWE giả. Nó kiểm tra 278 chuỗi trong ngữ cảnh Settings, fitting, label reuse/nil, button states, attributed styles, caption/comment/search content, tab/profile, dark appearance và bảng chẩn đoán. Fixture không chứa Douyin, không kết nối máy chủ Douyin và không thể chạy executable arm64 thiết bị của IPA trên Simulator. Kết quả và lỗi kiểm thử được ghi trong [STATUS.md](STATUS.md); không suy ra thành công feed/popup/splash từ fixture.
+
+## Vòng tìm kiếm/giao diện 0.4.0
+
+Đã đọc lại nguồn DYYY và better-douyin tại commit cố định và tìm issues theo guest-search selectors. Không tìm được patch native phù hợp trong các file/queries đã đọc; không dùng mô tả web làm bằng chứng iOS. Implementation mới dựa trên class getter/call path của chính mẫu và xác minh ABI adapter lúc chạy. [Chi tiết và nguồn có hash](GUEST_SEARCH.md).
+
+Rà AwemeCore/AWESearchFramework, resource catalogs và metadata YYLabel. 853 exact labels, 752 khóa thấy trong hai binary, 104 file catalog; bằng chứng tĩnh không đại diện mọi màn runtime. SDK English fallback dùng key/table sẵn có, không gửi chữ người dùng tới API dịch. [Rà soát có phạm vi và giới hạn](evidence/localization-audit-0.4.0.json).

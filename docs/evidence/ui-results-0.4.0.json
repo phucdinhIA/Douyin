@@ -1,0 +1,251 @@
+{
+  "checks" : [
+    {
+      "name" : "fixture uses delegate lifecycle without a Scene Manifest",
+      "passed" : true
+    },
+    {
+      "name" : "diagnostics gesture keeps normal touches",
+      "passed" : true
+    },
+    {
+      "name" : "legacy window gets exactly one diagnostics gesture",
+      "passed" : true
+    },
+    {
+      "name" : "delegate-window fallback works with an empty Scene enumeration and stays idempotent",
+      "passed" : true
+    },
+    {
+      "name" : "text assigned before window attachment translates",
+      "passed" : true
+    },
+    {
+      "name" : "attached label text updates translate",
+      "passed" : true
+    },
+    {
+      "name" : "nil label text does not crash",
+      "passed" : true
+    },
+    {
+      "name" : "translated label fitting survives UIKit internal setters",
+      "passed" : true
+    },
+    {
+      "name" : "repeated translated text retains fitting",
+      "passed" : true
+    },
+    {
+      "name" : "reused label restores original font settings",
+      "passed" : true
+    },
+    {
+      "name" : "caption text matching dictionary is preserved",
+      "passed" : true
+    },
+    {
+      "name" : "comment ancestor prevents content translation",
+      "passed" : true
+    },
+    {
+      "name" : "button title set before attachment translates",
+      "passed" : true
+    },
+    {
+      "name" : "disabled title fallback follows a later normal-title update",
+      "passed" : true
+    },
+    {
+      "name" : "clearing button title does not preserve stale translations",
+      "passed" : true
+    },
+    {
+      "name" : "UIKit attributed translation preserves styling",
+      "passed" : true
+    },
+    {
+      "name" : "mixed attributed styles are not rewritten",
+      "passed" : true
+    },
+    {
+      "name" : "nil attributed text does not crash",
+      "passed" : true
+    },
+    {
+      "name" : "placeholder translates while typed search content stays intact",
+      "passed" : true
+    },
+    {
+      "name" : "tab title localization",
+      "passed" : true
+    },
+    {
+      "name" : "all configured labels pass through actual UIKit hooks in a settings context",
+      "passed" : true
+    },
+    {
+      "name" : "configured labels or their compact variants fit a 120pt control at 16pt font",
+      "passed" : true
+    },
+    {
+      "name" : "screenshot sidebar labels translate and fit 94pt grid controls",
+      "passed" : true
+    },
+    {
+      "name" : "sidebar recent-user nickname matching a menu label stays intact",
+      "passed" : true
+    },
+    {
+      "name" : "narrow Settings control uses a compact title and survives app fitting resets",
+      "passed" : true
+    },
+    {
+      "name" : "widening a compact label restores its full English title",
+      "passed" : true
+    },
+    {
+      "name" : "plain label preserves a font change after translation and window attachment",
+      "passed" : true
+    },
+    {
+      "name" : "reusing a compact control clears translation state",
+      "passed" : true
+    },
+    {
+      "name" : "compact attributed controls preserve styling",
+      "passed" : true
+    },
+    {
+      "name" : "network error controls translate without suppressing the error",
+      "passed" : true
+    },
+    {
+      "name" : "experience channel label translates and remains present",
+      "passed" : true
+    },
+    {
+      "name" : "padded control title translates and receives fitting after attachment",
+      "passed" : true
+    },
+    {
+      "name" : "search filters translate within a protected result controller while result content remains original",
+      "passed" : true
+    },
+    {
+      "name" : "profile control tabs translate without rewriting profile titles",
+      "passed" : true
+    },
+    {
+      "name" : "comment header translates while the comment body stays original",
+      "passed" : true
+    },
+    {
+      "name" : "Swift app control class names are recognized",
+      "passed" : true
+    },
+    {
+      "name" : "custom YYLabel translates before attachment and fits narrow controls above the minimum scale",
+      "passed" : true
+    },
+    {
+      "name" : "custom label widens back to full title and original font",
+      "passed" : true
+    },
+    {
+      "name" : "custom multiline label restores full text and leaves wrapping to its own renderer",
+      "passed" : true
+    },
+    {
+      "name" : "custom label preserves a later app font change",
+      "passed" : true
+    },
+    {
+      "name" : "custom label reuse restores the last app font",
+      "passed" : true
+    },
+    {
+      "name" : "custom attributed control preserves color during fitting",
+      "passed" : true
+    },
+    {
+      "name" : "custom mixed attributed styles are left intact",
+      "passed" : true
+    },
+    {
+      "name" : "custom result content is not translated or shrunk",
+      "passed" : true
+    },
+    {
+      "name" : "custom nil\/reused labels clear without a crash",
+      "passed" : true
+    },
+    {
+      "name" : "configured search gateway installs actual runtime adapter methods in fixture",
+      "passed" : true
+    },
+    {
+      "name" : "search adapter diagnostics distinguish dynamic methods from fixed native hooks",
+      "passed" : true
+    },
+    {
+      "name" : "SDK lookup selects the bundled English value for the original key",
+      "passed" : true
+    },
+    {
+      "name" : "missing SDK English entry preserves original text rather than exposing a key",
+      "passed" : true
+    },
+    {
+      "name" : "bundled SDK English format entry retains its numeric placeholder",
+      "passed" : true
+    },
+    {
+      "name" : "dark appearance preserves text and fitting",
+      "passed" : true
+    },
+    {
+      "name" : "creator profile title is not globally translated as a control label",
+      "passed" : true
+    },
+    {
+      "name" : "diagnostics sheet can actually be presented on legacy window",
+      "passed" : true
+    },
+    {
+      "name" : "diagnostics sheet exposes four switches, copy and close",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-network-error.png",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-sidebar.png",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-search.png",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-settings.png",
+      "passed" : true
+    }
+  ],
+  "count" : 58,
+  "device" : "iPhone",
+  "fitting_observation" : {
+    "adjusts" : true,
+    "lines" : 1,
+    "minimum_scale" : 0.64999997615814209,
+    "text" : "More options"
+  },
+  "ios" : "18.2",
+  "overflow_labels" : [
+
+  ],
+  "passed" : true,
+  "scope" : "UIKit fixture only; original Douyin app and network were not executed",
+  "translation_entries_tested" : 853
+}

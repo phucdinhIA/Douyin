@@ -1,4 +1,4 @@
-# Douyin Guest — bản thử 0.3.0
+# Douyin Guest — bản thử 0.4.0
 
 Mã chỉnh sửa dành riêng cho mẫu Douyin **40.6.0 / 406019 / arm64**, SHA-256 nguồn:
 
@@ -6,14 +6,15 @@ Mã chỉnh sửa dành riêng cho mẫu Douyin **40.6.0 / 406019 / arm64**, SHA
 
 **Đây là bản thử cần kiểm tra trên iPhone, chưa phải bản hoàn chỉnh đã kiểm chứng.** Repository chứa mã do dự án viết, cấu hình, công cụ đóng gói và kiểm tra; không chứa IPA, binary hoặc mã nguồn của Douyin.
 
-**Bản hiện tại: 0.3.0-test**, bổ sung 24 bản dịch theo ảnh sidebar/error page, fitting cho control hẹp và ba observer tải feed. Bản 0.2.0 đã cài/mở được trên iPhone 15/iOS 18.5 sau sửa thinning; LIVE/Nearby phát theo báo cáo của người dùng, nhưng Featured/经验 vẫn Network error kể cả khi tắt ad/login. **Lỗi này chưa được sửa**; hai mục vẫn giữ nguyên. Xem [điều tra feed](docs/FEED_NETWORK.md) và [hash/kết quả](docs/STATUS.md).
+**Bản hiện tại: 0.4.0-test**, gộp 0.3.0 và tìm kiếm khách, 551 bản dịch mới (853 tổng cộng), YYLabel và tài nguyên tiếng Anh có sẵn trong SDK. Người dùng chưa cài 0.3.0; thử trực tiếp candidate mới. Xem [tìm kiếm khách](docs/GUEST_SEARCH.md). Bản 0.2.0 đã cài/mở được trên iPhone 15/iOS 18.5 sau sửa thinning; LIVE/Nearby phát theo báo cáo của người dùng, nhưng Featured/经验 vẫn Network error kể cả khi tắt ad/login. **Lỗi này chưa được sửa**; hai mục vẫn giữ nguyên. Xem [điều tra feed](docs/FEED_NETWORK.md) và [hash/kết quả](docs/STATUS.md).
 
 Các thay đổi được triển khai:
 
 - 11 hook cho bộ điều khiển nhắc đăng nhập trước khi xem, trong luồng cuộn và nút gợi ý đăng nhập. Không giả mạo trạng thái đã đăng nhập và không sửa quyền truy cập do máy chủ áp dụng.
 - 19 hook cho lọc video quảng cáo trong ba loại response và chặn các cổng hiển thị quảng cáo khởi động/splash đã xác định. Đọc `isAds` và bổ sung `checkIsAd`, `isHardAdModel`, `isHardAd` đã đối chiếu trên `AWEAwemeModel`; không làm initializer trả `nil`. Cursor, `hasMore`, retry và quyền truy cập video được giữ nguyên.
-- 302 bản dịch chính xác cho chữ điều khiển thường gặp. Xử lý UILabel, UIButton, nhãn điều hướng theo ngữ cảnh, tab, placeholder và lookup localization. Chữ một dòng được phép co trong giới hạn 65%; chuỗi attributed có nhiều kiểu giữ nguyên. Sửa fitting sau setter, giữ fallback state của button và bảo vệ tiêu đề profile. Nội dung video/caption không được gửi ra dịch vụ dịch.
-- Bảng tùy chọn và chẩn đoán cục bộ, hỗ trợ scene/delegate window; 33 hook gồm 30 hook tính năng và 3 observer feed. Ghi category/mã NSError và thống kê list, không ghi URL, token hoặc description; callback gốc vẫn nhận nguyên argument. Không có endpoint/analytics mới.
+- 853 cặp dịch khớp toàn chuỗi cho chữ điều khiển thường gặp. Xử lý UILabel, UIButton, YYLabel, nhãn điều hướng theo ngữ cảnh, tab, placeholder và lookup localization; SDK có tài nguyên en.lproj dùng bản Anh cùng key/table. Chữ một dòng được phép co trong giới hạn 65%; chuỗi attributed có nhiều kiểu giữ nguyên. Sửa fitting sau setter, giữ fallback state của button và bảo vệ tiêu đề profile. Nội dung video/caption không được gửi ra dịch vụ dịch.
+- Tìm kiếm khách qua service adapter thật của app; kiểm tra hai method BOOL trước khi bật cổng client, có công tắc riêng. Không giả tài khoản hoặc đổi kết quả máy chủ. Chưa kiểm chứng tìm kiếm thật trên iPhone.
+- Bảng tùy chọn và chẩn đoán cục bộ, hỗ trợ scene/delegate window; 39 fixed hook gồm 30 hook ad/login, 5 gateway tìm kiếm khách và 4 observer; 2 method adapter động được kiểm tra ABI và đếm riêng. Ghi category/mã NSError và thống kê list, không ghi URL, token hoặc description; callback gốc vẫn nhận nguyên argument. Không có endpoint/analytics mới.
 
 Giới hạn hiện tại: chưa bao phủ mọi màn hình, WebView/Lynx, chữ tải từ máy chủ, quảng cáo lồng trong video hay tất cả đường dữ liệu. Không bảo đảm xem mọi video hoặc không giới hạn khi máy chủ yêu cầu xác thực. Hành vi thực tế và bố cục cần kiểm tra trên thiết bị.
 
@@ -26,7 +27,7 @@ GitHub Actions dùng macOS với SDK từ Xcode để biên dịch thư viện. 
 3. Đóng gói trên Windows/macOS/Linux với Python 3.11 trở lên:
 
 ```powershell
-python scripts/ipa_patch.py "path\original.ipa" "build\DouyinGuest.dylib" "dist\Douyin-40.6.0-Guest-0.3.0-iPhone15-TEST.ipa" --library-sha256 HASH_FROM_ARTIFACT
+python scripts/ipa_patch.py "path\original.ipa" "build\DouyinGuest.dylib" "dist\Douyin-40.6.0-Guest-0.4.0-iPhone15-TEST.ipa" --library-sha256 HASH_FROM_ARTIFACT
 ```
 
 Công cụ từ chối hash nguồn sai, binary mã hóa, kiến trúc sai, vùng header không trống, tên ZIP không an toàn, đường dẫn trùng, hoặc ghi đè file đã tồn tại. Nó đọc lại tất cả file output và kiểm chứng hash, đồng thời kiểm tra IPA nguồn vẫn nguyên vẹn. Báo cáo `.validation.json` đi kèm ghi chi tiết thay đổi.
@@ -37,7 +38,7 @@ Ký/cài bản thử bằng Sideloadly. IPA cần ký lại toàn bộ thành ph
 
 Chạm đồng thời **hai ngón tay, ba lần** trên màn hình app để mở **Douyin Guest**:
 
-- bật/tắt nhắc đăng nhập, lọc quảng cáo hoặc tiếng Anh;
+- bật/tắt nhắc đăng nhập, lọc quảng cáo, tiếng Anh hoặc **Guest search**;
 - **Copy diagnostics** sao chép phiên bản, số hook đã cài/còn active và các bộ đếm; không chứa token, tài khoản hoặc URL video;
 - khởi động lại ứng dụng sau khi thay đổi. Việc tắt lọc không khôi phục mục quảng cáo đã bị lọc khỏi response cũ; cần tải lại feed.
 
@@ -45,7 +46,7 @@ Hook chỉ bật cho build đã chọn; bundle ID gốc hoặc ID có hậu tố
 
 ## Tài liệu và kiểm tra
 
-Vòng [36844285286](https://github.com/phucdinhIA/Douyin/actions/runs/36844285286) đã đạt 14 Python tests, Foundation, build và **37/37 UIKit checks** trên iPhone 15 Simulator/iOS 18.2. Đã xem ảnh menu/error fixture; đây không phải Douyin thật. IPA mới đã được đọc lại/hash toàn bộ 5.629 entry và đối chiếu 4.977 file không sửa với audit, không sai lệch. Bản 0.3.0 vẫn cần kiểm tra trên iPhone và lấy mã lỗi feed. [Trạng thái kiểm chứng](docs/STATUS.md).
+Vòng [36863785258](https://github.com/phucdinhIA/Douyin/actions/runs/36863785258) đã đạt 14 Python tests, Foundation, build và **58/58 UIKit checks** trên iPhone 15 Simulator/iOS 18.2. Đã xem bốn ảnh sidebar/error/Search/Settings của fixture; đây không phải Douyin thật. IPA mới đã được đọc lại/hash toàn bộ 5.629 entry và đối chiếu 4.977 file không sửa với audit, không sai lệch. Bản 0.4.0 vẫn cần kiểm tra tìm kiếm/giao diện trên iPhone và lấy mã lỗi feed. [Trạng thái kiểm chứng](docs/STATUS.md).
 
 - [Kế hoạch triển khai và luồng xử lý](docs/PLAN.md)
 - [Nguồn nghiên cứu, lựa chọn kỹ thuật](docs/RESEARCH.md)

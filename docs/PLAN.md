@@ -42,7 +42,7 @@ Chặn các cổng splash trong `AWESplashManager`, `AWEAwesomeSplashManager`, `
 
 App có 104 file `.strings/.stringsdict`, nhiều file thuộc SDK phụ; không có bảng tiếng Anh hoàn chỉnh cho giao diện Douyin chính. Không thay raw byte chuỗi trong binary vì độ dài có thể khác, phá offset và mã.
 
-Bảng 302 cặp Trung–Anh dùng phép khớp toàn chuỗi. Kiểm tra tĩnh tìm thấy 241 chuỗi của bảng trong các CFString của AwemeCore; 61 mục còn lại là biến thể chưa xác nhận trong lõi, có thể dùng ở SDK phụ hoặc màn hình khác. Sự hiện diện không chứng minh hook chạm tới nhãn hiển thị. Nhãn được xử lý khi đổi text và khi gắn vào window; kiểm tra ancestor/responder để ưu tiên class điều khiển/navigation/menu/settings và bỏ qua class có tên caption/comment/subtitle/username/chat/search content. Đây là biện pháp dựa vào tên lớp cần xác nhận bằng thiết bị, chưa chứng minh tất cả caption đều được loại trừ.
+Bảng 853 cặp Trung–Anh dùng phép khớp toàn chuỗi. Kiểm tra tĩnh tìm thấy 752 khóa của bảng trong AwemeCore/AWESearchFramework; 101 khóa chưa được tìm thấy trong hai binary. Đã đọc 104 resource .strings/.stringsdict; một số hằng số trỏ vào zero-fill nên chưa đọc được tĩnh. Sự hiện diện không chứng minh hook chạm tới nhãn hiển thị. Nhãn được xử lý khi đổi text và khi gắn vào window; kiểm tra ancestor/responder để ưu tiên class điều khiển/navigation/menu/settings và bỏ qua class có tên caption/comment/subtitle/username/chat/search content. Đây là biện pháp dựa vào tên lớp cần xác nhận bằng thiết bị, chưa chứng minh tất cả caption đều được loại trừ.
 
 Button, placeholder, tab title và localized strings được xử lý riêng. Không rewrite mọi `UINavigationItem.title`; nhãn navigation dùng ngữ cảnh controller và loại profile/user detail để giữ tên tác giả. Button attachment không tạo title override cho disabled/highlighted state, giữ fallback về normal title. Attributed text chỉ dịch khi một bộ attributes phủ toàn chuỗi, giữ attributes ban đầu; chuỗi nhiều style giữ nguyên. Nhãn một dòng có giới hạn co chữ 65%, fitting sau setter UIKit và khôi phục thiết lập cũ khi nhãn được dùng lại cho chữ không dịch. Không đổi constraints, không thu nhỏ font toàn ứng dụng. Tắt/bật tiếng Anh cần khởi động lại để các title đã tạo được dựng lại.
 
@@ -60,10 +60,18 @@ Permissions text sử dụng bản tiếng Anh đã có trong mẫu; tên hiển
 
 Python tests kiểm tra bounds/path/hash/injection không dịch chuyển code và các trường hợp từ chối. Foundation tests chạy trên macOS kiểm tra bốn cờ ad, kiểu hàm sai, operation/ABI sai dù metadata khớp, cấu hình malformed, danh sách trống, giữ nội dung, attributed styles, override kế thừa và chuyển về implementation gốc khi tắt. Build dùng warnings-as-errors và kiểm tra chữ ký ad-hoc thư viện. UIKit fixture riêng chạy trên iPhone 15 Simulator; chỉ phát hành artifact thư viện khi toàn workflow đạt. Fixture không thay kiểm thử Douyin thật. Bảng chẩn đoán cần so cả `native_hooks_installed` và `native_hooks_active`; hook bị overwrite được ghi nhận, không tự cài chồng lên implementation lạ.
 
-Thiết bị thật cần kiểm tra cold/warm start, cuộn dài, foreground/background, mạng lỗi, các kiểu video, dịch/layout và tắt từng nhóm để so sánh. Chẩn đoán chỉ ghi bộ đếm hook và phiên bản, không nội dung sử dụng. Thay đổi phát sinh phải chạy lại các test liên quan trước khi tạo candidate tiếp theo. Không tạo release cuối cùng trước khi các ca bắt buộc đạt.
+Thiết bị thật cần kiểm tra cold/warm start, cuộn dài, foreground/background, mạng lỗi, các kiểu video, dịch/layout và tắt từng nhóm để so sánh. Chẩn đoán ghi bộ đếm hook/phiên bản, fixed category và mã lỗi feed/search; không ghi nội dung sử dụng. Thay đổi phát sinh phải chạy lại các test liên quan trước khi tạo candidate tiếp theo. Không tạo release cuối cùng trước khi các ca bắt buộc đạt.
 
 ## Vòng sửa 0.3.0 theo ảnh thiết bị
 
 Giữ sửa thinning. Bổ sung 24 labels; mở rộng ngữ cảnh SideBar/error/empty page nhưng bảo vệ recent-user cards. Fitting theo layout với compact variants, khôi phục chuỗi khi rộng hơn và phân biệt plain/attributed setter để giữ cập nhật font. Kiểm thử UIKit có grid 94pt, Settings 32pt, font thay đổi, protected user card và ảnh render để QA.
 
 Thêm ba observer completion đã đối chiếu type encoding; luôn chuyển tiếp implementation gốc và ghi category/code NSError cùng list samples. Không đổi request hoặc retry. Người dùng báo Featured/Tips lỗi dù ads/login OFF, LIVE/Nearby phát. Lấy diagnostics mới là bước cần thiết trước khi sửa lỗi mạng; không xóa hai kênh nếu chưa được người dùng xác nhận.
+
+## Vòng gộp 0.4.0
+
+Người dùng chưa thử 0.3.0, yêu cầu gộp tìm kiếm và rà thêm UI. Rà hai binary và 104 catalogs; thêm 551 labels, control islands cho Search/filter/comment header/profile tabs, tên Swift, padding, YYLabel không kế thừa UILabel và fallback en.lproj của SDK. Giữ nguyên layout constraints và dữ liệu người dùng. Kiểm thử all labels ở 120pt, grid/narrow controls, custom renderer/font changes/multiline/styles/reuse và render bốn màn để review.
+
+Theo call path sau nhập từ khóa, resolve guest adapter bằng 5 class getter đúng ABI; preflight hai method BOOL trước khi bật cổng client. Thêm công tắc Guest search riêng, registry đồng bộ/idempotent và diagnostics adapter riêng. Observer search status giữ nguyên result/message; không hook isLogin/needsLogin/shouldLoginLimit để che yêu cầu máy chủ. Không đặt thêm request/retry hoặc dịch vụ mạng. [Thiết kế tìm kiếm, nguồn và kiểm tra](GUEST_SEARCH.md).
+
+Build/test trên macOS CI, chỉ đóng gói khi đạt; đọc lại toàn ZIP, đối chiếu audit, giữ IPA cũ. Chỉ giao test candidate vì tìm kiếm thật, layout mọi màn và lỗi feed vẫn cần xác nhận trên iPhone 15/iOS 18.5.
