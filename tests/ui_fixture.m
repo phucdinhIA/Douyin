@@ -19,6 +19,12 @@
 @end
 @implementation AWECommentFixtureView
 @end
+// Fixture-only key window to exercise the fallback without changing real OS state.
+@interface FixtureKeyWindow : UIWindow
+@end
+@implementation FixtureKeyWindow
+- (BOOL)isKeyWindow { return YES; }
+@end
 @interface DGSettings : NSObject
 + (instancetype)shared;
 - (void)attachWindows;
@@ -62,7 +68,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
 }
 - (void)runCases {
     UIView *parent=self.host.view;
-    check(UIApplication.sharedApplication.connectedScenes.count==0,@"fixture matches legacy lifecycle without Scene Manifest");
+    check([NSBundle.mainBundle objectForInfoDictionaryKey:@"UIApplicationSceneManifest"]==nil,@"fixture uses delegate lifecycle without a Scene Manifest");
     [[DGSettings shared] attachWindows];
     [[DGSettings shared] attachWindows];
     NSUInteger gestures=0;
@@ -72,6 +78,19 @@ static NSUInteger countText(UIView *view, NSString *text) {
         if (tap.numberOfTouchesRequired==2 && tap.numberOfTapsRequired==3) {gestures++; check(!tap.cancelsTouchesInView,@"diagnostics gesture keeps normal touches");}
     }
     check(gestures==1,@"legacy window gets exactly one diagnostics gesture");
+    UIWindow *realWindow=self.window;
+    FixtureKeyWindow *fallback=[[FixtureKeyWindow alloc] initWithFrame:CGRectMake(0,0,200,200)];
+    self.window=fallback;
+    Method scenes=class_getInstanceMethod(UIApplication.class,@selector(connectedScenes));
+    IMP originalScenes=method_getImplementation(scenes);
+    IMP emptyScenes=imp_implementationWithBlock(^NSSet *(UIApplication *app) {(void)app; return [NSSet set];});
+    method_setImplementation(scenes,emptyScenes);
+    @try { [[DGSettings shared] attachWindows]; [[DGSettings shared] attachWindows]; }
+    @finally { method_setImplementation(scenes,originalScenes); imp_removeBlock(emptyScenes); self.window=realWindow; }
+    NSUInteger fallbackGestures=0;
+    for (UIGestureRecognizer *gesture in fallback.gestureRecognizers)
+        if ([gesture isKindOfClass:UITapGestureRecognizer.class] && ((UITapGestureRecognizer *)gesture).numberOfTouchesRequired==2) ++fallbackGestures;
+    check(fallbackGestures==1,@"delegate-window fallback works with an empty Scene enumeration and stays idempotent");
     UILabel *home=label(parent,@"首页",100);
     check([home.text isEqualToString:@"Home"],@"text assigned before window attachment translates");
     home.text=@"设置";

@@ -9,7 +9,8 @@ static atomic_bool guestEnabled, adsEnabled, englishEnabled;
 static NSDictionary<NSString *, NSString *> *translations;
 static NSSet<NSString *> *translatedValues;
 static NSArray<NSDictionary *> *hookSpecs;
-static NSMutableSet<NSString *> *installed;
+static NSMutableDictionary<NSString *, NSValue *> *installed;
+static NSMutableSet<NSString *> *overwritten;
 static NSMutableDictionary<NSString *, NSNumber *> *counters;
 static os_unfair_lock counterLock = OS_UNFAIR_LOCK_INIT;
 static char fontStateKey, gestureKey;
@@ -187,14 +188,43 @@ static void DGInstallEnglish(void) {
     });
 }
 
+static NSString *DGHookKey(NSDictionary *spec) {
+    return [NSString stringWithFormat:@"%@|%@|%@", spec[@"class"], spec[@"selector"], spec[@"class_method"]];
+}
+
+static Method DGHookMethod(NSDictionary *spec) {
+    Class cls = NSClassFromString(spec[@"class"]);
+    if (!cls) return NULL;
+    if ([spec[@"class_method"] boolValue]) cls = object_getClass(cls);
+    return class_getInstanceMethod(cls, NSSelectorFromString(spec[@"selector"]));
+}
+
+static NSUInteger DGActiveHookCount(void) {
+    NSUInteger active = 0;
+    for (NSDictionary *spec in hookSpecs) {
+        NSValue *implementation = installed[DGHookKey(spec)];
+        Method method = DGHookMethod(spec);
+        if (implementation && method && method_getImplementation(method) == (IMP)implementation.pointerValue) ++active;
+    }
+    return active;
+}
+
 static void DGInstallNative(void) {
     for (NSDictionary *spec in hookSpecs) {
-        NSString *key = [NSString stringWithFormat:@"%@|%@|%@", spec[@"class"], spec[@"selector"], spec[@"class_method"]];
-        if ([installed containsObject:key]) continue;
+        NSString *key = DGHookKey(spec);
+        NSValue *implementation = installed[key];
+        if (implementation) {
+            Method method = DGHookMethod(spec);
+            if ((!method || method_getImplementation(method) != (IMP)implementation.pointerValue) && ![overwritten containsObject:key]) {
+                [overwritten addObject:key]; DGCount([@"Hook overwritten: " stringByAppendingString:key], 1);
+            }
+            // Do not automatically stack another hook over an unknown replacement.
+            continue;
+        }
         NSString *feature = spec[@"feature"];
         DGEnabled enabled = ^BOOL { return [feature isEqualToString:@"guest"] ? atomic_load(&guestEnabled) : atomic_load(&adsEnabled); };
         if (DGInstallHook(spec, enabled, ^(NSString *event, NSUInteger count) { DGCount(event, count); }))
-            [installed addObject:key];
+            installed[key] = [NSValue valueWithPointer:(const void *)method_getImplementation(DGHookMethod(spec))];
     }
 }
 
@@ -238,7 +268,7 @@ static void DGInstallNative(void) {
     UIViewController *presenter = window.rootViewController;
     while (presenter.presentedViewController) presenter = presenter.presentedViewController;
     if (!presenter || [presenter isKindOfClass:UIAlertController.class]) return;
-    NSString *message = [NSString stringWithFormat:@"Test build • 40.6.0 (406019)\nNative hooks: %lu/%lu\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)installed.count, (unsigned long)hookSpecs.count];
+    NSString *message = [NSString stringWithFormat:@"Test build • 40.6.0 (406019)\nNative hooks: %lu/%lu active\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)DGActiveHookCount(), (unsigned long)hookSpecs.count];
     UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Douyin Guest" message:message preferredStyle:UIAlertControllerStyleAlert];
     NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls"];
     NSArray *keys = @[@"DGGuestEnabled", @"DGAdsEnabled", @"DGEnglishEnabled"];
@@ -256,6 +286,7 @@ static void DGInstallNative(void) {
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
         NSMutableDictionary *report = [@{@"patch_version": @"0.2.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled))};
+        report[@"native_hooks_active"] = @(DGActiveHookCount());
         NSData *data = [NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:NULL];
         if (data) UIPasteboard.generalPasteboard.string = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     }]];
@@ -281,7 +312,7 @@ __attribute__((constructor)) static void DGStart(void) {
         id words = DGReadJSON(@"translations"), specs = DGReadJSON(@"hooks");
         if (![words isKindOfClass:NSDictionary.class] || ![specs isKindOfClass:NSArray.class]) return;
         translations = words; translatedValues = [NSSet setWithArray:translations.allValues]; hookSpecs = specs;
-        counters = [NSMutableDictionary new]; installed = [NSMutableSet new];
+        counters = [NSMutableDictionary new]; installed = [NSMutableDictionary new]; overwritten = [NSMutableSet new];
         [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES}];
         atomic_init(&guestEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGGuestEnabled"]);
         atomic_init(&adsEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGAdsEnabled"]);
