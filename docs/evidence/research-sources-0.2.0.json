@@ -1,0 +1,172 @@
+{
+  "date": "2026-10-01",
+  "sources": [
+    {
+      "repository": "huami1314/DYYY",
+      "commit": "6c3dfbd911822b4d0f758f184c196566e8142291",
+      "license_observed": "MIT",
+      "downloaded_files": [
+        {
+          "local_file": "AwemeHeaders.h",
+          "sha256": "44226c34c73ff2a846026ab2b310ac50f4ca2266cd4575bbffad622d36de2412",
+          "bytes": 46770
+        },
+        {
+          "local_file": "DYYY.xm",
+          "sha256": "6f005f7903bf315947662ea478136db0db6a21e7dd2d53a426491d10fc94408a",
+          "bytes": 293000
+        },
+        {
+          "local_file": "DYYYFilterSettingsView.h",
+          "sha256": "f1a70a0b90bf0d27a9a80247b8698f5de087e02c3fdab680bba8c857446c2e0c",
+          "bytes": 835
+        },
+        {
+          "local_file": "DYYYFilterSettingsView.m",
+          "sha256": "0906f589d5a46bdd1e6bff1e00fabe16e53af2ff161fee4ab6bb82f7c5002d01",
+          "bytes": 22641
+        },
+        {
+          "local_file": "LICENSE",
+          "sha256": "04f4f92380bd3533da8f2a852b6623a27871900cc2b66af704e46bae8377b47c",
+          "bytes": 1063
+        },
+        {
+          "local_file": "README.md",
+          "sha256": "e51d39a198a3a11285a3511f25db66fe754002611becebc7c73d83f35241d303",
+          "bytes": 9924
+        }
+      ]
+    },
+    {
+      "repository": "pxx917144686/DYYY",
+      "commit": "39561aef7fff5ac039eb2f6a202dd05beba42d89",
+      "license_observed": null,
+      "downloaded_files": [
+        {
+          "local_file": "AwemeHeaders.h",
+          "sha256": "1f46ad2a04c937438998db2ccd22693c8e6d58469775411d14a02737a5dbd356",
+          "bytes": 36611
+        },
+        {
+          "local_file": "DYYY.xm",
+          "sha256": "c31e8dab66d315e4cc395b7d377ac6a4a3c4e41c169f5fee5fa18b21abd811e3",
+          "bytes": 207421
+        },
+        {
+          "local_file": "DYYYFilterSettingsView.h",
+          "sha256": "d592848a65efc8affa01aa294a7977947f08ff0cf1de850a9a0c677a45593789",
+          "bytes": 1090
+        },
+        {
+          "local_file": "DYYYFilterSettingsView.m",
+          "sha256": "0f4226d7fffbfd34cf9177d54eb2c15511c6fd53a210ee2cbed45a93bb46410b",
+          "bytes": 18658
+        },
+        {
+          "local_file": "DYYYUtils.m",
+          "sha256": "6e88bc16fc6f264af2af648d714783eb3eb6211c7d6d6974467e51896db3e4ad",
+          "bytes": 34794
+        },
+        {
+          "local_file": "README.md",
+          "sha256": "c814bc30c6796b5242de1d7e09c6326438f84149a0b8ff7ebcde3cf328482473",
+          "bytes": 1491
+        }
+      ]
+    },
+    {
+      "repository": "sleep1234/DYYY-for-Douyin-39-9-0",
+      "commit": "59dff1216626d924485d0dbd4008bbeb7d61d213",
+      "license_observed": "MIT",
+      "downloaded_files": [
+        {
+          "local_file": "AwemeHeaders.h",
+          "sha256": "ec2c40002d311855e02daa0b05b3743f4a817ed30d94c2fb76cd037c5b98b64e",
+          "bytes": 63654
+        },
+        {
+          "local_file": "DYYY.xm",
+          "sha256": "96a5cadaf0e1565e6aa9d1c9f6f6f54f0afa9435fb130c1ad31ebd1258b3d482",
+          "bytes": 426690
+        },
+        {
+          "local_file": "DYYYFilterSettingsView.h",
+          "sha256": "f1a70a0b90bf0d27a9a80247b8698f5de087e02c3fdab680bba8c857446c2e0c",
+          "bytes": 835
+        },
+        {
+          "local_file": "DYYYFilterSettingsView.m",
+          "sha256": "0906f589d5a46bdd1e6bff1e00fabe16e53af2ff161fee4ab6bb82f7c5002d01",
+          "bytes": 22641
+        },
+        {
+          "local_file": "LICENSE",
+          "sha256": "04f4f92380bd3533da8f2a852b6623a27871900cc2b66af704e46bae8377b47c",
+          "bytes": 1063
+        },
+        {
+          "local_file": "README.md",
+          "sha256": "52697f21ad62773444570c48b8bedf8bdf73c00ea4c9985d7a7e70edc4a64233",
+          "bytes": 10178
+        }
+      ]
+    },
+    {
+      "repository": "YU-1021/better-douyin",
+      "commit": "322845e1fd12f11c2ff7c9d832d9bc7e49bffc13",
+      "license_observed": "MIT",
+      "downloaded_files": [
+        {
+          "local_file": "LICENSE",
+          "sha256": "4615d7b5be5cbf280907b3f533cc6d571b2da72e2644c2fe8fcb27f0d9b60cea",
+          "bytes": 1059
+        },
+        {
+          "local_file": "README.md",
+          "sha256": "b068bfa303bccf5264eda989db896cf43f1ea3b11e13554a71a921e3730eae37",
+          "bytes": 1501
+        },
+        {
+          "local_file": "更好的抖音.js",
+          "sha256": "94c85d1dea5050f62f772581e9a81daaa98fd782af20d78044cb88fbee2fcd8a",
+          "bytes": 6264
+        }
+      ]
+    },
+    {
+      "repository": "Feng-zheng666/potplay",
+      "commit": "22c2a42ae5e6d2219c82e8857d95615ff43d33dc",
+      "license_observed": "MIT",
+      "downloaded_files": [
+        {
+          "local_file": "LICENSE",
+          "sha256": "7ca64d728c3a67ed5dc2ae55bf717de4b4f21664e945c6d4bdb4597671a49bca",
+          "bytes": 1067
+        },
+        {
+          "local_file": "抖音无登录查看.txt",
+          "sha256": "4d0df484aaa8ba74627782b77a387a12aee1edf6566a86a5799f55f665448e08",
+          "bytes": 1048
+        }
+      ]
+    },
+    {
+      "repository": "lyf9528/douyin-dl",
+      "commit": "037f11cabf39d3e0769209d5b2de948e2fab800f",
+      "license_observed": null,
+      "downloaded_files": [
+        {
+          "local_file": "README.md",
+          "sha256": "4587cbe64d14b7e57bb2cd41c299b6900d6f1a1c422792e8a8ad7d295a4903b7",
+          "bytes": 2676
+        }
+      ]
+    }
+  ],
+  "internet_code_executed": false,
+  "prebuilt_library_from_references_used": false,
+  "original_ipa_uploaded": false,
+  "source_read_scope": "Downloaded source snapshots used for reference; not a claim of full-line review of every file or every repository",
+  "notes": "Null license means not recorded in metadata. See RESEARCH.md for LICENSE observations and decisions."
+}

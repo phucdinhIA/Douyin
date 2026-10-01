@@ -34,7 +34,7 @@ Thư viện kiểm tra type encoding trước mỗi lần cài hook. Nếu lớp
 
 ## 4. Quảng cáo
 
-`AWEAwemeModel.isAds` có kiểu BOOL không tham số. Ba lớp response có getter/setter `awemeList` kiểu object. Lọc tại cả getter và setter giúp bao phủ setter thông thường và response được gán ivar trực tiếp. Chỉ bỏ model trả về BOOL true từ `isAds`; model lạ, không có method hoặc trả kiểu khác được giữ nguyên. Thứ tự và tính mutable của danh sách được giữ; không sửa input tại chỗ, không sửa cursor/hasMore, không tạo retry vô hạn khi cả trang là quảng cáo.
+`AWEAwemeModel` có bốn method BOOL không tham số đã đối chiếu: `isAds`, `checkIsAd`, `isHardAdModel`, `isHardAd`. Ba lớp response có getter/setter `awemeList` kiểu object. Lọc tại cả getter và setter giúp bao phủ setter thông thường và response được gán ivar trực tiếp. Chỉ bỏ model có dấu hiệu BOOL true; ba method bổ sung chỉ áp dụng trên `AWEAwemeModel`. Model không có method đúng kiểu được giữ nguyên. Thứ tự và tính mutable của danh sách được giữ; không sửa input tại chỗ, không sửa cursor/hasMore, không tạo retry vô hạn khi cả trang là quảng cáo. Không làm model initializer trả `nil`.
 
 Chặn các cổng splash trong `AWESplashManager`, `AWEAwesomeSplashManager`, `AWEAwesomeBiddingSplashManager`, cùng `tryToShowSplash`. Không chặn toàn bộ domain CDN vì video và quảng cáo có thể dùng chung hạ tầng. Không báo impression quảng cáo giả. Không hứa loại bỏ quảng cáo do creator chèn trong video, banner của mọi tính năng hay các trang web nhúng chưa kiểm tra.
 
@@ -44,7 +44,7 @@ App có 104 file `.strings/.stringsdict`, nhiều file thuộc SDK phụ; không
 
 Bảng 278 cặp Trung–Anh dùng phép khớp toàn chuỗi. Kiểm tra tĩnh tìm thấy 223 chuỗi của bảng trong các CFString của AwemeCore; 55 mục còn lại là biến thể chưa xác nhận trong lõi, có thể dùng ở SDK phụ hoặc màn hình khác. Sự hiện diện không chứng minh hook chạm tới nhãn hiển thị. Nhãn được xử lý khi đổi text và khi gắn vào window; kiểm tra ancestor/responder để ưu tiên class điều khiển/navigation/menu/settings và bỏ qua class có tên caption/comment/subtitle/username/chat/search content. Đây là biện pháp dựa vào tên lớp cần xác nhận bằng thiết bị, chưa chứng minh tất cả caption đều được loại trừ.
 
-Button, placeholder, nav/tab title và localized strings được xử lý riêng. Attributed text chỉ dịch khi một bộ attributes phủ toàn chuỗi, giữ attributes ban đầu; chuỗi nhiều style giữ nguyên. Nhãn một dòng có giới hạn co chữ 65%, khôi phục thiết lập cũ khi nhãn được dùng lại cho chữ không dịch. Không đổi constraints, không thu nhỏ font toàn ứng dụng. Tắt/bật tiếng Anh cần khởi động lại để các title đã tạo được dựng lại.
+Button, placeholder, tab title và localized strings được xử lý riêng. Không rewrite mọi `UINavigationItem.title`; nhãn navigation dùng ngữ cảnh controller và loại profile/user detail để giữ tên tác giả. Button attachment không tạo title override cho disabled/highlighted state, giữ fallback về normal title. Attributed text chỉ dịch khi một bộ attributes phủ toàn chuỗi, giữ attributes ban đầu; chuỗi nhiều style giữ nguyên. Nhãn một dòng có giới hạn co chữ 65%, fitting sau setter UIKit và khôi phục thiết lập cũ khi nhãn được dùng lại cho chữ không dịch. Không đổi constraints, không thu nhỏ font toàn ứng dụng. Tắt/bật tiếng Anh cần khởi động lại để các title đã tạo được dựng lại.
 
 Permissions text sử dụng bản tiếng Anh đã có trong mẫu; tên hiển thị là Douyin Guest. Màn WebView/Lynx, chữ trong ảnh và chuỗi máy chủ ngoài từ điển cần bổ sung từ bằng chứng runtime, không dùng API dịch gửi dữ liệu cá nhân ra ngoài.
 
@@ -58,6 +58,6 @@ Permissions text sử dụng bản tiếng Anh đã có trong mẫu; tên hiển
 
 ## 7. Xác minh và vòng sửa
 
-Python tests kiểm tra bounds/path/hash/injection không dịch chuyển code và các trường hợp từ chối. Foundation tests chạy trên macOS kiểm tra lọc dữ liệu, kiểu hàm sai, danh sách trống, giữ nội dung, attributed styles, override kế thừa và chuyển về implementation gốc khi tắt. Build dùng warnings-as-errors và kiểm tra chữ ký ad-hoc thư viện.
+Python tests kiểm tra bounds/path/hash/injection không dịch chuyển code và các trường hợp từ chối. Foundation tests chạy trên macOS kiểm tra bốn cờ ad, kiểu hàm sai, operation/ABI sai dù metadata khớp, cấu hình malformed, danh sách trống, giữ nội dung, attributed styles, override kế thừa và chuyển về implementation gốc khi tắt. Build dùng warnings-as-errors và kiểm tra chữ ký ad-hoc thư viện. UIKit fixture riêng chạy trên iPhone 15 Simulator; chỉ phát hành artifact thư viện khi toàn workflow đạt. Fixture không thay kiểm thử Douyin thật. Bảng chẩn đoán cần so cả `native_hooks_installed` và `native_hooks_active`; hook bị overwrite được ghi nhận, không tự cài chồng lên implementation lạ.
 
 Thiết bị thật cần kiểm tra cold/warm start, cuộn dài, foreground/background, mạng lỗi, các kiểu video, dịch/layout và tắt từng nhóm để so sánh. Chẩn đoán chỉ ghi bộ đếm hook và phiên bản, không nội dung sử dụng. Thay đổi phát sinh phải chạy lại các test liên quan trước khi tạo candidate tiếp theo. Không tạo release cuối cùng trước khi các ca bắt buộc đạt.

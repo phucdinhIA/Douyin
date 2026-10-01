@@ -1,0 +1,119 @@
+{
+  "checks" : [
+    {
+      "name" : "fixture uses delegate lifecycle without a Scene Manifest",
+      "passed" : true
+    },
+    {
+      "name" : "diagnostics gesture keeps normal touches",
+      "passed" : true
+    },
+    {
+      "name" : "legacy window gets exactly one diagnostics gesture",
+      "passed" : true
+    },
+    {
+      "name" : "delegate-window fallback works with an empty Scene enumeration and stays idempotent",
+      "passed" : true
+    },
+    {
+      "name" : "text assigned before window attachment translates",
+      "passed" : true
+    },
+    {
+      "name" : "attached label text updates translate",
+      "passed" : true
+    },
+    {
+      "name" : "nil label text does not crash",
+      "passed" : true
+    },
+    {
+      "name" : "translated label fitting survives UIKit internal setters",
+      "passed" : true
+    },
+    {
+      "name" : "repeated translated text retains fitting",
+      "passed" : true
+    },
+    {
+      "name" : "reused label restores original font settings",
+      "passed" : true
+    },
+    {
+      "name" : "caption text matching dictionary is preserved",
+      "passed" : true
+    },
+    {
+      "name" : "comment ancestor prevents content translation",
+      "passed" : true
+    },
+    {
+      "name" : "button title set before attachment translates",
+      "passed" : true
+    },
+    {
+      "name" : "disabled title fallback follows a later normal-title update",
+      "passed" : true
+    },
+    {
+      "name" : "clearing button title does not preserve stale translations",
+      "passed" : true
+    },
+    {
+      "name" : "UIKit attributed translation preserves styling",
+      "passed" : true
+    },
+    {
+      "name" : "mixed attributed styles are not rewritten",
+      "passed" : true
+    },
+    {
+      "name" : "nil attributed text does not crash",
+      "passed" : true
+    },
+    {
+      "name" : "placeholder translates while typed search content stays intact",
+      "passed" : true
+    },
+    {
+      "name" : "tab title localization",
+      "passed" : true
+    },
+    {
+      "name" : "all configured labels pass through actual UIKit hooks in a settings context",
+      "passed" : true
+    },
+    {
+      "name" : "configured labels can fit a 120pt fixture control at 16pt font",
+      "passed" : true
+    },
+    {
+      "name" : "dark appearance preserves text and fitting",
+      "passed" : true
+    },
+    {
+      "name" : "creator profile title is not globally translated as a control label",
+      "passed" : true
+    },
+    {
+      "name" : "diagnostics sheet can actually be presented on legacy window",
+      "passed" : true
+    },
+    {
+      "name" : "diagnostics sheet exposes three switches, copy and close",
+      "passed" : true
+    }
+  ],
+  "count" : 26,
+  "device" : "iPhone",
+  "fitting_observation" : {
+    "adjusts" : true,
+    "lines" : 1,
+    "minimum_scale" : 0.64999997615814209,
+    "text" : "More options"
+  },
+  "ios" : "18.2",
+  "passed" : true,
+  "scope" : "UIKit fixture only; original Douyin app and network were not executed"
+}

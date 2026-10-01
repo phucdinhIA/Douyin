@@ -4,7 +4,7 @@ Trạng thái ban đầu của toàn bộ ca dưới đây: **chưa chạy trên
 
 ## Chuẩn bị
 
-Giữ IPA gốc và dữ liệu cần thiết. Dùng candidate `Douyin-40.6.0-Guest-TEST.ipa`, ký bằng Sideloadly và cài. Không bật thêm tweak khác trong vòng kiểm tra này để xác định nguyên nhân lỗi. Bundle ID có hậu tố được hỗ trợ; không đổi hẳn sang tên khác.
+Giữ IPA gốc và dữ liệu cần thiết. Dùng candidate `Douyin-40.6.0-Guest-0.2.0-TEST.ipa`, ký bằng Sideloadly và cài. Không bật thêm tweak khác trong vòng kiểm tra này để xác định nguyên nhân lỗi. Bundle ID có hậu tố được hỗ trợ; không đổi hẳn sang tên khác. Diagnostics phải báo `patch_version: 0.2.0-test` để tránh thử nhầm bản 0.1.0.
 
 Nếu Sideloadly báo lỗi, lưu nguyên văn mã lỗi. Nếu app đóng ngay, lấy crash report có tên Aweme tại **Settings → Privacy & Security → Analytics & Improvements → Analytics Data**. Trước khi gửi, bỏ thông tin cá nhân không cần thiết. Nếu lỗi liên quan ký hoặc extension/provisioning, phải xử lý riêng trước khi kết luận hook sai.
 
@@ -13,7 +13,7 @@ Nếu Sideloadly báo lỗi, lưu nguyên văn mã lỗi. Nếu app đóng ngay,
 | ID | Thao tác | Kết quả cần đạt |
 |---|---|---|
 | D01 | Mở app sau khi đóng hoàn toàn, chưa đăng nhập | App vào được luồng nội dung công khai, không crash/đứng ở splash. Không tự bỏ qua màn consent/tuổi. |
-| D02 | Chạm hai ngón ba lần; Copy diagnostics | Bảng Douyin Guest mở; `native_hooks_installed` đối chiếu với 30, không có signature mismatch. |
+| D02 | Chạm hai ngón ba lần; Copy diagnostics ngay sau mở và sau cuộn lâu | Bảng Douyin Guest mở; cả `native_hooks_installed` và `native_hooks_active` đối chiếu với 30, không có signature mismatch hoặc hook overwritten. |
 | D03 | Xem/cuộn ít nhất 200 video hoặc 30 phút | Không popup nhắc login tự động gây gián đoạn. Ghi số video/thời điểm nếu máy chủ dừng cấp nội dung. |
 | D04 | Mở video từ tìm kiếm/profile công khai; xem collection | Video máy chủ cho phép xem vẫn phát; không hỏng điều hướng quay lại. |
 | D05 | Cold start ít nhất 5 lần, quay lại app từ background 5 lần | Không quảng cáo splash thuộc các đường đã sửa; không màn đen/lớp phủ không đóng. |
