@@ -24,6 +24,10 @@
 @end
 @implementation AWELeftSideBarFixtureView
 @end
+@interface AWELeftSideBarRecentVisitUserCell : UIView
+@end
+@implementation AWELeftSideBarRecentVisitUserCell
+@end
 @interface AWENetworkErrorFixtureView : UIView
 @end
 @implementation AWENetworkErrorFixtureView
@@ -227,6 +231,9 @@ static NSUInteger countText(UIView *view, NSString *text) {
         if ([grid.text sizeWithAttributes:@{NSFontAttributeName:grid.font}].width*grid.minimumScaleFactor>grid.bounds.size.width+1) sidebarWidthOK=NO;
     }
     check(sidebarOK && sidebarWidthOK,@"screenshot sidebar labels translate and fit 94pt grid controls");
+    AWELeftSideBarRecentVisitUserCell *recentUser=[[AWELeftSideBarRecentVisitUserCell alloc] initWithFrame:CGRectMake(0,30,200,28)];
+    [sidebar addSubview:recentUser];UILabel *nickname=label(recentUser,@"我的客服",0);
+    check([nickname.text isEqualToString:@"我的客服"],@"sidebar recent-user nickname matching a menu label stays intact");
     UILabel *narrow=label(sidebar,@"设置",0);narrow.frame=CGRectMake(0,0,32,28);
     narrow.adjustsFontSizeToFitWidth=NO;narrow.minimumScaleFactor=1;[narrow setNeedsLayout];[narrow layoutIfNeeded];
     check([narrow.text isEqualToString:@"Setup"] && narrow.adjustsFontSizeToFitWidth && fabs(narrow.minimumScaleFactor-0.65)<1e-6,

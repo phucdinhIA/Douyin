@@ -34,7 +34,8 @@ static BOOL DGIsContentClass(NSString *name) {
     for (NSString *part in @[@"Caption", @"Description", @"Subtitle", @"Comment",
                              @"Nickname", @"UserName", @"AwemeDesc", @"VideoTitle",
                              @"SearchResult", @"SearchInput", @"Chat", @"MessageCell",
-                             @"AuthorName", @"AuthorInfo", @"UserNick", @"Danmaku", @"Barrage", @"UserText"]) {
+                             @"AuthorName", @"AuthorInfo", @"UserNick", @"Danmaku", @"Barrage", @"UserText",
+                             @"RecentVisitUser", @"RevisitUser", @"UserCard"]) {
         if ([name rangeOfString:part options:NSCaseInsensitiveSearch].location != NSNotFound)
             return YES;
     }
