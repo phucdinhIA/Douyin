@@ -1,8 +1,12 @@
 import importlib.util
+import contextlib
+import io
+import plistlib
 import pathlib
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch as mock_patch
 import zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -76,5 +80,37 @@ class PackagingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path=pathlib.Path(directory)/'input';path.write_bytes(b'known bytes')
             self.assertEqual(patch.sha256(path),hashlib.sha256(b'known bytes').hexdigest())
+    def test_build_removes_device_thinning_without_weakening_capabilities(self):
+        main = {'CFBundleIdentifier':'com.ss.iphone.ugc.Aweme', 'CFBundleShortVersionString':'40.6.0',
+                'CFBundleVersion':'406019', 'UISupportedDevices':['iPhone9,1'],
+                'UIDeviceFamily':[1,2], 'UIRequiredDeviceCapabilities':['arm64'], 'MinimumOSVersion':'15.0'}
+        extension = {'CFBundleIdentifier':'fixture.extension', 'UISupportedDevices':['iPhone9,1'],
+                     'UIDeviceFamily':[1], 'UIRequiredDeviceCapabilities':{'arm64':True}, 'MinimumOSVersion':'15.0'}
+        main_path=patch.APP+'Info.plist'
+        extension_path=patch.APP+'PlugIns/Fixture.appex/Info.plist'
+        untouched_path=patch.APP+'PlugIns/Other.appex/Info.plist'
+        untouched=plistlib.dumps({'CFBundleIdentifier':'fixture.other','UIDeviceFamily':[1]})
+        with tempfile.TemporaryDirectory() as directory:
+            root=pathlib.Path(directory);source=root/'source.ipa';library=root/'fixture.dylib';output=root/'patched.ipa'
+            library.write_bytes(b'Fixture only, not a real library')
+            with zipfile.ZipFile(source,'w') as archive:
+                archive.writestr(main_path,plistlib.dumps(main))
+                archive.writestr(extension_path,plistlib.dumps(extension))
+                archive.writestr(untouched_path,untouched)
+                archive.writestr(patch.APP+'Aweme',binary())
+                archive.writestr(patch.APP+'en.lproj/InfoPlist.strings',plistlib.dumps({'CFBundleDisplayName':'Douyin'}))
+            with mock_patch.object(patch,'SOURCE_SHA256',patch.sha256(source)), \
+                 mock_patch.object(patch,'validate_library',return_value=[]), contextlib.redirect_stdout(io.StringIO()):
+                report=patch.build(source,library,output,patch.sha256(library))
+            with zipfile.ZipFile(source) as original, zipfile.ZipFile(output) as result:
+                for path,expected in [(main_path,main),(extension_path,extension)]:
+                    self.assertEqual(plistlib.loads(original.read(path)),expected)
+                    actual=plistlib.loads(result.read(path))
+                    self.assertNotIn('UISupportedDevices',actual)
+                    for key in ['UIDeviceFamily','UIRequiredDeviceCapabilities','MinimumOSVersion']:
+                        self.assertEqual(actual[key],expected[key])
+                self.assertEqual(result.read(untouched_path),untouched)
+            self.assertEqual({x['path'] for x in report['removed_thinning_allowlists']},{main_path,extension_path})
+            self.assertNotIn(untouched_path,report['modified'])
 
 if __name__ == '__main__': unittest.main()

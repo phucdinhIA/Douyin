@@ -199,6 +199,7 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
     dependencies = validate_library(library_data)
     hooks, words = validate_resources(resource_dir)
     changes, removals, corrections, hashes = [], [], [], {}
+    thinning_allowlists = []
     output.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(prefix='guest-', suffix='.ipa.tmp', dir=output.parent)
     os.close(descriptor)
@@ -216,6 +217,10 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
             info['CFBundleDisplayName'] = 'Douyin Guest'
             info['CFBundleDevelopmentRegion'] = 'en'
             info['DGSourceSHA256'] = SOURCE_SHA256
+            # App Store thinning leaves an exact-model allowlist. It can reject
+            # newer arm64 phones before launch; retain family/capability/minimum OS checks.
+            if 'UISupportedDevices' in info:
+                thinning_allowlists.append({'path': APP+'Info.plist', 'previous': info.pop('UISupportedDevices')})
             modified = {APP+'Aweme': injected, APP+'Info.plist': plistlib.dumps(info, fmt=plistlib.FMT_BINARY)}
             for entry, name in zip(original.infolist(), names):
                 if name != entry.filename: corrections.append(name)
@@ -223,6 +228,11 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
                     removals.append(name); continue
                 if name.startswith(APP+'DouyinGuest.bundle/') or name == APP+'Frameworks/DouyinGuest.dylib':
                     raise ValueError('Input already contains the patch')
+                if name.startswith(APP+'PlugIns/') and name.endswith('.appex/Info.plist'):
+                    extension_info = plistlib.loads(original.read(entry))
+                    if 'UISupportedDevices' in extension_info:
+                        thinning_allowlists.append({'path': name, 'previous': extension_info.pop('UISupportedDevices')})
+                        modified[name] = plistlib.dumps(extension_info, fmt=plistlib.FMT_BINARY)
                 if name.startswith(APP) and name.count('/') == 3 and name.endswith('.lproj/InfoPlist.strings'):
                     localized = plistlib.loads(original.read(entry))
                     localized.update(english_info)
@@ -264,6 +274,7 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
                   'library_sha256':library_sha256,'size':output.stat().st_size,
                   'modified':changes,'added':list(additions),'removed_signature_entries':removals,
                   'utf8_filename_corrections':corrections,'entry_count':len(hashes),
+                  'removed_thinning_allowlists':thinning_allowlists,
                   'all_output_entry_hashes_verified':True,'source_unchanged':True,
                   'library_dependencies':dependencies,'native_hooks':len(hooks),'translation_entries':len(words),
                   'runtime_tested':False,'status':'test candidate; re-sign required', 'entry_sha256':hashes}
