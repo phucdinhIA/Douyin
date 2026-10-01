@@ -42,7 +42,7 @@ Chặn các cổng splash trong `AWESplashManager`, `AWEAwesomeSplashManager`, `
 
 App có 104 file `.strings/.stringsdict`, nhiều file thuộc SDK phụ; không có bảng tiếng Anh hoàn chỉnh cho giao diện Douyin chính. Không thay raw byte chuỗi trong binary vì độ dài có thể khác, phá offset và mã.
 
-Bảng 278 cặp Trung–Anh dùng phép khớp toàn chuỗi. Nhãn được xử lý khi đổi text và khi gắn vào window; kiểm tra ancestor/responder để ưu tiên giao diện app và bỏ qua class có tên caption/comment/subtitle/username/chat/search content. Đây là biện pháp dựa vào tên lớp cần xác nhận bằng thiết bị, chưa chứng minh tất cả caption đều được loại trừ.
+Bảng 278 cặp Trung–Anh dùng phép khớp toàn chuỗi. Kiểm tra tĩnh tìm thấy 223 chuỗi của bảng trong các CFString của AwemeCore; 55 mục còn lại là biến thể chưa xác nhận trong lõi, có thể dùng ở SDK phụ hoặc màn hình khác. Sự hiện diện không chứng minh hook chạm tới nhãn hiển thị. Nhãn được xử lý khi đổi text và khi gắn vào window; kiểm tra ancestor/responder để ưu tiên class điều khiển/navigation/menu/settings và bỏ qua class có tên caption/comment/subtitle/username/chat/search content. Đây là biện pháp dựa vào tên lớp cần xác nhận bằng thiết bị, chưa chứng minh tất cả caption đều được loại trừ.
 
 Button, placeholder, nav/tab title và localized strings được xử lý riêng. Attributed text chỉ dịch khi một bộ attributes phủ toàn chuỗi, giữ attributes ban đầu; chuỗi nhiều style giữ nguyên. Nhãn một dòng có giới hạn co chữ 65%, khôi phục thiết lập cũ khi nhãn được dùng lại cho chữ không dịch. Không đổi constraints, không thu nhỏ font toàn ứng dụng. Tắt/bật tiếng Anh cần khởi động lại để các title đã tạo được dựng lại.
 
