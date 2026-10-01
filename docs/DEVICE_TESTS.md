@@ -1,10 +1,10 @@
 # Kiểm tra thiết bị — iPhone 15 / iOS 18.5 / Sideloadly
 
-Trạng thái ban đầu của toàn bộ ca dưới đây: **chưa chạy trên iPhone**. Build và kiểm tra tĩnh không thay thế kết quả thiết bị thật.
+Bản 0.2.0 đã được người dùng cài/mở trên iPhone 15/iOS 18.5, gửi diagnostics 30/30 hook active và báo LIVE/Nearby phát. Các ca đầy đủ chưa được xác nhận; Featured/经验 lỗi kể cả khi tắt hai nhóm ad/login. Toàn bộ ca dưới đây cho **candidate 0.3.0** vẫn cần chạy lại trên iPhone; Simulator không thay thế app thật.
 
 ## Chuẩn bị
 
-Giữ IPA gốc và dữ liệu cần thiết. Dùng candidate `Douyin-40.6.0-Guest-0.2.0-iPhone15-TEST.ipa`, ký bằng Sideloadly và cài. Không bật thêm tweak khác trong vòng kiểm tra này để xác định nguyên nhân lỗi. Bundle ID có hậu tố được hỗ trợ; không đổi hẳn sang tên khác. Diagnostics phải báo `patch_version: 0.2.0-test` để tránh thử nhầm bản 0.1.0. Bản revision 1 sửa lỗi thinning có `iPhone15` trong tên file; diagnostics vẫn là 0.2.0-test vì thư viện không đổi. Trong Sideloadly chọn lại đúng IPA mới, không Retry tác vụ đang giữ file cũ.
+Giữ IPA gốc và dữ liệu cần thiết. Dùng candidate `Douyin-40.6.0-Guest-0.3.0-iPhone15-TEST.ipa`, ký bằng Sideloadly và cài. Không bật thêm tweak khác trong vòng kiểm tra này để xác định nguyên nhân lỗi. Bundle ID có hậu tố được hỗ trợ; không đổi hẳn sang tên khác. Diagnostics phải báo `patch_version: 0.3.0-test` để tránh thử nhầm bản 0.1.0. Bản mới giữ sửa thinning và có iPhone15 trong tên file. Trong Sideloadly chọn lại đúng IPA mới, không Retry tác vụ đang giữ file cũ.
 
 Nếu Sideloadly báo lỗi, lưu nguyên văn mã lỗi. Nếu app đóng ngay, lấy crash report có tên Aweme tại **Settings → Privacy & Security → Analytics & Improvements → Analytics Data**. Trước khi gửi, bỏ thông tin cá nhân không cần thiết. Nếu lỗi liên quan ký hoặc extension/provisioning, phải xử lý riêng trước khi kết luận hook sai.
 
@@ -13,7 +13,7 @@ Nếu Sideloadly báo lỗi, lưu nguyên văn mã lỗi. Nếu app đóng ngay,
 | ID | Thao tác | Kết quả cần đạt |
 |---|---|---|
 | D01 | Mở app sau khi đóng hoàn toàn, chưa đăng nhập | App vào được luồng nội dung công khai, không crash/đứng ở splash. Không tự bỏ qua màn consent/tuổi. |
-| D02 | Chạm hai ngón ba lần; Copy diagnostics ngay sau mở và sau cuộn lâu | Bảng Douyin Guest mở; cả `native_hooks_installed` và `native_hooks_active` đối chiếu với 30, không có signature mismatch hoặc hook overwritten. |
+| D02 | Chạm hai ngón ba lần; Copy diagnostics ngay sau mở và sau cuộn lâu | Bảng Douyin Guest mở; cả `native_hooks_installed` và `native_hooks_active` đối chiếu với 33, không có signature mismatch hoặc hook overwritten. |
 | D03 | Xem/cuộn ít nhất 200 video hoặc 30 phút | Không popup nhắc login tự động gây gián đoạn. Ghi số video/thời điểm nếu máy chủ dừng cấp nội dung. |
 | D04 | Mở video từ tìm kiếm/profile công khai; xem collection | Video máy chủ cho phép xem vẫn phát; không hỏng điều hướng quay lại. |
 | D05 | Cold start ít nhất 5 lần, quay lại app từ background 5 lần | Không quảng cáo splash thuộc các đường đã sửa; không màn đen/lớp phủ không đóng. |
@@ -34,3 +34,9 @@ Phiên bản candidate/commit, ID ca, các bước ngắn tái hiện, kết qu�
 ## Điều kiện chốt
 
 Chỉ chốt phạm vi đã thực hiện khi các ca bắt buộc đạt và lỗi còn chữ/layout/ad đã được xử lý hoặc ghi rõ phạm vi không bao phủ. Không thể chứng minh “mọi video không giới hạn” từ một phiên cuộn; hạn chế máy chủ phải được báo đúng. Không thể chứng minh “không có bất kỳ quảng cáo nào ở mọi tính năng” khi chỉ sửa feed/splash.
+
+## Vòng chẩn đoán Featured / Tips
+
+Trong bảng Douyin Guest (hai ngón tay chạm ba lần), giữ Filter feed / startup ads OFF và Hide login reminders OFF để so sánh. Sau khi cài candidate 0.3.0, đóng hẳn/mở lại app, chọn Featured, Retry một lần; chọn Tips (经验), Retry một lần, rồi Copy diagnostics. Gửi cả mã lỗi và bước tái hiện. Observer vẫn bật khi hai tùy chọn này OFF. Nếu cần tách từng kênh, thử mỗi kênh trong một lần mở app và sao chép diagnostics ngay sau đó. [Cách diễn giải và giới hạn](FEED_NETWORK.md).
+
+Kiểm tra các tiêu đề/menu mới, nút Settings/Setup không bị cắt, các mục Tools & services/Quick tools/Creator tools/Lifestyle cân đối; coupon/booking/QR/teen controls dịch đúng. Xác nhận caption/username bên phải feed giữ nguyên. Các chức năng cần tài khoản vẫn có thể yêu cầu đăng nhập chủ động.

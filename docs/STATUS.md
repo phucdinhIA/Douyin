@@ -1,63 +1,79 @@
-# Trạng thái kiểm chứng
+# Trạng thái kiểm chứng — 0.3.0-test
 
-Candidate: **0.2.0-test / packaging revision 1**. Đã đóng gói và kiểm thử tự động; **chưa kiểm chứng trên iPhone thật, chưa phải bản hoàn chỉnh**.
+Đã xử lý mã dịch/fitting theo ảnh iPhone và bổ sung chẩn đoán feed. **Lỗi Network error chưa xác định root cause và chưa được sửa; chưa phát hành bản hoàn chỉnh.**
 
-| Hạng mục | Kết quả đã kiểm tra |
-|---|---|
-| Identity/hash IPA gốc | 40.6.0 / 406019 / arm64; hash trước/sau khớp audit |
-| 30 native hook | Selector, method kind và type encoding khớp metadata mẫu; 11 login guide, 19 ads/feed/splash |
-| Bốn dấu hiệu ad | `isAds`, `checkIsAd`, `isHardAdModel`, `isHardAd` đúng BOOL trên `AWEAwemeModel`; disassembly giới hạn bằng `LC_FUNCTION_STARTS` |
-| Python | 14/14 tests đóng gói đạt trên Windows và CI macOS |
-| Foundation | Policy và hook regressions đạt; gồm bốn dấu hiệu ad, forwarding, metaclass, inheritance, direct-ivar list, switch, sai ABI và malformed config |
-| Build | arm64 / deployment iOS 15.0; Xcode 15.4 / SDK iOS 17.5; warnings-as-errors đạt |
-| Chữ ký thư viện | Ad-hoc `codesign --verify --strict` đạt; IPA vẫn cần ký lại bằng Sideloadly |
-| UIKit fixture | **26/26 checks đạt**, iPhone 15 Simulator / iOS 18.2 |
-| Chuỗi và fitting trong fixture | 278/278 labels đi qua UIKit hook ở ngữ cảnh Settings; thử 120pt/16pt, reuse, nil, attributed styles, button fallback và dark appearance |
-| Bảo vệ nội dung trong fixture | Caption/comment/search text và creator profile không bị dịch nhầm trong các ca đã dựng |
-| Bảng chẩn đoán trong fixture | Gesture không lặp; fallback khi scene enumeration rỗng; modal mở được |
-| ZIP candidate | Đọc lại/hash **5.629 entry**, không sai lệch |
-| So sánh độc lập | **5.620 entry** khớp CRC/size/mode nguồn; **4.977 file không sửa** khớp SHA-256 audit trước đó |
-| Binary gốc | AwemeCore nguyên vẹn; executable chỉ đổi 51 byte trong header, không đổi kích thước/nội dung code phía sau |
-| Cài candidate trước trên iPhone 15/iOS 18.5 | Người dùng báo `DeviceNotSupportedByThinning`; chưa vào được app |
-| Cài candidate sửa metadata | **Chưa thử lại trên iPhone** |
-| Không popup, không ad, xem video, layout mọi màn | **Chưa được chứng minh trên app thật** |
-| An toàn tổng thể của mẫu internet | Kiểm thử patch không chứng minh toàn bộ IPA gốc an toàn |
-
-CI thành công: [36827280855](https://github.com/phucdinhIA/Douyin/actions/runs/36827280855), source commit `b3357d16888c9e59087c51f5c83cd4d45638d00b`. Artifact tải về đã đối chiếu commit, trạng thái run và SHA-256.
-
-Hai vòng fixture trước đã phát hiện lỗi kiểm tra: [36826255486](https://github.com/phucdinhIA/Douyin/actions/runs/36826255486), [36826863437](https://github.com/phucdinhIA/Douyin/actions/runs/36826863437). Giả định “không Scene Manifest thì connectedScenes rỗng” không đúng trên runtime này; test hiện kiểm tra plist và dựng riêng tình huống scene rỗng. UILabel lưu/trả minimum scale `0.6499999761581421` khi đặt `0.65`; đã đo trực tiếp và dùng tolerance `1e-6`, vẫn kiểm tra đúng chuỗi, fitting và scale. Không bỏ ca thất bại để cho test đạt.
-
-Candidate cục bộ: `dist/Douyin-40.6.0-Guest-0.2.0-iPhone15-TEST.ipa`, **704.813.212 byte**.
+Candidate: `dist/Douyin-40.6.0-Guest-0.3.0-iPhone15-TEST.ipa`, **704,817,323 byte**.
 
 SHA-256 IPA:
 
-`b994e7807752a9dbe9a6168fdb3e844c4ddc4e3220eb4d9d4f7d8c9f131a6b5d`
+`513d5846f8f4869fe4c87fd16b82df4ee07f3103322efeee3a08c7e10037808a`
 
 SHA-256 thư viện:
 
-`24facd4d87f47880c53c4919b4095e31968d23c531df925bb1ace3d92cf6824c`
+`72577d73f696d5da646c78be073dd29411a7bc7da899b23d7f1941930cfab61c`
 
-Bản 0.1.0 và IPA gốc vẫn được giữ nguyên. Repository không chứa IPA/binary Douyin.
+| Kiểm tra | Kết quả |
+|---|---|
+| CI [36844285286](https://github.com/phucdinhIA/Douyin/actions/runs/36844285286) | Thành công; commit deec7b0fa9584ab0fde5a88a46e66e6f1b2262da |
+| Python | 14/14 packaging regressions đạt; có ca loại device thinning trong app/extension |
+| Foundation | Policy/hook regressions đạt; observer chuyển tiếp nguyên result/error/BOOL, không làm lỗi thành success, không ghi URL/token/description |
+| Build | arm64 / iOS 15.0, Xcode 15.4 / SDK iOS 17.5, warnings-as-errors và ad-hoc signature verification đạt |
+| UIKit | **37/37 checks đạt**, iPhone 15 Simulator / iOS 18.2 |
+| Bản dịch | 302 cặp; 241 tìm thấy trong CFString lõi; toàn từ điển đi qua hook trong fixture |
+| Bố cục | Menu 94pt, control Settings 32pt, width 120pt với compact variants, đổi font sau attachment, attributed styles, reuse/nil và dark appearance đạt |
+| Bảo vệ nội dung | Caption/comment/search/profile và nickname trong sidebar user card được giữ trong các ca fixture |
+| Native hooks | 33 selector/types khớp metadata; 11 login, 19 ads, 3 observer feed; **chưa kiểm tra active trên iPhone bản 0.3.0** |
+| Ảnh fixture | Đã xem [menu](evidence/ui-sidebar-0.3.0.png) và [màn lỗi](evidence/ui-network-error-0.3.0.png), chữ hiển thị rõ, không cắt trong bố cục fixture |
+| ZIP | Hash/read-back 5.629 entry đạt; 5.620 entry không sửa khớp CRC/size/mode; 4.977 file khớp audit SHA-256; không sai lệch |
+| Thinning | Quét 287 Info.plist: không còn UISupportedDevices; giữ device family/capability/minimum OS |
+| Binary gốc | AwemeCore không đổi; executable chỉ đổi 51 byte vùng header, kích thước/code phía sau giữ nguyên |
+| iPhone bản 0.3.0 | **Chưa cài/chạy** |
+| Featured / Tips | **Network error chưa được sửa**, giữ nguyên hai mục |
+| An toàn toàn IPA internet | Không được chứng minh bởi kiểm thử patch |
 
-- [Kết quả UIKit nguyên bản từ artifact](evidence/ui-results-0.2.0.json)
-- [Ảnh fixture đã xem để kiểm tra chữ/bố cục](evidence/ui-fixture-0.2.0.png)
-- [Tóm tắt kiểm chứng máy](VALIDATION.json)
-- [Nguồn nghiên cứu và quyết định áp dụng](RESEARCH.md)
-- [Nguồn internet đã đọc và hash file](evidence/research-sources-0.2.0.json)
-- [14 ca cần chạy trên iPhone](DEVICE_TESTS.md)
+## Những gì đã thay đổi
 
-Báo cáo chi tiết hash mọi entry nằm cạnh IPA dưới đuôi `.validation.json`; đối chiếu audit độc lập nằm trong `.independent-validation.json`. Bước còn thiếu để chốt là ký/cài candidate 0.2.0 bằng Sideloadly trên iPhone 15/iOS 18.5, chạy D01–D14 và cung cấp diagnostics/kết quả lỗi. Fixture không xác nhận khả năng truy cập video do máy chủ giới hạn hoặc bao phủ mọi quảng cáo/WebView/Lynx.
+Thêm 24 chuỗi từ ba ảnh và các biến thể tên Creator hub. Nhận diện ngữ cảnh sidebar/error/empty page, nhưng loại các lớp user card/recent user để giữ nickname. Fitting được áp lại khi layout sau khi app thay font/width hoặc reset property; chỉ ghi property khi cần, không đổi frame/constraints. Khi chữ đầy đủ không vừa ở tỷ lệ tối thiểu 65% và bản rút gọn vừa, dùng compact label (Settings → Setup, hướng dẫn kết nối → Check connection). Khi chiều rộng tăng, khôi phục chữ đầy đủ. Cache phân biệt setter plain và attributed để tránh khóa font cũ; nội dung thông thường được khôi phục fitting khi reuse.
 
-## Sửa lỗi cài đặt DeviceNotSupportedByThinning
+Hai lỗi vòng kiểm thử đã được xử lý trước đóng gói: câu hướng dẫn dài cần compact variant cho control hẹp; nhãn plain bị UIKit biểu diễn thành attributed text nên font cũ bị giữ. Các ca tái hiện đều đạt trong vòng cuối. [Kết quả nguyên bản từ artifact](evidence/ui-results-0.3.0.json).
 
-Danh sách `UISupportedDevices` trong IPA trước chỉ có `iPhone10,1`, `iPhone10,4`, `iPhone12,8`, `iPhone14,6`, `iPhone9,1`, `iPhone9,3`; thông báo của thiết bị yêu cầu tương thích `iPhone15,4`/`iPhone15,2`. Bộ đóng gói trước đã giữ nhầm danh sách của bản App Store thinned.
+Ảnh ở trên là app fixture riêng dùng UIKit thật với lớp AWE giả, **không phải Douyin chạy trên Simulator hoặc ảnh iPhone thật sau sửa**. Hình menu được dựng để kiểm tra chữ/chiều rộng, không tái dựng mọi constraint của app gốc. Layout thực tế cần kiểm tra lại trên iPhone.
 
-Revision 1 bỏ đúng khóa `UISupportedDevices` ở Info.plist chính. Sau sửa đã quét **287 Info.plist**, không còn khóa đó; app và tám extension đều có executable arm64. `UIDeviceFamily`, `UIRequiredDeviceCapabilities` và `MinimumOSVersion` được giữ nguyên. Bộ đóng gói cũng xử lý allowlist nếu gặp trong extension, nhưng các extension của mẫu hiện tại không có khóa này.
+## Bằng chứng iPhone của bản trước
 
-Đối chiếu trực tiếp với candidate 0.2.0 trước: **5.628 entry có bytes giống hệt**, chỉ một entry `Payload/Aweme.app/Info.plist` khác; nội dung dictionary chỉ mất khóa nêu trên. Thư viện và cấu hình không đổi nên kết quả Foundation/UIKit trước vẫn là bằng chứng cho cùng mã, không phải kết quả chạy lại Douyin thật. Full read-back/hash và đối chiếu audit của IPA mới cũng đạt, không có sai lệch.
+Người dùng đã cài/mở bản 0.2.0 sau sửa thinning, gửi diagnostics 30/30 hook active và ảnh sidebar/error page. LIVE/Nearby phát mượt theo báo cáo; Featured/经验 vẫn Network error khi tắt riêng ads và khi tắt cả ads/login. Các nhóm tùy chọn này ít có khả năng là nguyên nhân; chưa đủ để kết luận lỗi server, bắt buộc login hay lỗi ký lại. [Điều tra và bước chẩn đoán](FEED_NETWORK.md).
 
-[Bằng chứng sửa metadata cài đặt](evidence/installation-compatibility-0.2.0-r1.json). Test mới dựng IPA fixture chứa allowlist ở app/extension để kiểm tra cả quá trình đóng gói và giữ nguyên các yêu cầu phần cứng/OS; 14/14 Python tests đạt cục bộ và CI macOS.
+0.3.0 chỉ thêm observer callback đã đối chiếu ABI và bộ đếm list, không tự tạo request, sửa TLS, giả login, đổi endpoint hoặc giấu lỗi. Mã lỗi trong diagnostics mới trên iPhone là phần còn thiếu để chọn cách khắc phục.
 
-Sửa allowlist xử lý nguyên nhân từ chối cài được báo trong ảnh; không chứng minh đầy đủ tài nguyên của mẫu thinned phù hợp mọi thiết bị. Cần thử lại Sideloadly, mở app và kiểm tra playback/layout trên iPhone. Diagnostics vẫn báo `0.2.0-test`; nhận biết revision 1 bằng tên file có `iPhone15` và SHA-256 mới.
+## Bảng dịch bổ sung
 
-CI vòng sửa metadata [36836830226](https://github.com/phucdinhIA/Douyin/actions/runs/36836830226) đã đạt: 14 Python tests, Foundation, build arm64 và 26/26 UIKit checks trên iPhone 15 Simulator/iOS 18.2. Thư viện build lại có SHA-256 khớp chính thư viện đã đóng gói; [kết quả UIKit vòng này](evidence/ui-results-0.2.0-r1.json). Vẫn chưa thử cài lại trên iPhone thật.
+| Chữ gốc | Chữ tiếng Anh |
+|---|---|
+| 工具服务 | Tools & services |
+| 我的客服 | Support |
+| 我的预约 | Bookings |
+| 直播缓存 | Live cache |
+| 创作与经营 | Creator tools |
+| 上热门 | Promote |
+| 生活娱乐 | Lifestyle |
+| 社区共建 | Community |
+| 券包 | Coupons |
+| 常用功能 | Quick tools |
+| 离线缓存 | Offline videos |
+| 抖音创作者中心 | Creator hub |
+| 抖音创作者服务中心 | Creator hub |
+| 抖音创作者 | Creator hub |
+| 抖音创作者… | Creator hub |
+| 抖音创作者... | Creator hub |
+| 直播广场 | Live hub |
+| 使用管理助手 | Screen time |
+| 定时关闭 | Sleep timer |
+| 我的二维码 | My QR code |
+| 未成年人保护 | Teen safety |
+| 经验 | Tips |
+| 请检查网络连接后重试 | Check your connection and retry |
+| 查看解决方案 | Troubleshoot |
+
+Bản trước và IPA gốc vẫn giữ nguyên. [Tóm tắt kiểm chứng máy](VALIDATION.json); manifest hash chi tiết và đối chiếu audit nằm cạnh IPA cục bộ. Lưu trạng thái trước ở [0.2.0-r1](evidence/status-0.2.0-r1.md).
+
+**Bước còn thiếu:** ký/cài đúng IPA 0.3.0 bằng Sideloadly, kiểm tra lại ba màn hình đã gửi, thử Retry trên Featured/Tips và gửi Copy diagnostics (mong đợi patch_version 0.3.0-test, native_hooks_expected 33).

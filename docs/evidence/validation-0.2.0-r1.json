@@ -1,0 +1,94 @@
+{
+  "candidate": "Douyin-40.6.0-Guest-0.2.0-iPhone15-TEST.ipa",
+  "patch_version": "0.2.0-test",
+  "app_version": "40.6.0",
+  "app_build": "406019",
+  "source_sha256": "3444d6045147b772e8f5e7e844c38a0f72464f34a4eb1af5c5df5f9433d706af",
+  "output_sha256": "b994e7807752a9dbe9a6168fdb3e844c4ddc4e3220eb4d9d4f7d8c9f131a6b5d",
+  "library_sha256": "24facd4d87f47880c53c4919b4095e31968d23c531df925bb1ace3d92cf6824c",
+  "output_size_bytes": 704813212,
+  "ci_runs_successful": [
+    36827280855,
+    36836830226
+  ],
+  "compiled_commit": "b3357d16888c9e59087c51f5c83cd4d45638d00b",
+  "python_tests_passed": 14,
+  "foundation_policy_and_hook_regressions_passed": true,
+  "warnings_as_errors_build_passed": true,
+  "library_adhoc_signature_verified": true,
+  "toolchain": {
+    "xcode": "15.4",
+    "iphoneos_sdk": "17.5",
+    "minimum_ios": "15.0",
+    "architecture": "arm64"
+  },
+  "uikit_fixture": {
+    "passed": true,
+    "checks_passed": 26,
+    "device": "iPhone 15 Simulator",
+    "ios": "18.2",
+    "scope": "UIKit fixture only; original Douyin app and network were not executed",
+    "fitting_observation": {
+      "adjusts": true,
+      "lines": 1,
+      "minimum_scale": 0.6499999761581421,
+      "text": "More options"
+    },
+    "evidence": "evidence/ui-results-0.2.0.json",
+    "screenshot": "evidence/ui-fixture-0.2.0.png",
+    "reused_for_packaging_revision": true,
+    "reuse_reason": "Library, code, translations and hooks byte-identical to previous tested candidate; only main Info.plist changed",
+    "latest_run": 36836830226,
+    "latest_evidence": "evidence/ui-results-0.2.0-r1.json"
+  },
+  "native_hooks_matching_source_metadata": 30,
+  "login_guide_hooks": 11,
+  "ad_filter_and_splash_hooks": 19,
+  "ad_flags_verified_on_AWEAwemeModel": [
+    "isAds",
+    "checkIsAd",
+    "isHardAdModel",
+    "isHardAd"
+  ],
+  "translation_entries": 278,
+  "translations_found_in_core_cfstring": 223,
+  "translation_ui_coverage_verified": false,
+  "source_unchanged": true,
+  "utf8_filename_corrections": 4,
+  "runtime_tested": false,
+  "runtime_tested_scope": "Original Douyin app on physical iPhone",
+  "requires_resigning": true,
+  "original_ipa_safety_proven": false,
+  "status": "repackaged test candidate; physical-device installation retry required",
+  "zip_entries_read_back_and_sha256_verified": 5629,
+  "unchanged_entries_independent_crc_size_mode_comparison": 5620,
+  "unchanged_files_independent_audit_sha256_comparison": 4977,
+  "prior_audit_total_records": 5011,
+  "comparison_mismatches": 0,
+  "mismatches": [],
+  "original_core_binary_unchanged": true,
+  "executable_size_preserved": true,
+  "executable_actual_bytes_changed": 51,
+  "executable_code_after_injected_header_unchanged": true,
+  "packaging_revision": 1,
+  "packaging_commit": "710e0458d71419a41714f35163cd35a50e674b8c",
+  "python_tests_passed_scope": "Windows and macOS CI packaging regressions; includes fixture archive build for device thinning",
+  "previous_candidate_installation_failure": "DeviceNotSupportedByThinning on iPhone 15 / iOS 18.5",
+  "removed_thinning_allowlists": [
+    {
+      "path": "Payload/Aweme.app/Info.plist",
+      "previous": [
+        "iPhone10,1",
+        "iPhone10,4",
+        "iPhone12,8",
+        "iPhone14,6",
+        "iPhone9,1",
+        "iPhone9,3"
+      ]
+    }
+  ],
+  "installation_compatibility_evidence": "evidence/installation-compatibility-0.2.0-r1.json",
+  "installation_on_iphone_retested": false,
+  "packaging_validation_ci_run": 36836830226,
+  "rebuilt_library_sha256_matches_packaged_library": true
+}
