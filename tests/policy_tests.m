@@ -40,6 +40,9 @@
 @interface TestOperations : NSObject
 @property (strong) id items;
 @property NSUInteger calls;
+@property (strong) id completionResult;
+@property (strong) id completionError;
+@property BOOL completionFlag;
 - (BOOL)defaultFalse;
 - (BOOL)oneObject:(id)value;
 - (BOOL)twoObjects:(id)a second:(id)b;
@@ -47,6 +50,8 @@
 - (BOOL)twoBools:(BOOL)a second:(BOOL)b;
 - (void)trigger;
 + (BOOL)classGate;
+- (void)completed:(id)result error:(id)error;
+- (void)completed:(id)result error:(id)error flag:(BOOL)flag;
 @end
 @implementation TestOperations
 - (BOOL)defaultFalse { return NO; }
@@ -56,6 +61,8 @@
 - (BOOL)twoBools:(BOOL)a second:(BOOL)b { return a && !b; }
 - (void)trigger { self.calls += 1; }
 + (BOOL)classGate { return YES; }
+- (void)completed:(id)result error:(id)error { self.completionResult=result; self.completionError=error; self.calls++; }
+- (void)completed:(id)result error:(id)error flag:(BOOL)flag { [self completed:result error:error]; self.completionFlag=flag; }
 @end
 
 static void check(BOOL condition, NSString *message) {
@@ -142,6 +149,27 @@ int main(void) {
         check([object oneBool:YES] && [object twoBools:YES second:NO],@"original BOOL arguments forwarded");
         [object trigger]; check(object.calls == 1,@"original local trigger forwarded");
         object.items = input; check(object.items == input,@"response getters and setters bypass filtering when switched off");
+        NSMutableDictionary *diagnostics=[NSMutableDictionary new];
+        __block BOOL observe=YES;
+        for (NSArray *op in @[@[@"completed:error:",@"observeFeedCompletion2"],
+                               @[@"completed:error:flag:",@"observeFeedCompletion2Bool"]]) {
+            Method method=class_getInstanceMethod(TestOperations.class,NSSelectorFromString(op[0]));
+            NSDictionary *operationSpec=@{@"class":@"TestOperations",@"selector":op[0],@"types":[NSString stringWithUTF8String:method_getTypeEncoding(method)],@"operation":op[1]};
+            check(DGInstallHook(operationSpec,^BOOL{return observe;},^(NSString *event,NSUInteger n){diagnostics[event]=@([diagnostics[event] unsignedIntegerValue]+n);}),@"observe hook installs with exact ABI");
+        }
+        NSError *networkError=[NSError errorWithDomain:NSURLErrorDomain code:-1009 userInfo:@{NSLocalizedDescriptionKey:@"PRIVATE description",NSURLErrorFailingURLStringErrorKey:@"https://private.example/?token=PRIVATE"}];
+        object.calls=0;
+        [object completed:input error:networkError flag:YES];
+        check(object.calls==1 && object.completionResult==input && object.completionError==networkError && object.completionFlag,
+              @"observing an error forwards every callback argument without modifying the failure");
+        check([diagnostics[@"TestOperations completed:error:flag: error URL -1009"] unsignedIntegerValue]==1,@"fixed error category and numeric code recorded");
+        check([[diagnostics.description lowercaseString] rangeOfString:@"private"].location==NSNotFound,@"diagnostics omit error descriptions and URL/userInfo");
+        [object completed:nil error:@"unusual error object"];
+        check([diagnostics[@"TestOperations completed:error: non-NSError failure"] unsignedIntegerValue]==1,@"unknown error object does not get treated as NSError");
+        observe=NO;NSUInteger logged=diagnostics.count;
+        [object completed:input error:nil flag:NO];
+        check(object.completionResult==input && object.completionError==nil && !object.completionFlag && diagnostics.count==logged,
+              @"observation switch preserves original success handling");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
     return 0;

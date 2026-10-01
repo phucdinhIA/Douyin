@@ -268,5 +268,32 @@
     "operation": "noop0",
     "feature": "ads",
     "evidence_imp": "0x1346b340"
+  },
+  {
+    "class": "AWEFeedTableViewController",
+    "selector": "initialFetchCompletion:error:",
+    "types": "v32@0:8@16@24",
+    "class_method": false,
+    "operation": "observeFeedCompletion2",
+    "feature": "diagnostics",
+    "evidence_imp": "0x13145de4"
+  },
+  {
+    "class": "AWEFeedTableViewController",
+    "selector": "loadMoreCompletion:error:isFooterRefreshing:",
+    "types": "v36@0:8@16@24B32",
+    "class_method": false,
+    "operation": "observeFeedCompletion2Bool",
+    "feature": "diagnostics",
+    "evidence_imp": "0x15420310"
+  },
+  {
+    "class": "AWEFeedTableViewController",
+    "selector": "refreshCompletion:error:needAnimation:",
+    "types": "v36@0:8@16@24B32",
+    "class_method": false,
+    "operation": "observeFeedCompletion2Bool",
+    "feature": "diagnostics",
+    "evidence_imp": "0x14d17fe8"
   }
 ]

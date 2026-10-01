@@ -3,6 +3,35 @@
 #import <objc/runtime.h>
 #include <string.h>
 
+static void DGRecordFeedCompletion(NSString *event, id result, id error, DGRecord record) {
+    record([event stringByAppendingString:@" callbacks"], 1);
+    if (!error) {
+        record([event stringByAppendingString:@" success"], 1);
+        if ([result isKindOfClass:NSArray.class]) record([event stringByAppendingString:@" direct-array items"], [result count]);
+        return;
+    }
+    if (![error isKindOfClass:NSError.class]) {
+        record([event stringByAppendingString:@" non-NSError failure"], 1); return;
+    }
+    NSError *value = error;
+    NSString *category = @"App";
+    if ([value.domain isEqualToString:NSURLErrorDomain]) category = @"URL";
+    else if ([value.domain isEqualToString:NSPOSIXErrorDomain]) category = @"POSIX";
+    else if ([value.domain isEqualToString:NSCocoaErrorDomain]) category = @"Cocoa";
+    else if ([value.domain isEqualToString:@"kCFErrorDomainCFNetwork"]) category = @"CFNetwork";
+    // Numeric codes and a fixed category only: no description, URL, userInfo, or tokens.
+    record([NSString stringWithFormat:@"%@ error %@ %ld", event, category, (long)value.code], 1);
+}
+
+static void DGRecordFeedList(NSString *event, id items, NSUInteger removed, DGRecord record) {
+    record([event stringByAppendingString:@" accesses"], 1);
+    if (![items isKindOfClass:NSArray.class]) { record([event stringByAppendingString:@" non-array input"], 1); return; }
+    NSUInteger count = [items count];
+    record([event stringByAppendingString:@" input item samples"], count);
+    if (!count) record([event stringByAppendingString:@" empty input"], 1);
+    if (count && removed == count) record([event stringByAppendingString:@" all items filtered"], 1);
+}
+
 static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
     NSString *returnType;
     NSArray<NSString *> *arguments;
@@ -23,6 +52,10 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
         returnType = @"@"; arguments = @[@"@", @":"];
     } else if ([kind isEqualToString:@"filterSetter"]) {
         returnType = @"v"; arguments = @[@"@", @":", @"@"];
+    } else if ([kind isEqualToString:@"observeFeedCompletion2"]) {
+        returnType = @"v"; arguments = @[@"@", @":", @"@", @"@"];
+    } else if ([kind isEqualToString:@"observeFeedCompletion2Bool"]) {
+        returnType = @"v"; arguments = @[@"@", @":", @"@", @"@", boolean];
     } else return NO;
     char type[64] = {0};
     method_getReturnType(method, type, sizeof(type));
@@ -88,9 +121,9 @@ BOOL DGInstallHook(NSDictionary *spec, DGEnabled enabled, DGRecord record) {
     } else if ([kind isEqualToString:@"filterGetter"]) {
         block = ^id(id self) {
             id items = ((id (*)(id, SEL))original)(self, sel);
-            if (!enabled()) return items;
             NSUInteger removed = 0;
-            id filtered = DGFilterAds(items, &removed);
+            id filtered = enabled() ? DGFilterAds(items, &removed) : items;
+            DGRecordFeedList(event, items, removed, record);
             if (removed) record(@"Feed ad items removed", removed);
             return filtered;
         };
@@ -98,8 +131,19 @@ BOOL DGInstallHook(NSDictionary *spec, DGEnabled enabled, DGRecord record) {
         block = ^(id self, id items) {
             NSUInteger removed = 0;
             id filtered = enabled() ? DGFilterAds(items, &removed) : items;
+            DGRecordFeedList(event, items, removed, record);
             if (removed) record(@"Feed ad items removed", removed);
             ((void (*)(id, SEL, id))original)(self, sel, filtered);
+        };
+    } else if ([kind isEqualToString:@"observeFeedCompletion2"]) {
+        block = ^(id self, id result, id error) {
+            ((void (*)(id, SEL, id, id))original)(self, sel, result, error);
+            if (enabled()) DGRecordFeedCompletion(event, result, error, record);
+        };
+    } else if ([kind isEqualToString:@"observeFeedCompletion2Bool"]) {
+        block = ^(id self, id result, id error, BOOL flag) {
+            ((void (*)(id, SEL, id, id, BOOL))original)(self, sel, result, error, flag);
+            if (enabled()) DGRecordFeedCompletion(event, result, error, record);
         };
     } else return NO;
     IMP replacement = imp_implementationWithBlock(block);

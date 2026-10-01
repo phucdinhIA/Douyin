@@ -2,18 +2,20 @@
 #import <objc/runtime.h>
 #import <os/lock.h>
 #include <stdatomic.h>
+#include <math.h>
 #import "DGPolicy.h"
 #import "DGHook.h"
 
 static atomic_bool guestEnabled, adsEnabled, englishEnabled;
 static NSDictionary<NSString *, NSString *> *translations;
 static NSSet<NSString *> *translatedValues;
+static NSDictionary<NSString *, NSString *> *compactLabels;
 static NSArray<NSDictionary *> *hookSpecs;
 static NSMutableDictionary<NSString *, NSValue *> *installed;
 static NSMutableSet<NSString *> *overwritten;
 static NSMutableDictionary<NSString *, NSNumber *> *counters;
 static os_unfair_lock counterLock = OS_UNFAIR_LOCK_INIT;
-static char fontStateKey, gestureKey;
+static char fontStateKey, gestureKey, labelSourceKey, labelUpdateKey;
 
 static void DGCount(NSString *event, NSUInteger amount) {
     os_unfair_lock_lock(&counterLock);
@@ -61,7 +63,8 @@ static BOOL DGIsChrome(UIView *view) {
             for (NSString *part in @[@"Navigation", @"TabBar", @"TabButton", @"Menu", @"Setting",
                                      @"Toolbar", @"ToolBar", @"Control", @"ActionButton", @"Channel",
                                      @"Login", @"SearchBar", @"SearchButton", @"PageTitle", @"HeaderTitle",
-                                     @"TopTitle", @"Progress", @"Quality", @"Speed"]) {
+                                     @"TopTitle", @"Progress", @"Quality", @"Speed", @"SideBar", @"Sidebar",
+                                     @"NetworkError", @"NetError", @"EmptyPage", @"EmptyView", @"ErrorView"]) {
                 if ([name containsString:part]) { chrome = YES; break; }
             }
         }
@@ -78,15 +81,46 @@ static void DGFitLabel(UILabel *label, BOOL changed) {
                       @"baseline": @(label.baselineAdjustment)};
             objc_setAssociatedObject(label, &fontStateKey, prior, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         }
-        label.adjustsFontSizeToFitWidth = YES;
-        label.minimumScaleFactor = MAX(0.65, [prior[@"scale"] doubleValue]);
-        label.baselineAdjustment = UIBaselineAdjustmentAlignCenters;
+        if (!label.adjustsFontSizeToFitWidth) label.adjustsFontSizeToFitWidth = YES;
+        if (fabs(label.minimumScaleFactor - 0.65) > 1e-6) label.minimumScaleFactor = 0.65;
+        if (label.baselineAdjustment != UIBaselineAdjustmentAlignCenters)
+            label.baselineAdjustment = UIBaselineAdjustmentAlignCenters;
     } else if (prior) {
         label.adjustsFontSizeToFitWidth = [prior[@"adjust"] boolValue];
         label.minimumScaleFactor = [prior[@"scale"] doubleValue];
         label.baselineAdjustment = (UIBaselineAdjustment)[prior[@"baseline"] integerValue];
         objc_setAssociatedObject(label, &fontStateKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
+}
+
+static void DGApplyLabelLayout(UILabel *label) {
+    if ([objc_getAssociatedObject(label, &labelUpdateKey) boolValue]) return;
+    id source = objc_getAssociatedObject(label, &labelSourceKey);
+    BOOL rich = [source isKindOfClass:NSAttributedString.class];
+    NSString *full = rich ? ((NSAttributedString *)source).string : source;
+    BOOL active = full && DGIsChrome(label);
+    DGFitLabel(label, active);
+    if (!active) return;
+    NSString *display = full, *shorter = compactLabels[full];
+    CGFloat width = label.bounds.size.width;
+    UIFont *font = label.font;
+    if (rich && [source length]) {
+        id attribute = [source attribute:NSFontAttributeName atIndex:0 effectiveRange:NULL];
+        if ([attribute isKindOfClass:UIFont.class]) font = attribute;
+    }
+    if (label.numberOfLines == 1 && width > 0 && shorter.length &&
+        [full sizeWithAttributes:@{NSFontAttributeName:font}].width * 0.65 > width &&
+        [shorter sizeWithAttributes:@{NSFontAttributeName:font}].width * 0.65 <= width)
+        display = shorter;
+    objc_setAssociatedObject(label, &labelUpdateKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    @try {
+        if (rich) {
+            NSAttributedString *value = [display isEqualToString:full] ? source : DGTranslateAttributed(source, @{full:display});
+            if (![label.attributedText isEqualToAttributedString:value]) label.attributedText = value;
+        } else if (![label.text isEqualToString:display]) {
+            label.text = display;
+        }
+    } @finally { objc_setAssociatedObject(label, &labelUpdateKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
 }
 
 static void DGSwizzle(Class cls, SEL selector, id (^factory)(IMP)) {
@@ -99,33 +133,56 @@ static void DGSwizzle(Class cls, SEL selector, id (^factory)(IMP)) {
 
 static void DGTranslateLabel(UILabel *label) {
     if (!DGIsChrome(label)) return;
+    if (objc_getAssociatedObject(label, &labelSourceKey)) { DGApplyLabelLayout(label); return; }
     if (label.attributedText.length) {
         NSAttributedString *value = DGTranslateAttributed(label.attributedText, translations);
-        if (value != label.attributedText) { label.attributedText = value; DGFitLabel(label, YES); }
+        if (value != label.attributedText || [translatedValues containsObject:value.string]) { label.attributedText = value; }
     } else if (label.text.length) {
         NSString *value = DGTranslate(label.text, translations);
-        if (![value isEqualToString:label.text]) { label.text = value; DGFitLabel(label, YES); }
+        if (![value isEqualToString:label.text] || [translatedValues containsObject:value]) { label.text = value; }
     }
-    DGFitLabel(label, label.text && [translatedValues containsObject:label.text]);
+    DGApplyLabelLayout(label);
 }
 
 static void DGInstallEnglish(void) {
     DGSwizzle(UILabel.class, @selector(setText:), ^id(IMP original) {
         return ^(UILabel *label, NSString *text) {
+            if ([objc_getAssociatedObject(label, &labelUpdateKey) boolValue]) {
+                ((void (*)(id, SEL, id))original)(label, @selector(setText:), text); return;
+            }
             NSString *value = text && DGIsChrome(label) ? DGTranslate(text, translations) : text;
             BOOL changed = text && ![value isEqualToString:text];
-            ((void (*)(id, SEL, id))original)(label, @selector(setText:), value);
+            BOOL chrome = value && DGIsChrome(label) && [translatedValues containsObject:value];
+            objc_setAssociatedObject(label, &labelSourceKey, chrome ? value : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(label, &labelUpdateKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            @try { ((void (*)(id, SEL, id))original)(label, @selector(setText:), value); }
+            @finally { objc_setAssociatedObject(label, &labelUpdateKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
             // UIKit may call another text setter internally. Fit after its work finishes.
-            DGFitLabel(label, value && DGIsChrome(label) && [translatedValues containsObject:value]);
+            DGApplyLabelLayout(label);
             if (changed) DGCount(@"Labels translated", 1);
         };
     });
     DGSwizzle(UILabel.class, @selector(setAttributedText:), ^id(IMP original) {
         return ^(UILabel *label, NSAttributedString *text) {
+            if ([objc_getAssociatedObject(label, &labelUpdateKey) boolValue]) {
+                ((void (*)(id, SEL, id))original)(label, @selector(setAttributedText:), text); return;
+            }
             NSAttributedString *value = text && DGIsChrome(label) ? DGTranslateAttributed(text, translations) : text;
-            ((void (*)(id, SEL, id))original)(label, @selector(setAttributedText:), value);
-            DGFitLabel(label, value && DGIsChrome(label) && [translatedValues containsObject:value.string]);
+            BOOL chrome = value && DGIsChrome(label) && [translatedValues containsObject:value.string];
+            objc_setAssociatedObject(label, &labelSourceKey, chrome ? value : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(label, &labelUpdateKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            @try { ((void (*)(id, SEL, id))original)(label, @selector(setAttributedText:), value); }
+            @finally { objc_setAssociatedObject(label, &labelUpdateKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
+            DGApplyLabelLayout(label);
             if (value != text) DGCount(@"Attributed labels translated", 1);
+        };
+    });
+    DGSwizzle(UILabel.class, @selector(layoutSubviews), ^id(IMP original) {
+        return ^(UILabel *label) {
+            // App code may reset fitting or change font/width after setText:.
+            // Reapply before layout; writes are conditional to avoid a layout loop.
+            DGApplyLabelLayout(label);
+            ((void (*)(id, SEL))original)(label, @selector(layoutSubviews));
         };
     });
     DGSwizzle(UILabel.class, @selector(didMoveToWindow), ^id(IMP original) {
@@ -222,7 +279,10 @@ static void DGInstallNative(void) {
             continue;
         }
         NSString *feature = spec[@"feature"];
-        DGEnabled enabled = ^BOOL { return [feature isEqualToString:@"guest"] ? atomic_load(&guestEnabled) : atomic_load(&adsEnabled); };
+        DGEnabled enabled = ^BOOL {
+            if ([feature isEqualToString:@"diagnostics"]) return YES;
+            return [feature isEqualToString:@"guest"] ? atomic_load(&guestEnabled) : atomic_load(&adsEnabled);
+        };
         if (DGInstallHook(spec, enabled, ^(NSString *event, NSUInteger count) { DGCount(event, count); }))
             installed[key] = [NSValue valueWithPointer:(const void *)method_getImplementation(DGHookMethod(spec))];
     }
@@ -284,7 +344,7 @@ static void DGInstallNative(void) {
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.2.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        NSMutableDictionary *report = [@{@"patch_version": @"0.3.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled))};
         report[@"native_hooks_active"] = @(DGActiveHookCount());
         NSData *data = [NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:NULL];
@@ -312,6 +372,8 @@ __attribute__((constructor)) static void DGStart(void) {
         id words = DGReadJSON(@"translations"), specs = DGReadJSON(@"hooks");
         if (![words isKindOfClass:NSDictionary.class] || ![specs isKindOfClass:NSArray.class]) return;
         translations = words; translatedValues = [NSSet setWithArray:translations.allValues]; hookSpecs = specs;
+        compactLabels = @{@"Settings":@"Setup", @"Watch history":@"History", @"Creator tools":@"Creators",
+                          @"Live cache":@"Live saves", @"My QR code":@"QR code", @"Screen time":@"Usage"};
         counters = [NSMutableDictionary new]; installed = [NSMutableDictionary new]; overwritten = [NSMutableSet new];
         [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES}];
         atomic_init(&guestEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGGuestEnabled"]);

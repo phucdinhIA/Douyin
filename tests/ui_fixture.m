@@ -20,6 +20,14 @@
 @end
 @implementation AWECommentFixtureView
 @end
+@interface AWELeftSideBarFixtureView : UIView
+@end
+@implementation AWELeftSideBarFixtureView
+@end
+@interface AWENetworkErrorFixtureView : UIView
+@end
+@implementation AWENetworkErrorFixtureView
+@end
 // Fixture-only key window to exercise the fallback without changing real OS state.
 @interface FixtureKeyWindow : UIWindow
 @end
@@ -153,6 +161,44 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(allWords,@"all configured labels pass through actual UIKit hooks in a settings context");
     check(widthOK,@"configured labels can fit a 120pt fixture control at 16pt font");
     probe.text=@"更多功能";
+    AWELeftSideBarFixtureView *sidebar=[[AWELeftSideBarFixtureView alloc] initWithFrame:CGRectMake(0,0,300,300)];
+    [parent addSubview:sidebar];
+    NSDictionary *screenshotWords=@{@"工具服务":@"Tools & services",@"我的客服":@"Support",@"我的预约":@"Bookings",
+        @"直播缓存":@"Live cache",@"创作与经营":@"Creator tools",@"上热门":@"Promote",@"生活娱乐":@"Lifestyle",
+        @"社区共建":@"Community",@"券包":@"Coupons",@"常用功能":@"Quick tools",@"离线缓存":@"Offline videos",
+        @"抖音创作者中心":@"Creator hub",@"直播广场":@"Live hub",@"使用管理助手":@"Screen time",
+        @"定时关闭":@"Sleep timer",@"我的二维码":@"My QR code",@"未成年人保护":@"Teen safety"};
+    UILabel *grid=label(sidebar,nil,0);grid.frame=CGRectMake(0,0,94,28);
+    BOOL sidebarOK=YES,sidebarWidthOK=YES;
+    for (NSString *word in screenshotWords) {
+        grid.text=word;[grid layoutIfNeeded];
+        if (![grid.text isEqualToString:screenshotWords[word]]) sidebarOK=NO;
+        if ([grid.text sizeWithAttributes:@{NSFontAttributeName:grid.font}].width*grid.minimumScaleFactor>grid.bounds.size.width+1) sidebarWidthOK=NO;
+    }
+    check(sidebarOK && sidebarWidthOK,@"screenshot sidebar labels translate and fit 94pt grid controls");
+    UILabel *narrow=label(sidebar,@"设置",0);narrow.frame=CGRectMake(0,0,32,28);
+    narrow.adjustsFontSizeToFitWidth=NO;narrow.minimumScaleFactor=1;[narrow setNeedsLayout];[narrow layoutIfNeeded];
+    check([narrow.text isEqualToString:@"Setup"] && narrow.adjustsFontSizeToFitWidth && fabs(narrow.minimumScaleFactor-0.65)<1e-6,
+          @"narrow Settings control uses a compact title and survives app fitting resets");
+    narrow.frame=CGRectMake(0,0,120,28);[narrow setNeedsLayout];[narrow layoutIfNeeded];
+    check([narrow.text isEqualToString:@"Settings"],@"widening a compact label restores its full English title");
+    narrow.text=@"ordinary text";[narrow layoutIfNeeded];
+    check([narrow.text isEqualToString:@"ordinary text"] && !narrow.adjustsFontSizeToFitWidth,@"reusing a compact control clears translation state");
+    narrow.attributedText=[[NSAttributedString alloc] initWithString:@"设置" attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16],NSForegroundColorAttributeName:UIColor.systemBlueColor}];
+    narrow.frame=CGRectMake(0,0,32,28);[narrow setNeedsLayout];[narrow layoutIfNeeded];
+    check([narrow.attributedText.string isEqualToString:@"Setup"] &&
+          [[narrow.attributedText attribute:NSForegroundColorAttributeName atIndex:0 effectiveRange:NULL] isEqual:UIColor.systemBlueColor],
+          @"compact attributed controls preserve styling");
+    [sidebar removeFromSuperview];
+    AWENetworkErrorFixtureView *errorView=[[AWENetworkErrorFixtureView alloc] initWithFrame:CGRectMake(0,0,350,100)];
+    [parent addSubview:errorView];
+    UILabel *errorDetail=label(errorView,@"请检查网络连接后重试",0);errorDetail.frame=CGRectMake(0,0,330,30);
+    UILabel *troubleshoot=label(errorView,@"查看解决方案",34);
+    check([errorDetail.text isEqualToString:@"Check your connection and retry"] && [troubleshoot.text isEqualToString:@"Troubleshoot"],
+          @"network error controls translate without suppressing the error");
+    [errorView removeFromSuperview];
+    UITabBarItem *tips=[[UITabBarItem alloc] initWithTitle:@"经验" image:nil tag:1];
+    check([tips.title isEqualToString:@"Tips"],@"experience channel label translates and remains present");
     self.window.overrideUserInterfaceStyle=UIUserInterfaceStyleDark;
     check([home.text isEqualToString:@"Home"] && home.adjustsFontSizeToFitWidth,@"dark appearance preserves text and fitting");
     self.window.overrideUserInterfaceStyle=UIUserInterfaceStyleLight;
