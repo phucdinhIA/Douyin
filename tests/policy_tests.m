@@ -24,6 +24,26 @@
 @end
 @implementation TestChild
 @end
+@interface TestOperations : NSObject
+@property (strong) id items;
+@property NSUInteger calls;
+- (BOOL)defaultFalse;
+- (BOOL)oneObject:(id)value;
+- (BOOL)twoObjects:(id)a second:(id)b;
+- (BOOL)oneBool:(BOOL)value;
+- (BOOL)twoBools:(BOOL)a second:(BOOL)b;
+- (void)trigger;
++ (BOOL)classGate;
+@end
+@implementation TestOperations
+- (BOOL)defaultFalse { return NO; }
+- (BOOL)oneObject:(id)value { return [value isEqual:@"expected"]; }
+- (BOOL)twoObjects:(id)a second:(id)b { return [a isEqual:@"first"] && [b isEqual:@"second"]; }
+- (BOOL)oneBool:(BOOL)value { return value; }
+- (BOOL)twoBools:(BOOL)a second:(BOOL)b { return a && !b; }
+- (void)trigger { self.calls += 1; }
++ (BOOL)classGate { return YES; }
+@end
 
 static void check(BOOL condition, NSString *message) {
     if (!condition) { NSLog(@"FAIL: %@", message); exit(1); }
@@ -68,6 +88,37 @@ int main(void) {
         NSDictionary *bad = @{@"class":@"TestParent",@"selector":@"canShow",@"types":@"@16@0:8",@"operation":@"false0"};
         check(!DGInstallHook(bad, ^BOOL {return YES;}, ^(NSString *event, NSUInteger n){(void)event; (void)n;}), @"signature mismatch rejected");
         check([[TestParent new] canShow] && events >= 2, @"failed hook preserves parent");
+        NSArray *ops = @[
+            @[@"defaultFalse",@"true0"], @[@"oneObject:",@"falseObject1"],
+            @[@"twoObjects:second:",@"falseObject2"], @[@"oneBool:",@"falseBool1"],
+            @[@"twoBools:second:",@"falseBool2"], @[@"trigger",@"noop0"],
+            @[@"items",@"filterGetter"], @[@"setItems:",@"filterSetter"],
+            @[@"classGate",@"false0"]
+        ];
+        __block BOOL features = YES;
+        for (NSArray *op in ops) {
+            BOOL isClass = [op[0] isEqual:@"classGate"];
+            Class cls = isClass ? object_getClass(TestOperations.class) : TestOperations.class;
+            Method method = class_getInstanceMethod(cls,NSSelectorFromString(op[0]));
+            NSDictionary *operationSpec = @{@"class":@"TestOperations",@"selector":op[0],@"types":[NSString stringWithUTF8String:method_getTypeEncoding(method)],@"operation":op[1],@"class_method":@(isClass)};
+            check(DGInstallHook(operationSpec,^BOOL {return features;},^(NSString *event,NSUInteger n){(void)event;(void)n;}),op[0]);
+        }
+        TestOperations *object = [TestOperations new];
+        check(object.defaultFalse && ![TestOperations classGate],@"instance and metaclass hooks");
+        check(![object oneObject:@"expected"] && ![object twoObjects:@"first" second:@"second"],@"object argument hooks enabled");
+        check(![object oneBool:YES] && ![object twoBools:YES second:NO],@"BOOL argument hooks enabled");
+        [object trigger]; check(object.calls == 0,@"disabled local trigger not invoked");
+        object.items = input;
+        check([object.items isEqual:result] && input.count == 6,@"response setter removes ads without mutating source");
+        Ivar itemsIvar = class_getInstanceVariable(TestOperations.class,"_items");
+        object_setIvar(object,itemsIvar,input);
+        check([object.items isEqual:result],@"getter covers a list set without using its setter");
+        features = NO;
+        check(!object.defaultFalse && [TestOperations classGate],@"metaclass original restored by switch");
+        check([object oneObject:@"expected"] && [object twoObjects:@"first" second:@"second"],@"original object arguments forwarded");
+        check([object oneBool:YES] && [object twoBools:YES second:NO],@"original BOOL arguments forwarded");
+        [object trigger]; check(object.calls == 1,@"original local trigger forwarded");
+        object.items = input; check(object.items == input,@"response getters and setters bypass filtering when switched off");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
     return 0;
