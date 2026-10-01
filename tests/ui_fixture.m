@@ -61,7 +61,7 @@
 @end
 @implementation YYLabel
 - (instancetype)initWithFrame:(CGRect)frame {
-    if ((self = [super initWithFrame:frame])) { _font = [UIFont systemFontOfSize:16]; _numberOfLines = 1; }
+    if ((self = [super initWithFrame:frame])) { _font = [UIFont systemFontOfSize:16]; _numberOfLines = 1; self.opaque=NO; self.backgroundColor=UIColor.clearColor; }
     return self;
 }
 - (void)setText:(NSString *)text { _text = [text copy]; _attributedText = nil; }
@@ -182,7 +182,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     }
     YYLabel *custom=[[YYLabel alloc] initWithFrame:CGRectMake(20,500,120,30)];custom.text=@"语音搜索重试按钮";[filters addSubview:custom];
     UILabel *query=label(searchCanvas,@"首页",555);query.frame=CGRectMake(20,555,width-40,30);
-    UILabel *note=label(filters,@"The Chinese label below is protected result content.",595);note.frame=CGRectMake(20,595,width-40,50);note.numberOfLines=2;
+    UILabel *note=label(filters,@"The Chinese label above is protected result content.",595);note.frame=CGRectMake(20,595,width-40,50);note.numberOfLines=2;
     screen=[UIViewController new];screen.view=searchCanvas;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-search.png"];
 
