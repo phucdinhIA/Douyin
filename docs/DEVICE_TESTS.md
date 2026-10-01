@@ -4,7 +4,7 @@ Trạng thái ban đầu của toàn bộ ca dưới đây: **chưa chạy trên
 
 ## Chuẩn bị
 
-Giữ IPA gốc và dữ liệu cần thiết. Dùng candidate `Douyin-40.6.0-Guest-0.2.0-TEST.ipa`, ký bằng Sideloadly và cài. Không bật thêm tweak khác trong vòng kiểm tra này để xác định nguyên nhân lỗi. Bundle ID có hậu tố được hỗ trợ; không đổi hẳn sang tên khác. Diagnostics phải báo `patch_version: 0.2.0-test` để tránh thử nhầm bản 0.1.0.
+Giữ IPA gốc và dữ liệu cần thiết. Dùng candidate `Douyin-40.6.0-Guest-0.2.0-iPhone15-TEST.ipa`, ký bằng Sideloadly và cài. Không bật thêm tweak khác trong vòng kiểm tra này để xác định nguyên nhân lỗi. Bundle ID có hậu tố được hỗ trợ; không đổi hẳn sang tên khác. Diagnostics phải báo `patch_version: 0.2.0-test` để tránh thử nhầm bản 0.1.0. Bản revision 1 sửa lỗi thinning có `iPhone15` trong tên file; diagnostics vẫn là 0.2.0-test vì thư viện không đổi. Trong Sideloadly chọn lại đúng IPA mới, không Retry tác vụ đang giữ file cũ.
 
 Nếu Sideloadly báo lỗi, lưu nguyên văn mã lỗi. Nếu app đóng ngay, lấy crash report có tên Aweme tại **Settings → Privacy & Security → Analytics & Improvements → Analytics Data**. Trước khi gửi, bỏ thông tin cá nhân không cần thiết. Nếu lỗi liên quan ký hoặc extension/provisioning, phải xử lý riêng trước khi kết luận hook sai.
 

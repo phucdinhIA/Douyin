@@ -1,0 +1,125 @@
+{
+  "reason": "DeviceNotSupportedByThinning reported on iPhone 15 / iOS 18.5",
+  "before": "Douyin-40.6.0-Guest-0.2.0-TEST.ipa",
+  "after": "Douyin-40.6.0-Guest-0.2.0-iPhone15-TEST.ipa",
+  "plist_files_scanned": 287,
+  "remaining_UISupportedDevices_allowlists": [],
+  "entries_byte_identical_to_previous_candidate": 5628,
+  "entries_changed_from_previous_candidate": [
+    "Payload/Aweme.app/Info.plist"
+  ],
+  "metadata_change": "Remove UISupportedDevices only",
+  "executable_requirements_preserved": [
+    {
+      "path": "Payload/Aweme.app/PlugIns/AwemeDYShareExtension.appex/AwemeDYShareExtension",
+      "architecture": "arm64",
+      "MinimumOSVersion": "15.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "UIRequiredDeviceCapabilities": [
+        "arm64"
+      ]
+    },
+    {
+      "path": "Payload/Aweme.app/PlugIns/AwemeNotificationService.appex/AwemeNotificationService",
+      "architecture": "arm64",
+      "MinimumOSVersion": "15.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "UIRequiredDeviceCapabilities": [
+        "arm64"
+      ]
+    },
+    {
+      "path": "Payload/Aweme.app/PlugIns/AwemeWidgetExtension.appex/AwemeWidgetExtension",
+      "architecture": "arm64",
+      "MinimumOSVersion": "15.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "UIRequiredDeviceCapabilities": [
+        "arm64"
+      ]
+    },
+    {
+      "path": "Payload/Aweme.app/PlugIns/AWEVideoWidget.appex/AWEVideoWidget",
+      "architecture": "arm64",
+      "MinimumOSVersion": "15.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "UIRequiredDeviceCapabilities": [
+        "arm64"
+      ]
+    },
+    {
+      "path": "Payload/Aweme.app/PlugIns/AwemeWidgetIntentsExtension.appex/AwemeWidgetIntentsExtension",
+      "architecture": "arm64",
+      "MinimumOSVersion": "15.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "UIRequiredDeviceCapabilities": [
+        "arm64"
+      ]
+    },
+    {
+      "path": "Payload/Aweme.app/PlugIns/AwemeSiriExtension.appex/AwemeSiriExtension",
+      "architecture": "arm64",
+      "MinimumOSVersion": "15.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "UIRequiredDeviceCapabilities": [
+        "arm64"
+      ]
+    },
+    {
+      "path": "Payload/Aweme.app/PlugIns/AwemeBroadcastExtension.appex/AwemeBroadcastExtension",
+      "architecture": "arm64",
+      "MinimumOSVersion": "15.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "UIRequiredDeviceCapabilities": [
+        "arm64"
+      ]
+    },
+    {
+      "path": "Payload/Aweme.app/PlugIns/AwemeVideoNotification.appex/AwemeVideoNotification",
+      "architecture": "arm64",
+      "MinimumOSVersion": "15.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "UIRequiredDeviceCapabilities": [
+        "arm64"
+      ]
+    },
+    {
+      "path": "Payload/Aweme.app/Aweme",
+      "architecture": "arm64",
+      "MinimumOSVersion": "15.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "UIRequiredDeviceCapabilities": [
+        "arm64"
+      ]
+    }
+  ],
+  "compiled_sources_and_resources_unchanged": true,
+  "installation_on_iphone_retested": false,
+  "asset_completeness_on_iphone15_proven": false
+}

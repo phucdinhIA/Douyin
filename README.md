@@ -6,6 +6,8 @@ Mã chỉnh sửa dành riêng cho mẫu Douyin **40.6.0 / 406019 / arm64**, SHA
 
 **Đây là bản thử cần kiểm tra trên iPhone, chưa phải bản hoàn chỉnh đã kiểm chứng.** Repository chứa mã do dự án viết, cấu hình, công cụ đóng gói và kiểm tra; không chứa IPA, binary hoặc mã nguồn của Douyin.
 
+**Bản đóng gói hiện tại: 0.2.0 / revision 1**, tên file `Douyin-40.6.0-Guest-0.2.0-iPhone15-TEST.ipa`. Bản trước bị iPhone 15 từ chối cài với `DeviceNotSupportedByThinning`; đã bỏ allowlist model cũ trong Info.plist. Quét 287 plist không còn khóa này; so với bản trước chỉ một entry thay đổi. 14/14 Python tests đạt trên Windows và CI macOS. Chưa xác nhận cài/mở thành công trên iPhone; xem [trạng thái và hash mới](docs/STATUS.md).
+
 Các thay đổi được triển khai:
 
 - 11 hook cho bộ điều khiển nhắc đăng nhập trước khi xem, trong luồng cuộn và nút gợi ý đăng nhập. Không giả mạo trạng thái đã đăng nhập và không sửa quyền truy cập do máy chủ áp dụng.
@@ -24,7 +26,7 @@ GitHub Actions dùng macOS với SDK từ Xcode để biên dịch thư viện. 
 3. Đóng gói trên Windows/macOS/Linux với Python 3.11 trở lên:
 
 ```powershell
-python scripts/ipa_patch.py "path\original.ipa" "build\DouyinGuest.dylib" "dist\Douyin-40.6.0-Guest-0.2.0-TEST.ipa" --library-sha256 HASH_FROM_ARTIFACT
+python scripts/ipa_patch.py "path\original.ipa" "build\DouyinGuest.dylib" "dist\Douyin-40.6.0-Guest-0.2.0-iPhone15-TEST.ipa" --library-sha256 HASH_FROM_ARTIFACT
 ```
 
 Công cụ từ chối hash nguồn sai, binary mã hóa, kiến trúc sai, vùng header không trống, tên ZIP không an toàn, đường dẫn trùng, hoặc ghi đè file đã tồn tại. Nó đọc lại tất cả file output và kiểm chứng hash, đồng thời kiểm tra IPA nguồn vẫn nguyên vẹn. Báo cáo `.validation.json` đi kèm ghi chi tiết thay đổi.
