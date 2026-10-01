@@ -46,5 +46,7 @@ jobs:
           path: |
             build/ui-fixture/ui-results.json
             build/ui-fixture/ui-fixture.png
+            build/ui-fixture/ui-sidebar.png
+            build/ui-fixture/ui-network-error.png
           if-no-files-found: warn
           retention-days: 14

@@ -61,8 +61,57 @@ static NSUInteger countText(UIView *view, NSString *text) {
 @property (strong, nonatomic) AWESettingsFixtureViewController *host;
 @property (strong, nonatomic) UINavigationController *navigation;
 - (void)runCases;
+- (void)showVisualSamples;
 @end
 @implementation FixtureDelegate
+- (void)saveWindowImage:(NSString *)name {
+    UIGraphicsImageRenderer *renderer=[[UIGraphicsImageRenderer alloc] initWithSize:self.window.bounds.size];
+    __block BOOL drawn=NO;
+    UIImage *snapshot=[renderer imageWithActions:^(__unused UIGraphicsImageRendererContext *context) {
+        drawn=[self.window drawViewHierarchyInRect:self.window.bounds afterScreenUpdates:YES];
+    }];
+    NSURL *documents=[NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
+    BOOL saved=[UIImagePNGRepresentation(snapshot) writeToURL:[documents URLByAppendingPathComponent:name] atomically:YES];
+    check(drawn && saved,[NSString stringWithFormat:@"render visual fixture %@",name]);
+}
+- (void)showVisualSamples {
+    CGFloat width=self.window.bounds.size.width,height=self.window.bounds.size.height;
+    AWENetworkErrorFixtureView *errorCanvas=[[AWENetworkErrorFixtureView alloc] initWithFrame:self.window.bounds];
+    errorCanvas.backgroundColor=UIColor.systemBackgroundColor;
+    UILabel *title=label(errorCanvas,@"Network error fixture",80);title.frame=CGRectMake(20,80,width-40,30);
+    UIImageView *symbol=[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"wifi.exclamationmark"]];
+    symbol.frame=CGRectMake((width-80)/2,190,80,80);symbol.contentMode=UIViewContentModeScaleAspectFit;[errorCanvas addSubview:symbol];
+    UILabel *errorTitle=label(errorCanvas,@"网络错误",320);errorTitle.frame=CGRectMake(20,320,width-40,34);errorTitle.textAlignment=NSTextAlignmentCenter;errorTitle.font=[UIFont systemFontOfSize:20];
+    UILabel *detail=label(errorCanvas,@"请检查网络连接后重试",365);detail.frame=CGRectMake(20,365,width-40,30);detail.textAlignment=NSTextAlignmentCenter;detail.textColor=UIColor.secondaryLabelColor;
+    UIButton *retry=[UIButton buttonWithType:UIButtonTypeSystem];retry.frame=CGRectMake(30,height-185,width-60,44);[retry setTitle:@"重试" forState:UIControlStateNormal];retry.layer.borderWidth=0.5;retry.layer.borderColor=UIColor.separatorColor.CGColor;[errorCanvas addSubview:retry];
+    UIButton *help=[UIButton buttonWithType:UIButtonTypeSystem];help.frame=CGRectMake(30,height-125,width-60,40);[help setTitle:@"查看解决方案" forState:UIControlStateNormal];[errorCanvas addSubview:help];
+    UIViewController *screen=[UIViewController new];screen.view=errorCanvas;self.window.rootViewController=screen;[self.window layoutIfNeeded];
+    [self saveWindowImage:@"ui-network-error.png"];
+
+    AWELeftSideBarFixtureView *sidebar=[[AWELeftSideBarFixtureView alloc] initWithFrame:self.window.bounds];sidebar.backgroundColor=UIColor.systemGroupedBackgroundColor;
+    title=label(sidebar,@"Sidebar fixture • 0.3.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
+    UILabel *settings=label(sidebar,@"设置",105);settings.frame=CGRectMake(285,105,32,22);settings.font=[UIFont systemFontOfSize:16];
+    NSArray *sections=@[
+        @[@"常用功能",@[@"观看历史",@"离线缓存",@"稍后再看",@"抖音创作者中心",@"直播广场",@"使用管理助手",@"我的二维码",@"未成年人保护"],@[@"clock",@"arrow.down.circle",@"play.rectangle",@"person.crop.circle",@"video",@"timer",@"qrcode",@"shield"]],
+        @[@"工具服务",@[@"我的客服",@"我的预约",@"直播缓存"],@[@"headphones",@"bell",@"arrow.down.to.line"]],
+        @[@"创作与经营",@[@"上热门"],@[@"chart.line.uptrend.xyaxis"]],
+        @[@"生活娱乐",@[@"社区共建"],@[@"house"]]];
+    CGFloat y=140,cardWidth=310;
+    for (NSArray *section in sections) {
+        NSArray *items=section[1],*icons=section[2];NSUInteger rows=(items.count+2)/3;
+        CGFloat cardHeight=48+rows*62;
+        UIView *card=[[UIView alloc] initWithFrame:CGRectMake(16,y,cardWidth,cardHeight)];card.backgroundColor=UIColor.secondarySystemGroupedBackgroundColor;card.layer.cornerRadius=14;[sidebar addSubview:card];
+        UILabel *header=label(card,section[0],10);header.frame=CGRectMake(14,10,cardWidth-28,24);header.font=[UIFont boldSystemFontOfSize:17];
+        for (NSUInteger i=0;i<items.count;i++) {
+            CGFloat x=12+(i%3)*96,row=43+(i/3)*62;
+            UIImageView *icon=[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:icons[i]]];icon.frame=CGRectMake(x+33,row,26,26);icon.tintColor=UIColor.labelColor;icon.contentMode=UIViewContentModeScaleAspectFit;[card addSubview:icon];
+            UILabel *item=label(card,items[i],row+30);item.frame=CGRectMake(x,row+30,92,24);item.textAlignment=NSTextAlignmentCenter;item.font=[UIFont systemFontOfSize:14];
+        }
+        y+=cardHeight+12;
+    }
+    screen=[UIViewController new];screen.view=sidebar;self.window.rootViewController=screen;[self.window layoutIfNeeded];
+    [self saveWindowImage:@"ui-sidebar.png"];
+}
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {
     (void)application; (void)options;
     checks=[NSMutableArray new];
@@ -221,12 +270,13 @@ static NSUInteger countText(UIView *view, NSString *text) {
         if (![sheet isKindOfClass:UIAlertController.class]) sheet=(UIAlertController *)self.navigation.presentedViewController;
         check([sheet isKindOfClass:UIAlertController.class] && [sheet.title isEqualToString:@"Douyin Guest"],@"diagnostics sheet can actually be presented on legacy window");
         check(sheet.actions.count==5,@"diagnostics sheet exposes three switches, copy and close");
+        [sheet dismissViewControllerAnimated:NO completion:nil];
+        [self showVisualSamples];
         BOOL success=YES; for (NSDictionary *item in checks) if (![item[@"passed"] boolValue]) success=NO;
         NSDictionary *report=@{@"scope":@"UIKit fixture only; original Douyin app and network were not executed",@"ios":UIDevice.currentDevice.systemVersion,@"device":UIDevice.currentDevice.model,@"checks":checks,@"passed":@(success),@"count":@(checks.count),@"fitting_observation":fittingObservation};
         NSData *result=[NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:NULL];
         NSURL *documents=[NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
         [result writeToURL:[documents URLByAppendingPathComponent:@"ui-results.json"] atomically:YES];
-        [sheet dismissViewControllerAnimated:NO completion:nil];
         NSLog(@"UI fixture finished: %@",success ? @"PASS" : @"FAIL");
     });
 }
