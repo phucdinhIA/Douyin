@@ -1,12 +1,14 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#import <objc/message.h>
 #import <os/lock.h>
 #include <stdatomic.h>
 #include <math.h>
+#include <string.h>
 #import "DGPolicy.h"
 #import "DGHook.h"
 
-static atomic_bool guestEnabled, adsEnabled, englishEnabled;
+static atomic_bool guestEnabled, adsEnabled, englishEnabled, searchEnabled;
 static NSDictionary<NSString *, NSString *> *translations;
 static NSSet<NSString *> *translatedValues;
 static NSDictionary<NSString *, NSString *> *compactLabels;
@@ -16,6 +18,11 @@ static NSMutableSet<NSString *> *overwritten;
 static NSMutableDictionary<NSString *, NSNumber *> *counters;
 static os_unfair_lock counterLock = OS_UNFAIR_LOCK_INIT;
 static char fontStateKey, gestureKey, labelSourceKey, labelUpdateKey, labelRichKey;
+static char customSourceKey, customFontKey, customLastFontKey, customBusyKey, customRichKey;
+
+static BOOL DGKnownEnglish(NSString *text) {
+    return text && [translatedValues containsObject:[text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet]];
+}
 
 static void DGCount(NSString *event, NSUInteger amount) {
     os_unfair_lock_lock(&counterLock);
@@ -42,14 +49,34 @@ static BOOL DGIsContentClass(NSString *name) {
     return NO;
 }
 
+static BOOL DGIsControlIsland(NSString *name) {
+    for (NSString *part in @[@"SearchFilter", @"SearchMenuFilter", @"SearchResultTab", @"SearchTabBar",
+                             @"SearchFullPageTitleBar", @"SearchFullPageVerticalTitleBar",
+                             @"SearchHistoryHeader", @"SearchSugHeader", @"SearchHotSearchHeader",
+                             @"CommentHeader", @"CommentToolbar", @"CommentSendButton",
+                             @"ProfileTab", @"PersonalTab", @"ProfileMenu", @"ProfileActionButton",
+                             @"SubtitleSetting", @"DanmakuSetting", @"BarrageSetting"]) {
+        if ([name containsString:part]) return YES;
+    }
+    return NO;
+}
+
 static BOOL DGIsChrome(UIView *view) {
     if (!atomic_load(&englishEnabled) || !view.window) return NO;
     BOOL chrome = [view isKindOfClass:UIButton.class];
+    BOOL island = NO;
     UIResponder *node = view;
     for (NSUInteger depth = 0; node && depth < 32; ++depth, node = node.nextResponder) {
         NSString *name = NSStringFromClass(node.class);
-        if (DGIsContentClass(name) || [node isKindOfClass:UITextView.class] ||
-            [node isKindOfClass:UITextField.class]) return NO;
+        if ([node isKindOfClass:UITextView.class] || [node isKindOfClass:UITextField.class]) return NO;
+        if (DGIsControlIsland(name)) { island = YES; chrome = YES; }
+        else if (DGIsContentClass(name)) {
+            // A result/comment controller can own filters or a toolbar as well
+            // as user content. Only an explicitly named control below it is exempt.
+            BOOL container = [name containsString:@"SearchResult"] || [name containsString:@"Comment"];
+            if (!island || !container || [name containsString:@"CommentCell"] ||
+                [name containsString:@"CommentText"] || [name containsString:@"SearchResultCell"]) return NO;
+        }
         if ([node isKindOfClass:UINavigationBar.class] || [node isKindOfClass:UITabBar.class])
             chrome = YES;
         if ([node isKindOfClass:UINavigationBar.class]) {
@@ -60,12 +87,15 @@ static BOOL DGIsChrome(UIView *view) {
                     return NO;
             }
         }
-        if ([name hasPrefix:@"AWE"] || [name hasPrefix:@"DUI"] || [name hasPrefix:@"IES"]) {
+        if ([name hasPrefix:@"AWE"] || [name hasPrefix:@"DUI"] || [name hasPrefix:@"DUX"] ||
+            [name hasPrefix:@"IES"] || ([name hasPrefix:@"_Tt"] && [name containsString:@"AWE"])) {
             for (NSString *part in @[@"Navigation", @"TabBar", @"TabButton", @"Menu", @"Setting",
                                      @"Toolbar", @"ToolBar", @"Control", @"ActionButton", @"Channel",
                                      @"Login", @"SearchBar", @"SearchButton", @"PageTitle", @"HeaderTitle",
                                      @"TopTitle", @"Progress", @"Quality", @"Speed", @"SideBar", @"Sidebar",
-                                     @"NetworkError", @"NetError", @"EmptyPage", @"EmptyView", @"ErrorView"]) {
+                                     @"NetworkError", @"NetError", @"EmptyPage", @"EmptyView", @"EmptyContainer",
+                                     @"ErrorView", @"PrivacySetting", @"Preference", @"SharePanel", @"ShareSheet",
+                                     @"ActionSheet", @"PopupMenu", @"Playback", @"PlayerMenu", @"TitleBar"]) {
                 if ([name containsString:part]) { chrome = YES; break; }
             }
         }
@@ -147,6 +177,114 @@ static void DGTranslateLabel(UILabel *label) {
     DGApplyLabelLayout(label);
 }
 
+static id DGCustomRead(id view, NSString *selector) {
+    return ((id (*)(id, SEL))objc_msgSend)(view, NSSelectorFromString(selector));
+}
+
+static void DGCustomWrite(id view, NSString *selector, id value) {
+    ((void (*)(id, SEL, id))objc_msgSend)(view, NSSelectorFromString(selector), value);
+}
+
+static void DGLayoutCustomLabel(UIView *view) {
+    if ([objc_getAssociatedObject(view, &customBusyKey) boolValue]) return;
+    id source = objc_getAssociatedObject(view, &customSourceKey);
+    UIFont *base = objc_getAssociatedObject(view, &customFontKey);
+    if (!source && !base) return;
+    UIFont *current = DGCustomRead(view, @"font");
+    UIFont *last = objc_getAssociatedObject(view, &customLastFontKey);
+    if (!source || !DGIsChrome(view)) {
+        if (base && [current isEqual:last]) DGCustomWrite(view, @"setFont:", base);
+        objc_setAssociatedObject(view, &customFontKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(view, &customLastFontKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        return;
+    }
+    if (![current isKindOfClass:UIFont.class]) return;
+    if (!base || (last && ![current isEqual:last])) base = current;
+    objc_setAssociatedObject(view, &customFontKey, base, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    BOOL rich = [source isKindOfClass:NSAttributedString.class];
+    NSString *full = rich ? ((NSAttributedString *)source).string : source;
+    NSDictionary *attributes = rich && [source length] ? [source attributesAtIndex:0 effectiveRange:NULL] : nil;
+    if ([attributes[NSFontAttributeName] isKindOfClass:UIFont.class]) base = attributes[NSFontAttributeName];
+    NSUInteger lines = ((NSUInteger (*)(id, SEL))objc_msgSend)(view, @selector(numberOfLines));
+    CGFloat width = view.bounds.size.width;
+    BOOL fit = lines == 1 && width > 0;
+    NSString *display = full, *shorter = compactLabels[full];
+    CGFloat measured = [full sizeWithAttributes:@{NSFontAttributeName:base}].width;
+    if (fit && measured * 0.65 > width && shorter.length &&
+        [shorter sizeWithAttributes:@{NSFontAttributeName:base}].width * 0.65 <= width) {
+        display = shorter; measured = [shorter sizeWithAttributes:@{NSFontAttributeName:base}].width;
+    }
+    CGFloat factor = fit && measured > 0 ? MAX(0.65, MIN(1.0, width / measured)) : 1.0;
+    UIFont *fitted = [base fontWithSize:base.pointSize * factor];
+    objc_setAssociatedObject(view, &customBusyKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    @try {
+        if (rich) {
+            NSMutableDictionary *style = [attributes mutableCopy] ?: [NSMutableDictionary new];
+            style[NSFontAttributeName] = fitted;
+            NSAttributedString *value = [[NSAttributedString alloc] initWithString:display attributes:style];
+            if (![DGCustomRead(view, @"attributedText") isEqualToAttributedString:value]) DGCustomWrite(view, @"setAttributedText:", value);
+        } else if (![DGCustomRead(view, @"text") isEqualToString:display]) DGCustomWrite(view, @"setText:", display);
+        if (![current isEqual:fitted]) DGCustomWrite(view, @"setFont:", fitted);
+        objc_setAssociatedObject(view, &customLastFontKey, fitted, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    } @finally { objc_setAssociatedObject(view, &customBusyKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
+}
+
+static void DGInstallCustomEnglish(void) {
+    Class cls = NSClassFromString(@"YYLabel");
+    if (!cls || ![cls isSubclassOfClass:UIView.class] || [cls isSubclassOfClass:UILabel.class]) return;
+    NSDictionary *types = @{@"text":@"@16@0:8", @"attributedText":@"@16@0:8", @"font":@"@16@0:8",
+        @"numberOfLines":@"Q16@0:8", @"setFont:":@"v24@0:8@16", @"setText:":@"v24@0:8@16", @"setAttributedText:":@"v24@0:8@16"};
+    for (NSString *selector in types) {
+        Method method = class_getInstanceMethod(cls, NSSelectorFromString(selector));
+        if (!method || strcmp(method_getTypeEncoding(method), [types[selector] UTF8String])) {
+            DGCount(@"YYLabel translation ABI mismatch", 1); return;
+        }
+    }
+    for (NSString *selectorName in @[@"setText:", @"setAttributedText:"]) {
+        SEL selector = NSSelectorFromString(selectorName);
+        BOOL rich = [selectorName isEqualToString:@"setAttributedText:"];
+        DGSwizzle(cls, selector, ^id(IMP original) {
+            return ^(UIView *view, id text) {
+                if ([objc_getAssociatedObject(view, &customBusyKey) boolValue]) {
+                    ((void (*)(id, SEL, id))original)(view, selector, text); return;
+                }
+                id value = text;
+                if (text && DGIsChrome(view)) value = rich ? DGTranslateAttributed(text, translations) : DGTranslate(text, translations);
+                NSString *string = rich ? [value string] : value;
+                BOOL translated = text && value != text;
+                // Mixed attributed styles are user/link content, even if their
+                // complete string happens to match an English control title.
+                BOOL uniform = YES;
+                if (rich && [value length]) {
+                    NSRange range; [value attributesAtIndex:0 effectiveRange:&range]; uniform = range.length == [value length];
+                }
+                objc_setAssociatedObject(view, &customSourceKey, DGIsChrome(view) && uniform && (translated || DGKnownEnglish(string)) ? value : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                objc_setAssociatedObject(view, &customRichKey, @(rich), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                if (!objc_getAssociatedObject(view, &customSourceKey)) DGLayoutCustomLabel(view);
+                objc_setAssociatedObject(view, &customBusyKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                @try { ((void (*)(id, SEL, id))original)(view, selector, value); }
+                @finally { objc_setAssociatedObject(view, &customBusyKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
+                DGLayoutCustomLabel(view);
+                if (translated) DGCount(@"Custom labels translated", 1);
+            };
+        });
+    }
+    DGSwizzle(cls, @selector(didMoveToWindow), ^id(IMP original) {
+        return ^(UIView *view) {
+            ((void (*)(id, SEL))original)(view, @selector(didMoveToWindow));
+            if (!DGIsChrome(view)) return;
+            BOOL rich = [objc_getAssociatedObject(view, &customRichKey) boolValue];
+            DGCustomWrite(view, rich ? @"setAttributedText:" : @"setText:", DGCustomRead(view, rich ? @"attributedText" : @"text"));
+        };
+    });
+    DGSwizzle(cls, @selector(layoutSubviews), ^id(IMP original) {
+        return ^(UIView *view) {
+            DGLayoutCustomLabel(view); ((void (*)(id, SEL))original)(view, @selector(layoutSubviews));
+        };
+    });
+    DGCount(@"YYLabel translation installed", 1);
+}
+
 static void DGInstallEnglish(void) {
     DGSwizzle(UILabel.class, @selector(setText:), ^id(IMP original) {
         return ^(UILabel *label, NSString *text) {
@@ -156,7 +294,7 @@ static void DGInstallEnglish(void) {
             NSString *value = text && DGIsChrome(label) ? DGTranslate(text, translations) : text;
             objc_setAssociatedObject(label, &labelRichKey, @NO, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             BOOL changed = text && ![value isEqualToString:text];
-            BOOL chrome = value && DGIsChrome(label) && [translatedValues containsObject:value];
+            BOOL chrome = value && DGIsChrome(label) && (changed || DGKnownEnglish(value));
             objc_setAssociatedObject(label, &labelSourceKey, chrome ? value : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             objc_setAssociatedObject(label, &labelUpdateKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             @try { ((void (*)(id, SEL, id))original)(label, @selector(setText:), value); }
@@ -173,7 +311,7 @@ static void DGInstallEnglish(void) {
             }
             NSAttributedString *value = text && DGIsChrome(label) ? DGTranslateAttributed(text, translations) : text;
             objc_setAssociatedObject(label, &labelRichKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-            BOOL chrome = value && DGIsChrome(label) && [translatedValues containsObject:value.string];
+            BOOL chrome = value && DGIsChrome(label) && (value != text || DGKnownEnglish(value.string));
             objc_setAssociatedObject(label, &labelSourceKey, chrome ? value : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             objc_setAssociatedObject(label, &labelUpdateKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             @try { ((void (*)(id, SEL, id))original)(label, @selector(setAttributedText:), value); }
@@ -286,6 +424,7 @@ static void DGInstallNative(void) {
         NSString *feature = spec[@"feature"];
         DGEnabled enabled = ^BOOL {
             if ([feature isEqualToString:@"diagnostics"]) return YES;
+            if ([feature isEqualToString:@"search"]) return atomic_load(&searchEnabled);
             return [feature isEqualToString:@"guest"] ? atomic_load(&guestEnabled) : atomic_load(&adsEnabled);
         };
         if (DGInstallHook(spec, enabled, ^(NSString *event, NSUInteger count) { DGCount(event, count); }))
@@ -335,9 +474,9 @@ static void DGInstallNative(void) {
     if (!presenter || [presenter isKindOfClass:UIAlertController.class]) return;
     NSString *message = [NSString stringWithFormat:@"Test build • 40.6.0 (406019)\nNative hooks: %lu/%lu active\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)DGActiveHookCount(), (unsigned long)hookSpecs.count];
     UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Douyin Guest" message:message preferredStyle:UIAlertControllerStyleAlert];
-    NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls"];
-    NSArray *keys = @[@"DGGuestEnabled", @"DGAdsEnabled", @"DGEnglishEnabled"];
-    BOOL flags[] = {atomic_load(&guestEnabled), atomic_load(&adsEnabled), atomic_load(&englishEnabled)};
+    NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls", @"Guest search"];
+    NSArray *keys = @[@"DGGuestEnabled", @"DGAdsEnabled", @"DGEnglishEnabled", @"DGSearchEnabled"];
+    BOOL flags[] = {atomic_load(&guestEnabled), atomic_load(&adsEnabled), atomic_load(&englishEnabled), atomic_load(&searchEnabled)};
     for (NSUInteger i = 0; i < names.count; ++i) {
         BOOL next = !flags[i];
         NSString *title = [NSString stringWithFormat:@"%@: %@", names[i], flags[i] ? @"ON" : @"OFF"];
@@ -346,11 +485,13 @@ static void DGInstallNative(void) {
             if (i == 0) atomic_store(&guestEnabled, next);
             if (i == 1) atomic_store(&adsEnabled, next);
             if (i == 2) atomic_store(&englishEnabled, next);
+            if (i == 3) atomic_store(&searchEnabled, next);
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.3.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
-        report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled))};
+        NSMutableDictionary *report = [@{@"patch_version": @"0.4.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled))};
+        report[@"search_adapter_hooks"] = DGSearchAdapterSnapshot();
         report[@"native_hooks_active"] = @(DGActiveHookCount());
         NSData *data = [NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:NULL];
         if (data) UIPasteboard.generalPasteboard.string = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
@@ -381,11 +522,12 @@ __attribute__((constructor)) static void DGStart(void) {
                           @"Live cache":@"Live saves", @"My QR code":@"QR code", @"Screen time":@"Usage",
                           @"Check your connection and retry":@"Check connection"};
         counters = [NSMutableDictionary new]; installed = [NSMutableDictionary new]; overwritten = [NSMutableSet new];
-        [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES}];
+        [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES, @"DGSearchEnabled":@YES}];
         atomic_init(&guestEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGGuestEnabled"]);
         atomic_init(&adsEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGAdsEnabled"]);
         atomic_init(&englishEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGEnglishEnabled"]);
-        DGInstallNative(); DGInstallEnglish();
+        atomic_init(&searchEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGSearchEnabled"]);
+        DGInstallNative(); DGInstallEnglish(); DGInstallCustomEnglish();
         NSNotificationCenter *notifications = NSNotificationCenter.defaultCenter;
         for (NSString *name in @[UIApplicationDidFinishLaunchingNotification, UIApplicationDidBecomeActiveNotification, UIWindowDidBecomeKeyNotification]) {
             [notifications addObserverForName:name object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {

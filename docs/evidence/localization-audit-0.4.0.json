@@ -1,0 +1,4588 @@
+{
+  "scope": "Static UI-label review; not exhaustive runtime screen coverage",
+  "baseline_dictionary_entries": 302,
+  "dictionary_entries": 853,
+  "new_entries": 551,
+  "reviewed_groups": {
+    "Search controls and empty states": 97,
+    "Menus, profile tabs and LIVE": 102,
+    "AI search controls; do not alter AI authentication": 25,
+    "Settings, privacy and accessibility": 106,
+    "Playback and offline video": 99,
+    "Common actions and real error messages": 122
+  },
+  "static_scan": {
+    "AwemeCore": {
+      "class_count": 132118,
+      "category_count": 5061,
+      "class_parse_errors": 0,
+      "cfstring_count": 468223,
+      "cfstring_errors": 2700
+    },
+    "AWESearchFramework": {
+      "class_count": 2850,
+      "category_count": 44,
+      "class_parse_errors": 0,
+      "cfstring_count": 17006,
+      "cfstring_errors": 0
+    }
+  },
+  "unique_chinese_constants_in_two_binaries": 36918,
+  "dictionary_keys_found_in_two_binaries": 752,
+  "dictionary_keys_not_found_in_two_binaries": [
+    "搜索你想看的内容",
+    "请输入搜索内容",
+    "稍后",
+    "视频暂时无法播放",
+    "自动播放",
+    "连续播放",
+    "正常速度",
+    "省流",
+    "省流量",
+    "长按倍速播放",
+    "长按屏幕倍速播放",
+    "画中画",
+    "合集详情",
+    "使用音乐",
+    "保存视频",
+    "减少类似作品",
+    "帮助与反馈",
+    "关注作者",
+    "隐私",
+    "账户与安全",
+    "推送通知",
+    "语言",
+    "语言设置",
+    "简体中文",
+    "繁體中文",
+    "英文",
+    "显示设置",
+    "存储空间",
+    "检查更新",
+    "版本",
+    "仅使用基本功能",
+    "登录/注册",
+    "登录或注册",
+    "注册",
+    "短信登录",
+    "请输入手机号",
+    "登录后查看更多",
+    "登录后继续观看",
+    "游客模式",
+    "今日不再提醒",
+    "视频时长",
+    "确定删除",
+    "每日推荐",
+    "推荐给你",
+    "合集播放",
+    "上一集",
+    "展开全文",
+    "全部评论",
+    "联系作者",
+    "青少年模式",
+    "休息一下",
+    "使用时长",
+    "直播缓存",
+    "券包",
+    "抖音创作者服务中心",
+    "抖音创作者…",
+    "抖音创作者...",
+    "未成年人保护",
+    "登录后搜索",
+    "登录后可搜索",
+    "登录后查看更多搜索结果",
+    "搜索次数已达上限",
+    "搜索次数达到上限",
+    "个性化内容推荐",
+    "浏览模式",
+    "大字模式",
+    "返回，按钮",
+    "清爽模式",
+    "字幕语言",
+    "我的购物车",
+    "我的卡券",
+    "我的活动",
+    "我的音乐",
+    "我的小程序",
+    "创作者服务中心",
+    "创作中心",
+    "帮助中心",
+    "客服中心",
+    "收藏视频",
+    "直播提醒",
+    "主播已下播",
+    "查看直播回放",
+    "热搜榜",
+    "热搜",
+    "热门搜索",
+    "知识",
+    "学习",
+    "娱乐",
+    "汽车",
+    "科技",
+    "时尚",
+    "摄影",
+    "才艺",
+    "健身",
+    "搞笑",
+    "数码",
+    "影视",
+    "搜索推荐",
+    "视频已删除",
+    "立即登录",
+    "没有更多"
+  ],
+  "new_label_evidence": {
+    "大家都在搜": {
+      "english": "Trending searches",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "大家都在问": {
+      "english": "Popular questions",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "猜你想搜": {
+      "english": "Suggested searches",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "猜你想看": {
+      "english": "Suggested videos",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "常搜": {
+      "english": "Frequent searches",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "相关搜索": {
+      "english": "Related searches",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "相关详情": {
+      "english": "Related details",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "全部搜索记录": {
+      "english": "All search history",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "清除全部搜索记录": {
+      "english": "Clear search history",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "删除全部历史": {
+      "english": "Delete all history",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "历史搜索": {
+      "english": "Search history",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "历史": {
+      "english": "History",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看更多历史": {
+      "english": "More history",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "查看更多作品": {
+      "english": "More posts",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看更多直播": {
+      "english": "More LIVE",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看更多": {
+      "english": "See more",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看结果": {
+      "english": "View results",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看最新结果": {
+      "english": "Latest results",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看所有内容": {
+      "english": "View all content",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "查看完整内容": {
+      "english": "View full content",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "查看原文": {
+      "english": "View original",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看视频": {
+      "english": "Watch video",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看图片": {
+      "english": "View photo",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看全部用户": {
+      "english": "View all users",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "查看全部话题": {
+      "english": "View all topics",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "查看全部音乐": {
+      "english": "View all music",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "查看全部地点": {
+      "english": "View all places",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "暂无记录": {
+      "english": "No history yet",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "暂无更多内容": {
+      "english": "No more content",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "暂无更多内容，": {
+      "english": "No more content",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "暂时没有更多了": {
+      "english": "No more results",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "暂时没有更多内容了": {
+      "english": "No more content",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "暂未找到内容": {
+      "english": "No content found",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "没有搜索到相关内容": {
+      "english": "No matching results",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "没有搜索到相关的内容": {
+      "english": "No matching results",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "没有搜索到你想要的内容": {
+      "english": "No matching results",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "试试换个搜索词": {
+      "english": "Try another search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "试试其他搜索词": {
+      "english": "Try another search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请重新搜索": {
+      "english": "Search again",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请输入搜索词": {
+      "english": "Enter search terms",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请输入作品关键词": {
+      "english": "Enter post keywords",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "请输入要搜索的用户昵称或抖音号": {
+      "english": "Enter name or Douyin ID",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请输入要搜索的主播昵称或抖音号": {
+      "english": "Enter name or Douyin ID",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "语音搜索": {
+      "english": "Voice search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "语音搜": {
+      "english": "Voice search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "语音搜索按钮": {
+      "english": "Voice search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "语音搜索重试按钮": {
+      "english": "Retry voice search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "点击搜图": {
+      "english": "Search by image",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "点击搜图片": {
+      "english": "Search by image",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "点击搜索图": {
+      "english": "Search by image",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "点击搜索图片": {
+      "english": "Search by image",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "一键搜索": {
+      "english": "Search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "进入搜索": {
+      "english": "Open search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "去搜索": {
+      "english": "Search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "图片与视频": {
+      "english": "Photos & videos",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频和图文": {
+      "english": "Videos & photos",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "话题": {
+      "english": "Topics",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "商品": {
+      "english": "Products",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "店铺": {
+      "english": "Shops",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "地点": {
+      "english": "Places",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "短剧": {
+      "english": "Short dramas",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "直播中": {
+      "english": "LIVE now",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "正在直播": {
+      "english": "LIVE now",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "直播回放": {
+      "english": "LIVE replays",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "综合排序": {
+      "english": "Relevance",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "默认排序": {
+      "english": "Default order",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "最多点赞": {
+      "english": "Most liked",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "最新发布": {
+      "english": "Newest",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "一周内": {
+      "english": "Past week",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "一天内": {
+      "english": "Past day",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "半年内": {
+      "english": "Past 6 months",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "全城": {
+      "english": "Whole city",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "切换城市": {
+      "english": "Change city",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "切换地点": {
+      "english": "Change location",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "正序": {
+      "english": "Ascending",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "倒序": {
+      "english": "Descending",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "重置": {
+      "english": "Reset",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "重置选项": {
+      "english": "Reset options",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "取消筛选": {
+      "english": "Clear filters",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "切换为单列模式": {
+      "english": "Single column",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "切换为双列模式": {
+      "english": "Two columns",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "切换为多列模式": {
+      "english": "Multi-column",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "单列模式": {
+      "english": "Single column",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "双列模式": {
+      "english": "Two columns",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "大图模式": {
+      "english": "Large previews",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "小图模式": {
+      "english": "Small previews",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "列表": {
+      "english": "List",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "默认": {
+      "english": "Default",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "全部结果": {
+      "english": "All results",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "未登录暂不支持搜索": {
+      "english": "Log in to search",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "登录后搜索": {
+      "english": "Log in to search",
+      "group": "Search controls and empty states",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "登录后可搜索": {
+      "english": "Log in to search",
+      "group": "Search controls and empty states",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "登录后查看更多搜索结果": {
+      "english": "Log in for more results",
+      "group": "Search controls and empty states",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "搜索次数已达上限": {
+      "english": "Search limit reached",
+      "group": "Search controls and empty states",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "搜索次数达到上限": {
+      "english": "Search limit reached",
+      "group": "Search controls and empty states",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "搜索失败": {
+      "english": "Search failed",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "搜索中": {
+      "english": "Searching",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "正在搜索": {
+      "english": "Searching",
+      "group": "Search controls and empty states",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "AI搜索": {
+      "english": "AI search",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "AI语音搜": {
+      "english": "AI voice search",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "问问AI": {
+      "english": "Ask AI",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "问AI或找你想看": {
+      "english": "Ask AI or search",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "问AI抖音或找你想看": {
+      "english": "Ask AI or search",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "继续问AI": {
+      "english": "Ask AI again",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "继续提问": {
+      "english": "Ask another question",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "继续追问": {
+      "english": "Ask a follow-up",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "继续问": {
+      "english": "Ask again",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "深度思考": {
+      "english": "Deep thinking",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "深度思考·已开启": {
+      "english": "Deep thinking on",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "深度思考中": {
+      "english": "Thinking deeply",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "正在思考中": {
+      "english": "Thinking",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "正在生成回答": {
+      "english": "Generating answer",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "正在生成回答...": {
+      "english": "Generating answer...",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "生成回答": {
+      "english": "Generate answer",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "回答生成失败": {
+      "english": "Answer failed",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "生成失败": {
+      "english": "Generation failed",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "生成已停止": {
+      "english": "Generation stopped",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "以上内容由AI生成": {
+      "english": "AI-generated content",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "内容由 AI 生成": {
+      "english": "AI-generated content",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "内容由AI生成": {
+      "english": "AI-generated content",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请输入你的问题": {
+      "english": "Enter your question",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "输入你想了解的问题": {
+      "english": "Enter your question",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "登录后可使用任务助手提问": {
+      "english": "Log in for assistant",
+      "group": "AI search controls; do not alter AI authentication",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "基础设置": {
+      "english": "Basic settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "高级设置": {
+      "english": "Advanced settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "功能设置": {
+      "english": "Feature settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自定义设置": {
+      "english": "Custom settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "设置中": {
+      "english": "Saving settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "设置成功": {
+      "english": "Settings saved",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "设置完成": {
+      "english": "Settings saved",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "设置失败": {
+      "english": "Could not save",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "设置加载失败": {
+      "english": "Settings failed to load",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已保存设置": {
+      "english": "Settings saved",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已恢复默认设置": {
+      "english": "Defaults restored",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "前往设置": {
+      "english": "Open settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "去设置": {
+      "english": "Open settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "进入设置": {
+      "english": "Open settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "前往系统设置": {
+      "english": "Open system settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "跳转至设置": {
+      "english": "Open settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "前往隐私设置": {
+      "english": "Privacy settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "前往通用设置": {
+      "english": "General settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "个人中心": {
+      "english": "My profile",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "个人页": {
+      "english": "Profile",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "主页": {
+      "english": "Profile",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "个人简介": {
+      "english": "Bio",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "编辑个人资料": {
+      "english": "Edit profile",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "编辑主页": {
+      "english": "Edit profile",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号管理": {
+      "english": "Manage accounts",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "切换账号": {
+      "english": "Switch account",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "切换抖音账号": {
+      "english": "Switch account",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号切换": {
+      "english": "Switch account",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号切换中": {
+      "english": "Switching account",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号切换失败": {
+      "english": "Could not switch",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号切换成功": {
+      "english": "Account switched",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号找回": {
+      "english": "Recover account",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号安全状态": {
+      "english": "Account security",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号安全通知": {
+      "english": "Security alerts",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "第三方账号绑定": {
+      "english": "Linked accounts",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "私密账号": {
+      "english": "Private account",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "这是私密账号": {
+      "english": "Private account",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "私密作品": {
+      "english": "Private posts",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "私密收藏夹": {
+      "english": "Private collection",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "系统权限": {
+      "english": "System permissions",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "通用权限": {
+      "english": "Permissions",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "位置权限": {
+      "english": "Location permission",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "地理位置权限": {
+      "english": "Location permission",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "通讯录权限": {
+      "english": "Contacts permission",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "相册权限": {
+      "english": "Photo permission",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "相机权限": {
+      "english": "Camera permission",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "麦克风权限": {
+      "english": "Microphone permission",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "蓝牙权限": {
+      "english": "Bluetooth permission",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络设置": {
+      "english": "Network settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "通知方式": {
+      "english": "Notification style",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "通知消息": {
+      "english": "Notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "通知消息管理": {
+      "english": "Manage notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "通知消息筛选": {
+      "english": "Filter notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "通知全部消息": {
+      "english": "All notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "仅通知重要消息": {
+      "english": "Important alerts only",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "不通知任何消息": {
+      "english": "No notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "不接收通知": {
+      "english": "No notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "系统通知": {
+      "english": "System notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "官方通知": {
+      "english": "Official notices",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "顶部横幅通知": {
+      "english": "Banner notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "互动通知": {
+      "english": "Interaction alerts",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "互动与更新通知": {
+      "english": "Interaction & updates",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "私信和通话通知": {
+      "english": "Messages & calls",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "私信消息通知": {
+      "english": "Message notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "私信通知": {
+      "english": "Message notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "私信设置": {
+      "english": "Message settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "陌生人私信设置": {
+      "english": "Messages from strangers",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "聊天与通话设置": {
+      "english": "Chat & call settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "勿扰设置": {
+      "english": "Do Not Disturb",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "作品更新通知": {
+      "english": "Post updates",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "主播通知设置": {
+      "english": "LIVE notifications",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "实时活动通知": {
+      "english": "Live Activity alerts",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "个性化推送管理": {
+      "english": "Personalized alerts",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "个性化内容推荐": {
+      "english": "Content personalization",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "了解个性化内容推荐": {
+      "english": "About personalization",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "了解与管理广告": {
+      "english": "Ad preferences",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "了解与管理广告推送": {
+      "english": "Ad notification settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "个人信息与权限使用记录": {
+      "english": "Data & permission use",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "个人信息保护指引": {
+      "english": "Personal data notice",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "隐私政策及简明版": {
+      "english": "Privacy policy summary",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "黑名单管理": {
+      "english": "Blocked accounts",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "访客设置": {
+      "english": "Visitor settings",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "展示浏览记录": {
+      "english": "Show view history",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "主页访客": {
+      "english": "Profile visitors",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "主页访客记录": {
+      "english": "Profile visits",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "作品浏览记录": {
+      "english": "Post views",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "浏览模式": {
+      "english": "Browse mode",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "长辈模式": {
+      "english": "Senior mode",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "大字模式": {
+      "english": "Large text",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "字体": {
+      "english": "Font",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "字号": {
+      "english": "Text size",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "调整字体大小": {
+      "english": "Adjust text size",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "开启": {
+      "english": "On",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "关闭。按钮": {
+      "english": "Close",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "关闭，按钮": {
+      "english": "Close",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "返回。按钮": {
+      "english": "Back",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "返回，按钮": {
+      "english": "Back",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "反馈，按钮": {
+      "english": "Feedback",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "重试按钮": {
+      "english": "Retry",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "清爽模式": {
+      "english": "Clean view",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "开启清爽模式": {
+      "english": "Enable clean view",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "退出清爽模式": {
+      "english": "Exit clean view",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "阅读模式": {
+      "english": "Reading mode",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "开启阅读模式": {
+      "english": "Enable reading mode",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "关闭阅读模式": {
+      "english": "Disable reading mode",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "保留阅读模式": {
+      "english": "Keep reading mode",
+      "group": "Settings, privacy and accessibility",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "从头播放": {
+      "english": "Play from start",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "顺序播放": {
+      "english": "Play in order",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "随机播放": {
+      "english": "Shuffle",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自动连播": {
+      "english": "Autoplay next",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自动播放已开启": {
+      "english": "Autoplay on",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自动播放已关闭": {
+      "english": "Autoplay off",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自动连播已开启": {
+      "english": "Autoplay next on",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自动连播已关闭": {
+      "english": "Autoplay next off",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已开启自动连播": {
+      "english": "Autoplay next on",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已关闭自动连播": {
+      "english": "Autoplay next off",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已开启循环播放": {
+      "english": "Loop on",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "后台播放设置": {
+      "english": "Background playback",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "后台播放已开启": {
+      "english": "Background play on",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "后台播放已关闭": {
+      "english": "Background play off",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "后台播放音频": {
+      "english": "Background audio",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "后台音频设置": {
+      "english": "Background audio",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "后台小窗播放": {
+      "english": "Background PiP",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "后台小窗设置": {
+      "english": "Background PiP",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "小窗设置": {
+      "english": "PiP settings",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "小窗播放设置": {
+      "english": "PiP settings",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自动小窗播放": {
+      "english": "Automatic PiP",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "退出后继续小窗播放": {
+      "english": "Keep PiP after exit",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "退出或锁屏后继续播放音频": {
+      "english": "Keep audio after exit",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自动旋转": {
+      "english": "Auto-rotate",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自动旋转进全屏": {
+      "english": "Rotate to full screen",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "长按两侧倍速播放": {
+      "english": "Hold sides to speed up",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "长按可倍速观看": {
+      "english": "Hold to speed up",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "长按整个屏幕可2倍速播放": {
+      "english": "Hold for 2x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "松手恢复 1 倍速": {
+      "english": "Release for 1x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "松手锁定 2 倍速": {
+      "english": "Release to lock 2x",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "上滑松手恢复 1 倍速": {
+      "english": "Swipe up for 1x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "上滑松手锁定 2 倍速": {
+      "english": "Swipe up to lock 2x",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "0.5 倍速": {
+      "english": "0.5x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "0.5倍速": {
+      "english": "0.5x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "1.0 倍速": {
+      "english": "1x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "1倍速": {
+      "english": "1x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "1.5 倍速": {
+      "english": "1.5x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "1.5倍速": {
+      "english": "1.5x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "2 倍速": {
+      "english": "2x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "2倍速": {
+      "english": "2x speed",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "2倍速播放中": {
+      "english": "Playing at 2x",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请选择清晰度": {
+      "english": "Choose quality",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "当前视频不支持快进": {
+      "english": "Seeking unavailable",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "字幕设置": {
+      "english": "Subtitle settings",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "字幕语言": {
+      "english": "Subtitle language",
+      "group": "Playback and offline video",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "选择字幕语言": {
+      "english": "Subtitle language",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "自动字幕": {
+      "english": "Auto subtitles",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "退出自动字幕": {
+      "english": "Disable auto subtitles",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频原声": {
+      "english": "Original audio",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频原声语言": {
+      "english": "Original audio language",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "评论与弹幕": {
+      "english": "Comments & overlays",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已关闭弹幕": {
+      "english": "Comments hidden",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已展示全部弹幕": {
+      "english": "All comments shown",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "屏蔽词设置": {
+      "english": "Blocked words",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "设置屏蔽词": {
+      "english": "Set blocked words",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "开启静音": {
+      "english": "Mute",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "静音模式已开启": {
+      "english": "Mute on",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "静音模式已关闭": {
+      "english": "Mute off",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "缓存设置": {
+      "english": "Cache settings",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "缓存视频": {
+      "english": "Cache videos",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "缓存中": {
+      "english": "Caching",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "缓存完成": {
+      "english": "Cached",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "缓存已暂停": {
+      "english": "Caching paused",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已缓存": {
+      "english": "Cached",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已缓存的视频": {
+      "english": "Cached videos",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频已缓存": {
+      "english": "Video cached",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频已缓存完成": {
+      "english": "Video cached",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "离线视频": {
+      "english": "Offline videos",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "离线播放": {
+      "english": "Offline playback",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "离线模式": {
+      "english": "Offline mode",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "离线模式设置": {
+      "english": "Offline settings",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "离线设置": {
+      "english": "Offline settings",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "调整缓存上限": {
+      "english": "Cache limit",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "继续缓存": {
+      "english": "Resume caching",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "取消缓存": {
+      "english": "Cancel caching",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "重新缓存": {
+      "english": "Cache again",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已有缓存": {
+      "english": "Already cached",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "缓存文件": {
+      "english": "Cached files",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "缓存过期后清除": {
+      "english": "Clear expired cache",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "什么是缓存？": {
+      "english": "What is cache?",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "了解缓存": {
+      "english": "About cache",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频下载中": {
+      "english": "Downloading video",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "下载中...": {
+      "english": "Downloading...",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已下载": {
+      "english": "Downloaded",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "下载成功": {
+      "english": "Downloaded",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "下载已取消": {
+      "english": "Download canceled",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "下载取消": {
+      "english": "Download canceled",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "取消下载": {
+      "english": "Cancel download",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "下载已中断": {
+      "english": "Download interrupted",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "重新下载": {
+      "english": "Download again",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "继续下载": {
+      "english": "Resume download",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "立即下载": {
+      "english": "Download now",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "下载当前图片": {
+      "english": "Download this photo",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "复制下载链接": {
+      "english": "Copy download link",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "下载链接已复制": {
+      "english": "Download link copied",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "移动网络下载": {
+      "english": "Download over cellular",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "删除已看视频": {
+      "english": "Delete watched videos",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已删除所选视频": {
+      "english": "Selected videos deleted",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已删除缓存视频": {
+      "english": "Cached videos deleted",
+      "group": "Playback and offline video",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "我的钱包": {
+      "english": "Wallet",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "钱包": {
+      "english": "Wallet",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "我的订单": {
+      "english": "Orders",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "订单": {
+      "english": "Orders",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "我的购物车": {
+      "english": "Cart",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "购物车": {
+      "english": "Cart",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "我的卡券": {
+      "english": "Coupons",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "优惠券": {
+      "english": "Coupons",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "我的群聊": {
+      "english": "My groups",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "群聊": {
+      "english": "Groups",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "我的抖音码": {
+      "english": "My Douyin code",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "抖音码": {
+      "english": "Douyin code",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "我的活动": {
+      "english": "My events",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "我的音乐": {
+      "english": "My music",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "我的小程序": {
+      "english": "Mini apps",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "小程序": {
+      "english": "Mini apps",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "小游戏": {
+      "english": "Mini games",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "创作者中心": {
+      "english": "Creator hub",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "创作者服务中心": {
+      "english": "Creator hub",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "创作中心": {
+      "english": "Creator hub",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "抖音公益": {
+      "english": "Douyin charity",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "公益": {
+      "english": "Charity",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "抖音精选": {
+      "english": "Douyin Featured",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "抖音商城": {
+      "english": "Douyin Shop",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "帮助中心": {
+      "english": "Help center",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "联系客服": {
+      "english": "Contact support",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "客服中心": {
+      "english": "Support center",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "我的收藏": {
+      "english": "Saved items",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "你的收藏": {
+      "english": "Your saved items",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "赞与收藏": {
+      "english": "Likes & saves",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "收藏视频": {
+      "english": "Saved videos",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "收藏音乐": {
+      "english": "Saved music",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "收藏合集": {
+      "english": "Saved collections",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "收藏夹管理": {
+      "english": "Manage collections",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "创建收藏夹": {
+      "english": "New collection",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "加入收藏夹": {
+      "english": "Add to collection",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "移出收藏夹": {
+      "english": "Remove from collection",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "编辑收藏夹": {
+      "english": "Edit collection",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "删除收藏夹": {
+      "english": "Delete collection",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "默认收藏夹": {
+      "english": "Default collection",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "收藏成功": {
+      "english": "Saved",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "取消收藏成功": {
+      "english": "Unsaved",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "取消收藏失败": {
+      "english": "Could not unsave",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已取消收藏": {
+      "english": "Unsaved",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已添加到收藏": {
+      "english": "Added to saved items",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "直播提醒": {
+      "english": "LIVE reminders",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "预约直播": {
+      "english": "Book LIVE",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "立即预约": {
+      "english": "Book now",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已预约": {
+      "english": "Booked",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "预约成功": {
+      "english": "Booked",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已取消预约": {
+      "english": "Booking canceled",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "精彩直播": {
+      "english": "LIVE highlights",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "直播榜": {
+      "english": "LIVE rankings",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "观看直播": {
+      "english": "Watch LIVE",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "继续看直播": {
+      "english": "Keep watching LIVE",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "该直播已结束": {
+      "english": "LIVE ended",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "该直播无法查看": {
+      "english": "LIVE unavailable",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "直播已结束": {
+      "english": "LIVE ended",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "主播已下播": {
+      "english": "Host is offline",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "查看直播回放": {
+      "english": "Watch LIVE replay",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "返回直播间": {
+      "english": "Back to LIVE",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频榜": {
+      "english": "Video rankings",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "音乐榜": {
+      "english": "Music rankings",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "短剧榜": {
+      "english": "Drama rankings",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "同城榜": {
+      "english": "Local rankings",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "榜单": {
+      "english": "Rankings",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "热搜榜": {
+      "english": "Trending searches",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "热搜": {
+      "english": "Trending searches",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "热门搜索": {
+      "english": "Popular searches",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "趋势榜": {
+      "english": "Trending rankings",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "电视剧": {
+      "english": "TV shows",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "电影": {
+      "english": "Movies",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "综艺": {
+      "english": "Variety shows",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "知识": {
+      "english": "Knowledge",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "学习": {
+      "english": "Learning",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "娱乐": {
+      "english": "Entertainment",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "体育": {
+      "english": "Sports",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "游戏": {
+      "english": "Games",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "汽车": {
+      "english": "Cars",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "美食": {
+      "english": "Food",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "旅行": {
+      "english": "Travel",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "科技": {
+      "english": "Technology",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "时尚": {
+      "english": "Fashion",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "摄影": {
+      "english": "Photography",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "宠物": {
+      "english": "Pets",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "才艺": {
+      "english": "Talent",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "健身": {
+      "english": "Fitness",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "日常": {
+      "english": "Daily life",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "生活": {
+      "english": "Lifestyle",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "动漫": {
+      "english": "Animation",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "搞笑": {
+      "english": "Comedy",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "亲子": {
+      "english": "Family",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "数码": {
+      "english": "Tech",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "影视": {
+      "english": "Film & TV",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "记录": {
+      "english": "History",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "历史观看": {
+      "english": "Watch history",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "历史观看记录": {
+      "english": "Watch history",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "最近看过": {
+      "english": "Recently watched",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "最近搜索": {
+      "english": "Recent searches",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "搜索发现": {
+      "english": "Discover searches",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "搜索推荐": {
+      "english": "Suggested searches",
+      "group": "Menus, profile tabs and LIVE",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "其他": {
+      "english": "Other",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "复制": {
+      "english": "Copy",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "复制失败": {
+      "english": "Copy failed",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "复制文案": {
+      "english": "Copy text",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "内容已复制": {
+      "english": "Content copied",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "修改": {
+      "english": "Change",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "查看": {
+      "english": "View",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "退出": {
+      "english": "Exit",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "去看看": {
+      "english": "View now",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "去开启": {
+      "english": "Enable",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "展开全部": {
+      "english": "Expand all",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "全文": {
+      "english": "Full text",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "完整图文": {
+      "english": "Full post",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "取消分享": {
+      "english": "Cancel sharing",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "分享给朋友": {
+      "english": "Share with friends",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "分享给好友": {
+      "english": "Share with friends",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "分享链接": {
+      "english": "Share link",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "分享视频": {
+      "english": "Share video",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "分享至": {
+      "english": "Share to",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "分享至微信": {
+      "english": "Share to WeChat",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "保存图片": {
+      "english": "Save photo",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "保存到相册": {
+      "english": "Save to Photos",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "保存成功": {
+      "english": "Saved",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "保存失败": {
+      "english": "Could not save",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "关注失败": {
+      "english": "Could not follow",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "取消关注失败": {
+      "english": "Could not unfollow",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "关注请求已发送": {
+      "english": "Follow request sent",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "点赞成功": {
+      "english": "Liked",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "取消点赞成功": {
+      "english": "Like removed",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "已赞": {
+      "english": "Liked",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "未点赞": {
+      "english": "Not liked",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "未收藏": {
+      "english": "Not saved",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "反馈与帮助": {
+      "english": "Help & feedback",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "反馈与举报": {
+      "english": "Feedback & report",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "反馈问题": {
+      "english": "Report a problem",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "反馈成功": {
+      "english": "Feedback submitted",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "反馈成功！": {
+      "english": "Feedback submitted",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "反馈失败": {
+      "english": "Feedback failed",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "反馈已取消": {
+      "english": "Feedback canceled",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "反馈给我们": {
+      "english": "Send feedback",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "立即反馈": {
+      "english": "Send feedback",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "去反馈": {
+      "english": "Send feedback",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "需要帮助吗?": {
+      "english": "Need help?",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "温馨提示": {
+      "english": "Notice",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "加载中，请稍后～": {
+      "english": "Loading, please wait",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "加载失败，请刷新重试": {
+      "english": "Load failed; refresh",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "加载失败，请稍后重试": {
+      "english": "Load failed; try later",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请稍后再试": {
+      "english": "Try again later",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请求超时，请稍后再试": {
+      "english": "Request timed out",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "网络超时": {
+      "english": "Network timeout",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络不可用": {
+      "english": "Network unavailable",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络不可达": {
+      "english": "Network unreachable",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络无法连接": {
+      "english": "Cannot connect",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络不给力": {
+      "english": "Poor connection",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络不佳": {
+      "english": "Poor connection",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络出错": {
+      "english": "Network error",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络连接错误": {
+      "english": "Connection error",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络连接异常": {
+      "english": "Connection error",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络请求失败": {
+      "english": "Request failed",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络错误！": {
+      "english": "Network error",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络错误，请重试": {
+      "english": "Network error; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络错误请重试": {
+      "english": "Network error; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络错误，请点击重试": {
+      "english": "Network error; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络错误，请检查后重试": {
+      "english": "Check connection; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络异常，请稍后重试": {
+      "english": "Network error; try later",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络不佳，请稍后重试": {
+      "english": "Poor connection; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "网络不佳，请点击下方重试": {
+      "english": "Poor connection; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请检查网络后重试": {
+      "english": "Check connection; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请检查网络后刷新试试": {
+      "english": "Check connection; refresh",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请检查网络设置后重试": {
+      "english": "Check network settings",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "当前无网络，请检查后重试": {
+      "english": "Offline; check connection",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "当前无网络，请检查网络设置": {
+      "english": "Offline; check settings",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "当前网络异常，请重试": {
+      "english": "Network error; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework"
+      ],
+      "already_in_0_3": false
+    },
+    "连接失败": {
+      "english": "Connection failed",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "连接超时": {
+      "english": "Connection timed out",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频加载中": {
+      "english": "Loading video",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频播放失败": {
+      "english": "Playback failed",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频下载失败": {
+      "english": "Download failed",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频保存失败": {
+      "english": "Could not save video",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频不可用": {
+      "english": "Video unavailable",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频不见了": {
+      "english": "Video unavailable",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频已被删除": {
+      "english": "Video deleted",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频已删除": {
+      "english": "Video deleted",
+      "group": "Common actions and real error messages",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "视频已失效": {
+      "english": "Video expired",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "视频已下架": {
+      "english": "Video removed",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "该视频不可见": {
+      "english": "Video unavailable",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "该视频已删除": {
+      "english": "Video deleted",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "该视频已被设置为私密": {
+      "english": "Private video",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "作品不存在": {
+      "english": "Post not found",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "作品已删除": {
+      "english": "Post deleted",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "作品无法查看": {
+      "english": "Post unavailable",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "此内容已被删除": {
+      "english": "Content deleted",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "内容不见了": {
+      "english": "Content unavailable",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "出现错误": {
+      "english": "An error occurred",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "图片不见了": {
+      "english": "Photo unavailable",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "下载失败，请稍后重试": {
+      "english": "Download failed; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "下载失败，请重试": {
+      "english": "Download failed; retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "你还未登录": {
+      "english": "You are not logged in",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "你还没有登录": {
+      "english": "You are not logged in",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "去登录": {
+      "english": "Log in",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "立即登录": {
+      "english": "Log in now",
+      "group": "Common actions and real error messages",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "继续登录": {
+      "english": "Continue login",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "选择登录方式": {
+      "english": "Choose login method",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "选择其他方式登录": {
+      "english": "Other login methods",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "验证码登录": {
+      "english": "Code login",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "邮箱登录": {
+      "english": "Email login",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "邮箱密码登录": {
+      "english": "Email & password",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "同意并登录": {
+      "english": "Agree and log in",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "验证并登录": {
+      "english": "Verify and log in",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "重新登录": {
+      "english": "Log in again",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请重新登录": {
+      "english": "Log in again",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "请登录后重试": {
+      "english": "Log in and retry",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号登录信息失效，请重新登录": {
+      "english": "Session expired; log in",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号已退出登录": {
+      "english": "Logged out",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "账号已被封禁": {
+      "english": "Account banned",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "暂无更多": {
+      "english": "No more results",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "没有更多": {
+      "english": "No more results",
+      "group": "Common actions and real error messages",
+      "found_in": [],
+      "already_in_0_3": false
+    },
+    "继续观看": {
+      "english": "Keep watching",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "立即观看": {
+      "english": "Watch now",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "重新加载": {
+      "english": "Reload",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "刷新页面": {
+      "english": "Refresh page",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    },
+    "点击重播": {
+      "english": "Tap to replay",
+      "group": "Common actions and real error messages",
+      "found_in": [
+        "AWESearchFramework",
+        "AwemeCore"
+      ],
+      "already_in_0_3": false
+    }
+  },
+  "limitations": [
+    "CFString decode errors retained in scan statistics",
+    "Chinese constants include logs, developer flags, content and labels; constants are not screen counts",
+    "WebView/Lynx/server strings and text rendered into images are not certified translated",
+    "User names, captions, comments and typed search queries remain original"
+  ],
+  "custom_renderer": {
+    "class": "YYLabel",
+    "methods_verified_in_source_metadata": true,
+    "runtime_ABI_checked": true,
+    "runtime_on_iPhone_verified": false
+  }
+}

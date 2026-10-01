@@ -22,6 +22,7 @@ OPERATIONS = {
     'falseBool1': 'B20@0:8B16', 'falseBool2': 'B24@0:8B16B20',
     'noop0': 'v16@0:8', 'filterGetter': '@16@0:8', 'filterSetter': 'v24@0:8@16',
     'observeFeedCompletion2': 'v32@0:8@16@24', 'observeFeedCompletion2Bool': 'v36@0:8@16@24B32',
+    'guestSearchAdapter': '#16@0:8', 'observeSearchStatus': 'B32@0:8@16@24',
 }
 
 def sha256(path: pathlib.Path) -> str:
@@ -170,7 +171,7 @@ def validate_resources(resource_dir: pathlib.Path):
         if key in seen or not spec['class'].startswith('AWE'):
             raise ValueError('Duplicate or out-of-scope hook')
         seen.add(key)
-        if spec['feature'] not in ('guest', 'ads', 'diagnostics') or spec['types'] != OPERATIONS.get(spec['operation']):
+        if spec['feature'] not in ('guest', 'ads', 'diagnostics', 'search') or spec['types'] != OPERATIONS.get(spec['operation']):
             raise ValueError('Invalid hook operation/type')
         if not isinstance(spec['class_method'], bool): raise ValueError('Invalid method kind')
     for key, value in translations.items():

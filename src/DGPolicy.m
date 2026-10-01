@@ -4,7 +4,18 @@
 
 NSString *DGTranslate(NSString *text, NSDictionary<NSString *, NSString *> *translations) {
     // Only exact labels: never send text to a service or translate arbitrary captions.
-    return translations[text] ?: text;
+    NSString *value = translations[text];
+    if (value || !text.length) return value ?: text;
+    // Several controls include padding spaces in their title. Preserve that
+    // padding without matching substrings inside sentences or search queries.
+    NSCharacterSet *padding = NSCharacterSet.whitespaceCharacterSet;
+    NSUInteger start = 0, end = text.length;
+    while (start < end && [padding characterIsMember:[text characterAtIndex:start]]) ++start;
+    while (end > start && [padding characterIsMember:[text characterAtIndex:end-1]]) --end;
+    if (!start && end == text.length) return text;
+    value = translations[[text substringWithRange:NSMakeRange(start, end-start)]];
+    if (!value) return text;
+    return [NSString stringWithFormat:@"%@%@%@", [text substringToIndex:start], value, [text substringFromIndex:end]];
 }
 
 NSAttributedString *DGTranslateAttributed(NSAttributedString *text,

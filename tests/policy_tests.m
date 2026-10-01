@@ -69,6 +69,43 @@ static void check(BOOL condition, NSString *message) {
     if (!condition) { NSLog(@"FAIL: %@", message); exit(1); }
 }
 
+@interface TestSearchAdapter : NSObject
++ (BOOL)enableGuestSearch;
++ (BOOL)hasRemainingGuestSearchCount;
+@end
+@implementation TestSearchAdapter
++ (BOOL)enableGuestSearch { return NO; }
++ (BOOL)hasRemainingGuestSearchCount { return NO; }
+@end
+@interface TestSearchChildAdapter : TestSearchAdapter
+@end
+@implementation TestSearchChildAdapter
+@end
+@interface TestWrongSearchAdapter : NSObject
++ (BOOL)enableGuestSearch;
++ (NSInteger)hasRemainingGuestSearchCount;
+@end
+@implementation TestWrongSearchAdapter
++ (BOOL)enableGuestSearch { return NO; }
++ (NSInteger)hasRemainingGuestSearchCount { return 42; }
+@end
+@interface TestSearchResolver : NSObject
+@property (class) Class adapter;
++ (Class)resolvedAdapter;
+- (BOOL)statusCode:(id)code message:(id)message;
+@property (strong) id receivedCode;
+@property (strong) id receivedMessage;
+@end
+static Class fixtureSearchAdapter;
+@implementation TestSearchResolver
++ (Class)adapter { return fixtureSearchAdapter; }
++ (void)setAdapter:(Class)value { fixtureSearchAdapter = value; }
++ (Class)resolvedAdapter { return fixtureSearchAdapter; }
+- (BOOL)statusCode:(id)code message:(id)message {
+    self.receivedCode = code; self.receivedMessage = message; return [code isEqual:@2483];
+}
+@end
+
 int main(void) {
     @autoreleasepool {
         TestModel *video = [TestModel new], *ad = [TestModel new]; ad.isAds = YES;
@@ -96,6 +133,8 @@ int main(void) {
         check([DGTranslate(@"首页", words) isEqual:@"Home"], @"exact label translation");
         check([DGTranslate(@"这是首页的视频", words) isEqual:@"这是首页的视频"], @"no substring rewriting of content");
         check([DGTranslate(@"", words) isEqual:@""], @"empty text");
+        check([DGTranslate(@"  首页\t", words) isEqual:@"  Home\t"], @"control padding preserved around an exact title");
+        check([DGTranslate(@"这是 首页", words) isEqual:@"这是 首页"], @"padding lookup does not translate sentence substrings");
         NSAttributedString *styled = [[NSAttributedString alloc] initWithString:@"更多功能" attributes:@{@"intent":@"button"}];
         NSAttributedString *translated = DGTranslateAttributed(styled, words);
         check([translated.string isEqual:@"More options"] && [[translated attribute:@"intent" atIndex:0 effectiveRange:NULL] isEqual:@"button"], @"attributed title style preserved");
@@ -170,6 +209,43 @@ int main(void) {
         [object completed:input error:nil flag:NO];
         check(object.completionResult==input && object.completionError==nil && !object.completionFlag && diagnostics.count==logged,
               @"observation switch preserves original success handling");
+        __block BOOL search = NO;
+        NSMutableDictionary *searchEvents = [NSMutableDictionary new];
+        DGRecord recordSearch = ^(NSString *event, NSUInteger n) { searchEvents[event] = @([searchEvents[event] unsignedIntegerValue] + n); };
+        TestSearchResolver.adapter = TestSearchChildAdapter.class;
+        Method resolver = class_getClassMethod(TestSearchResolver.class, @selector(resolvedAdapter));
+        check(DGInstallHook(@{@"class":@"TestSearchResolver",@"selector":@"resolvedAdapter",@"class_method":@YES,
+              @"types":[NSString stringWithUTF8String:method_getTypeEncoding(resolver)],@"operation":@"guestSearchAdapter"},
+              ^BOOL{return search;},recordSearch),@"search resolver installs with Class return ABI");
+        check([TestSearchResolver resolvedAdapter] == TestSearchChildAdapter.class && ![TestSearchChildAdapter enableGuestSearch],
+              @"disabled search resolver preserves class and original flags");
+        search = YES;
+        check([TestSearchResolver resolvedAdapter] == TestSearchChildAdapter.class && [TestSearchChildAdapter enableGuestSearch] &&
+              [TestSearchChildAdapter hasRemainingGuestSearchCount] && ![TestSearchAdapter enableGuestSearch],
+              @"resolved guest gates enabled locally without changing the superclass or return class");
+        [TestSearchResolver resolvedAdapter];
+        check([DGSearchAdapterSnapshot()[@"installed"] unsignedIntegerValue] == 2 && [DGSearchAdapterSnapshot()[@"active"] unsignedIntegerValue] == 2,
+              @"search adapter installation is idempotent and active count is separate");
+        search = NO;
+        check(![TestSearchChildAdapter enableGuestSearch] && ![TestSearchChildAdapter hasRemainingGuestSearchCount],
+              @"switching search off forwards both original guest gates");
+        search = YES; TestSearchResolver.adapter = TestWrongSearchAdapter.class;
+        [TestSearchResolver resolvedAdapter];
+        check(![TestWrongSearchAdapter enableGuestSearch] && [TestWrongSearchAdapter hasRemainingGuestSearchCount] == 42,
+              @"both adapter methods preflight before any partial incompatible modification");
+        TestSearchResolver.adapter = Nil;
+        check([TestSearchResolver resolvedAdapter] == Nil,@"nil adapter remains nil");
+        Method status = class_getInstanceMethod(TestSearchResolver.class,@selector(statusCode:message:));
+        check(DGInstallHook(@{@"class":@"TestSearchResolver",@"selector":@"statusCode:message:",@"operation":@"observeSearchStatus",
+                            @"types":[NSString stringWithUTF8String:method_getTypeEncoding(status)]},^BOOL{return YES;},recordSearch),
+              @"search status observer installs");
+        TestSearchResolver *statusObject = [TestSearchResolver new];
+        id privateMessage = @"PRIVATE cookie and keyword";
+        check([statusObject statusCode:@2483 message:privateMessage] && statusObject.receivedMessage == privateMessage &&
+              [statusObject.receivedCode isEqual:@2483],@"server login status and original message remain intact");
+        check([searchEvents[@"Search status code 2483"] unsignedIntegerValue] == 1 &&
+              [searchEvents.description rangeOfString:@"PRIVATE"].location == NSNotFound,
+              @"search diagnostics log numeric status without message or query");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
     return 0;

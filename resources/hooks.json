@@ -295,5 +295,59 @@
     "operation": "observeFeedCompletion2Bool",
     "feature": "diagnostics",
     "evidence_imp": "0x14d17fe8"
+  },
+  {
+    "class": "AWESearchResultHybridViewController",
+    "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+    "types": "#16@0:8",
+    "class_method": true,
+    "feature": "search",
+    "operation": "guestSearchAdapter",
+    "evidence_imp": "0xcd20ac"
+  },
+  {
+    "class": "AWESearchHomeNewStyleDetailBottomBarController",
+    "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+    "types": "#16@0:8",
+    "class_method": true,
+    "feature": "search",
+    "operation": "guestSearchAdapter",
+    "evidence_imp": "0xbf1544"
+  },
+  {
+    "class": "AWESearchModuleService",
+    "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+    "types": "#16@0:8",
+    "class_method": true,
+    "feature": "search",
+    "operation": "guestSearchAdapter",
+    "evidence_imp": "0xc556f0"
+  },
+  {
+    "class": "AWESearchBaseUtility",
+    "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+    "types": "#16@0:8",
+    "class_method": true,
+    "feature": "search",
+    "operation": "guestSearchAdapter",
+    "evidence_imp": "0x185f7ab8"
+  },
+  {
+    "class": "AWECustomSearchBar",
+    "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+    "types": "#16@0:8",
+    "class_method": true,
+    "feature": "search",
+    "operation": "guestSearchAdapter",
+    "evidence_imp": "0x185bfd68"
+  },
+  {
+    "class": "AWESearchFrequencyManager",
+    "selector": "checkHitLimitWithStatusCode:andStatusMsg:",
+    "types": "B32@0:8@16@24",
+    "class_method": false,
+    "feature": "diagnostics",
+    "operation": "observeSearchStatus",
+    "evidence_imp": "0x18561894"
   }
 ]

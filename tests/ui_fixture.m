@@ -3,6 +3,7 @@
 #import <objc/runtime.h>
 #include <math.h>
 #import "DGPolicy.h"
+#import "DGHook.h"
 
 @interface AWESettingsFixtureViewController : UIViewController
 @end
@@ -31,6 +32,58 @@
 @interface AWENetworkErrorFixtureView : UIView
 @end
 @implementation AWENetworkErrorFixtureView
+@end
+@interface AWESearchResultFixtureView : UIView
+@end
+@implementation AWESearchResultFixtureView
+@end
+@interface AWESearchFilterCollectionViewCell : UIView
+@end
+@implementation AWESearchFilterCollectionViewCell
+@end
+@interface AWEProfileTabFixtureView : UIView
+@end
+@implementation AWEProfileTabFixtureView
+@end
+@interface AWECommentHeaderFixtureView : UIView
+@end
+@implementation AWECommentHeaderFixtureView
+@end
+@interface _TtC18AWESearchSwiftImpl17SearchSettingView : UIView
+@end
+@implementation _TtC18AWESearchSwiftImpl17SearchSettingView
+@end
+@interface YYLabel : UIView
+@property (copy, nonatomic) NSString *text;
+@property (copy, nonatomic) NSAttributedString *attributedText;
+@property (strong, nonatomic) UIFont *font;
+@property (nonatomic) NSUInteger numberOfLines;
+@end
+@implementation YYLabel
+- (instancetype)initWithFrame:(CGRect)frame {
+    if ((self = [super initWithFrame:frame])) { _font = [UIFont systemFontOfSize:16]; _numberOfLines = 1; }
+    return self;
+}
+- (void)setText:(NSString *)text { _text = [text copy]; _attributedText = nil; }
+- (void)setAttributedText:(NSAttributedString *)text { _attributedText = [text copy]; _text = text.string; }
+- (void)drawRect:(CGRect)rect {
+    if (self.attributedText) [self.attributedText drawInRect:rect];
+    else [self.text drawInRect:rect withAttributes:@{NSFontAttributeName:self.font,NSForegroundColorAttributeName:UIColor.labelColor}];
+}
+@end
+@interface FixtureGuestAdapter : NSObject
++ (BOOL)enableGuestSearch;
++ (BOOL)hasRemainingGuestSearchCount;
+@end
+@implementation FixtureGuestAdapter
++ (BOOL)enableGuestSearch { return NO; }
++ (BOOL)hasRemainingGuestSearchCount { return NO; }
+@end
+@interface AWESearchBaseUtility : NSObject
++ (Class)aAWESearchModuleServiceDOUYINSSAdaperClass;
+@end
+@implementation AWESearchBaseUtility
++ (Class)aAWESearchModuleServiceDOUYINSSAdaperClass { return FixtureGuestAdapter.class; }
 @end
 // Fixture-only key window to exercise the fallback without changing real OS state.
 @interface FixtureKeyWindow : UIWindow
@@ -93,7 +146,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-network-error.png"];
 
     AWELeftSideBarFixtureView *sidebar=[[AWELeftSideBarFixtureView alloc] initWithFrame:self.window.bounds];sidebar.backgroundColor=UIColor.systemGroupedBackgroundColor;
-    title=label(sidebar,@"Sidebar fixture • 0.3.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
+    title=label(sidebar,@"Sidebar fixture • 0.4.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
     UILabel *settings=label(sidebar,@"设置",105);settings.frame=CGRectMake(285,105,32,22);settings.font=[UIFont systemFontOfSize:16];
     NSArray *sections=@[
         @[@"常用功能",@[@"观看历史",@"离线缓存",@"稍后再看",@"抖音创作者中心",@"直播广场",@"使用管理助手",@"我的二维码",@"未成年人保护"],@[@"clock",@"arrow.down.circle",@"play.rectangle",@"person.crop.circle",@"video",@"timer",@"qrcode",@"shield"]],
@@ -115,6 +168,30 @@ static NSUInteger countText(UIView *view, NSString *text) {
     }
     screen=[UIViewController new];screen.view=sidebar;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-sidebar.png"];
+
+    AWESearchResultFixtureView *searchCanvas=[[AWESearchResultFixtureView alloc] initWithFrame:self.window.bounds];
+    searchCanvas.backgroundColor=UIColor.systemBackgroundColor;
+    AWESearchFilterCollectionViewCell *filters=[[AWESearchFilterCollectionViewCell alloc] initWithFrame:self.window.bounds];[searchCanvas addSubview:filters];
+    title=label(filters,@"Search controls fixture • 0.4.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    NSArray *searchWords=@[@"综合排序",@"视频",@"用户",@"直播",@"一周内",@"最多点赞",@"切换为单列模式",@"切换为双列模式",@"相关搜索",@"大家都在搜",@"没有搜索到相关内容",@"试试换个搜索词"];
+    CGFloat rowY=140;
+    for (NSUInteger i=0;i<searchWords.count;i++) {
+        UILabel *item=label(filters,searchWords[i],rowY);item.frame=CGRectMake(20+(i%2)*180,rowY,160,34);
+        item.layer.borderWidth=0.5;item.layer.borderColor=UIColor.separatorColor.CGColor;
+        if (i%2) rowY+=50;
+    }
+    YYLabel *custom=[[YYLabel alloc] initWithFrame:CGRectMake(20,500,120,30)];custom.text=@"语音搜索重试按钮";[filters addSubview:custom];
+    UILabel *query=label(searchCanvas,@"首页",555);query.frame=CGRectMake(20,555,width-40,30);
+    UILabel *note=label(filters,@"The Chinese label below is protected result content.",595);note.frame=CGRectMake(20,595,width-40,50);note.numberOfLines=2;
+    screen=[UIViewController new];screen.view=searchCanvas;self.window.rootViewController=screen;[self.window layoutIfNeeded];
+    [self saveWindowImage:@"ui-search.png"];
+
+    AWESettingsFixtureViewController *settingsScreen=[AWESettingsFixtureViewController new];settingsScreen.view.backgroundColor=UIColor.systemBackgroundColor;
+    NSArray *settingsWords=@[@"设置",@"账号管理",@"个性化内容推荐",@"通知消息管理",@"私信和通话通知",@"字体大小",@"缓存设置",@"后台播放设置",@"小窗播放设置",@"字幕设置",@"黑名单管理",@"隐私政策及简明版"];
+    title=label(settingsScreen.view,@"Settings fixture • 0.4.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    for (NSUInteger i=0;i<settingsWords.count;i++) { UILabel *item=label(settingsScreen.view,settingsWords[i],135+i*43);item.frame=CGRectMake(20,135+i*43,180,36); }
+    screen=settingsScreen;self.window.rootViewController=screen;[self.window layoutIfNeeded];
+    [self saveWindowImage:@"ui-settings.png"];
 }
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {
     (void)application; (void)options;
@@ -211,7 +288,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
         if (![probe.text isEqualToString:words[word]]) allWords=NO;
         probe.frame=CGRectMake(20,340,120,30);[probe setNeedsLayout];[probe layoutIfNeeded];
         CGFloat width=[probe.text sizeWithAttributes:@{NSFontAttributeName:probe.font}].width;
-        if (width*probe.minimumScaleFactor>probe.bounds.size.width+1) widthOK=NO;
+        if (width*probe.minimumScaleFactor>probe.bounds.size.width+1) { widthOK=NO; NSLog(@"Width overflow: %@ -> %@, %.1f",word,probe.text,width); }
     }
     check(allWords,@"all configured labels pass through actual UIKit hooks in a settings context");
     check(widthOK,@"configured labels or their compact variants fit a 120pt control at 16pt font");
@@ -262,6 +339,40 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [errorView removeFromSuperview];
     UITabBarItem *tips=[[UITabBarItem alloc] initWithTitle:@"经验" image:nil tag:1];
     check([tips.title isEqualToString:@"Tips"],@"experience channel label translates and remains present");
+    UILabel *padded=label(parent,@"  收起 \t",0);[padded layoutIfNeeded];
+    check([padded.text isEqualToString:@"  Collapse \t"] && padded.adjustsFontSizeToFitWidth,@"padded control title translates and receives fitting after attachment");
+    AWESearchResultFixtureView *results=[[AWESearchResultFixtureView alloc] initWithFrame:CGRectMake(0,0,350,200)];[parent addSubview:results];
+    AWESearchFilterCollectionViewCell *filter=[[AWESearchFilterCollectionViewCell alloc] initWithFrame:CGRectMake(0,0,350,100)];[results addSubview:filter];
+    UILabel *filterTitle=label(filter,@"综合排序",0);UILabel *resultContent=label(results,@"综合排序",100);
+    check([filterTitle.text isEqualToString:@"Relevance"] && [resultContent.text isEqualToString:@"综合排序"],@"search filters translate within a protected result controller while result content remains original");
+    AWEProfileTabFixtureView *profileTabs=[[AWEProfileTabFixtureView alloc] initWithFrame:CGRectMake(0,0,300,40)];[parent addSubview:profileTabs];
+    check([label(profileTabs,@"作品",0).text isEqualToString:@"Posts"],@"profile control tabs translate without rewriting profile titles");
+    AWECommentFixtureView *commentContainer=[[AWECommentFixtureView alloc] initWithFrame:CGRectMake(0,0,300,80)];[parent addSubview:commentContainer];
+    AWECommentHeaderFixtureView *header=[[AWECommentHeaderFixtureView alloc] initWithFrame:CGRectMake(0,0,300,40)];[commentContainer addSubview:header];
+    check([label(header,@"评论",0).text isEqualToString:@"Comments"] && [label(commentContainer,@"评论",40).text isEqualToString:@"评论"],@"comment header translates while the comment body stays original");
+    _TtC18AWESearchSwiftImpl17SearchSettingView *swift=[[ _TtC18AWESearchSwiftImpl17SearchSettingView alloc] initWithFrame:CGRectMake(0,0,300,40)];[parent addSubview:swift];
+    check([label(swift,@"默认排序",0).text isEqualToString:@"Default order"],@"Swift app control class names are recognized");
+    YYLabel *custom=[[YYLabel alloc] initWithFrame:CGRectMake(0,0,32,30)];custom.text=@"设置";[filter addSubview:custom];[custom layoutIfNeeded];
+    check([custom.text isEqualToString:@"Setup"] && custom.font.pointSize>=16*0.65-0.01 && custom.font.pointSize<16,@"custom YYLabel translates before attachment and fits narrow controls above the minimum scale");
+    custom.frame=CGRectMake(0,0,160,30);[custom setNeedsLayout];[custom layoutIfNeeded];
+    check([custom.text isEqualToString:@"Settings"] && fabs(custom.font.pointSize-16)<1e-6,@"custom label widens back to full title and original font");
+    custom.font=[UIFont systemFontOfSize:24];[custom setNeedsLayout];[custom layoutIfNeeded];
+    check(fabs(custom.font.pointSize-24)<1e-6,@"custom label preserves a later app font change");
+    custom.frame=CGRectMake(0,0,32,30);[custom setNeedsLayout];[custom layoutIfNeeded];custom.text=@"ordinary text";
+    check([custom.text isEqualToString:@"ordinary text"] && fabs(custom.font.pointSize-24)<1e-6,@"custom label reuse restores the last app font");
+    custom.font=[UIFont systemFontOfSize:16];
+    custom.attributedText=[[NSAttributedString alloc] initWithString:@"设置" attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16],NSForegroundColorAttributeName:UIColor.systemBlueColor}];
+    check([custom.attributedText.string isEqualToString:@"Setup"] && [[custom.attributedText attribute:NSForegroundColorAttributeName atIndex:0 effectiveRange:NULL] isEqual:UIColor.systemBlueColor],@"custom attributed control preserves color during fitting");
+    NSMutableAttributedString *customMixed=[[NSMutableAttributedString alloc] initWithString:@"更多功能" attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]}];
+    [customMixed addAttribute:NSForegroundColorAttributeName value:UIColor.redColor range:NSMakeRange(0,1)];custom.attributedText=customMixed;
+    check([custom.attributedText isEqualToAttributedString:customMixed],@"custom mixed attributed styles are left intact");
+    YYLabel *customContent=[[YYLabel alloc] initWithFrame:CGRectMake(0,0,120,30)];customContent.text=@"首页";[results addSubview:customContent];
+    check([customContent.text isEqualToString:@"首页"] && fabs(customContent.font.pointSize-16)<1e-6,@"custom result content is not translated or shrunk");
+    custom.text=nil;custom.attributedText=nil;
+    check(custom.text==nil && custom.attributedText==nil,@"custom nil/reused labels clear without a crash");
+    check([AWESearchBaseUtility aAWESearchModuleServiceDOUYINSSAdaperClass]==FixtureGuestAdapter.class && [FixtureGuestAdapter enableGuestSearch] && [FixtureGuestAdapter hasRemainingGuestSearchCount],@"configured search gateway installs actual runtime adapter methods in fixture");
+    check([DGSearchAdapterSnapshot()[@"installed"] unsignedIntegerValue]==2 && [DGSearchAdapterSnapshot()[@"active"] unsignedIntegerValue]==2,@"search adapter diagnostics distinguish dynamic methods from fixed native hooks");
+    [results removeFromSuperview];[profileTabs removeFromSuperview];[commentContainer removeFromSuperview];[swift removeFromSuperview];
     self.window.overrideUserInterfaceStyle=UIUserInterfaceStyleDark;
     check([home.text isEqualToString:@"Home"] && home.adjustsFontSizeToFitWidth,@"dark appearance preserves text and fitting");
     self.window.overrideUserInterfaceStyle=UIUserInterfaceStyleLight;
@@ -276,7 +387,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
         UIAlertController *sheet=(UIAlertController *)self.host.presentedViewController;
         if (![sheet isKindOfClass:UIAlertController.class]) sheet=(UIAlertController *)self.navigation.presentedViewController;
         check([sheet isKindOfClass:UIAlertController.class] && [sheet.title isEqualToString:@"Douyin Guest"],@"diagnostics sheet can actually be presented on legacy window");
-        check(sheet.actions.count==5,@"diagnostics sheet exposes three switches, copy and close");
+        check(sheet.actions.count==6,@"diagnostics sheet exposes four switches, copy and close");
         [sheet dismissViewControllerAnimated:NO completion:nil];
         [self showVisualSamples];
         BOOL success=YES; for (NSDictionary *item in checks) if (![item[@"passed"] boolValue]) success=NO;

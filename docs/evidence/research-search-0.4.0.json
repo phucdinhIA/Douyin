@@ -1,0 +1,77 @@
+{
+  "repos": [
+    {
+      "repo": "huami1314/DYYY",
+      "commit": "6c3dfbd911822b4d0f758f184c196566e8142291",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "DYYY.xm",
+          "url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/DYYY.xm",
+          "bytes": 293000,
+          "sha256": "6f005f7903bf315947662ea478136db0db6a21e7dd2d53a426491d10fc94408a"
+        },
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/README.md",
+          "bytes": 9924,
+          "sha256": "e51d39a198a3a11285a3511f25db66fe754002611becebc7c73d83f35241d303"
+        }
+      ]
+    },
+    {
+      "repo": "pxx917144686/DYYY",
+      "commit": "39561aef7fff5ac039eb2f6a202dd05beba42d89",
+      "license": null,
+      "files": [
+        {
+          "path": "DYYY.xm",
+          "url": "https://raw.githubusercontent.com/pxx917144686/DYYY/39561aef7fff5ac039eb2f6a202dd05beba42d89/DYYY.xm",
+          "bytes": 207421,
+          "sha256": "c31e8dab66d315e4cc395b7d377ac6a4a3c4e41c169f5fee5fa18b21abd811e3"
+        },
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/pxx917144686/DYYY/39561aef7fff5ac039eb2f6a202dd05beba42d89/README.md",
+          "bytes": 1491,
+          "sha256": "c814bc30c6796b5242de1d7e09c6326438f84149a0b8ff7ebcde3cf328482473"
+        }
+      ]
+    },
+    {
+      "repo": "YU-1021/better-douyin",
+      "commit": "322845e1fd12f11c2ff7c9d832d9bc7e49bffc13",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/YU-1021/better-douyin/322845e1fd12f11c2ff7c9d832d9bc7e49bffc13/README.md",
+          "bytes": 1501,
+          "sha256": "b068bfa303bccf5264eda989db896cf43f1ea3b11e13554a71a921e3730eae37"
+        }
+      ]
+    }
+  ],
+  "queries": [
+    {
+      "query": "repo:huami1314/DYYY 搜索 登录",
+      "total": 0,
+      "items": []
+    },
+    {
+      "query": "repo:pxx917144686/DYYY 搜索 登录",
+      "total": 0,
+      "items": []
+    },
+    {
+      "query": "\"enableGuestSearch\"",
+      "total": 0,
+      "items": []
+    },
+    {
+      "query": "\"hasRemainingGuestSearchCount\"",
+      "total": 0,
+      "items": []
+    }
+  ]
+}

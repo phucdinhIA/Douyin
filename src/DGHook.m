@@ -1,7 +1,37 @@
 #import "DGHook.h"
 #import "DGPolicy.h"
 #import <objc/runtime.h>
+#import <dispatch/dispatch.h>
 #include <string.h>
+
+static NSObject *searchLock;
+static NSMutableDictionary<NSString *, NSDictionary *> *searchHooks;
+static NSMutableSet<NSString *> *searchFailures;
+
+static void DGPrepareSearchRegistry(void) {
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        searchLock = [NSObject new]; searchHooks = [NSMutableDictionary new];
+        searchFailures = [NSMutableSet new];
+    });
+}
+
+NSDictionary *DGSearchAdapterSnapshot(void) {
+    DGPrepareSearchRegistry();
+    @synchronized (searchLock) {
+        NSUInteger active = 0;
+        NSMutableSet *classes = [NSMutableSet new];
+        for (NSDictionary *entry in searchHooks.allValues) {
+            NSDictionary *spec = entry[@"spec"];
+            Class cls = NSClassFromString(spec[@"class"]);
+            [classes addObject:spec[@"class"]];
+            Method method = class_getClassMethod(cls, NSSelectorFromString(spec[@"selector"]));
+            if (method && method_getImplementation(method) == (IMP)[entry[@"imp"] pointerValue]) ++active;
+        }
+        return @{@"installed":@(searchHooks.count), @"active":@(active),
+                 @"adapter_classes":@(classes.count), @"methods_per_adapter":@2};
+    }
+}
 
 static void DGRecordFeedCompletion(NSString *event, id result, id error, DGRecord record) {
     record([event stringByAppendingString:@" callbacks"], 1);
@@ -56,6 +86,10 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
         returnType = @"v"; arguments = @[@"@", @":", @"@", @"@"];
     } else if ([kind isEqualToString:@"observeFeedCompletion2Bool"]) {
         returnType = @"v"; arguments = @[@"@", @":", @"@", @"@", boolean];
+    } else if ([kind isEqualToString:@"guestSearchAdapter"]) {
+        returnType = @"#"; arguments = @[@"@", @":"];
+    } else if ([kind isEqualToString:@"observeSearchStatus"]) {
+        returnType = boolean; arguments = @[@"@", @":", @"@", @"@"];
     } else return NO;
     char type[64] = {0};
     method_getReturnType(method, type, sizeof(type));
@@ -65,6 +99,39 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
         if (strcmp(type, arguments[i].UTF8String)) return NO;
     }
     return YES;
+}
+
+static void DGConfigureSearchAdapter(Class adapter, DGEnabled enabled, DGRecord record) {
+    // Resolve the actual service through the app's own class getter. No invented
+    // class or method is added if the guest-search API is missing or incompatible.
+    if (!adapter || !class_isMetaClass(object_getClass(adapter))) return;
+    DGPrepareSearchRegistry();
+    @synchronized (searchLock) {
+        NSString *name = NSStringFromClass(adapter);
+        NSArray *selectors = @[@"enableGuestSearch", @"hasRemainingGuestSearchCount"];
+        for (NSString *selector in selectors) {
+            // Allow the app's normal lazy method resolution, but never install
+            // a replacement for a selector implemented only by forwarding.
+            [adapter respondsToSelector:NSSelectorFromString(selector)];
+            Method method = class_getClassMethod(adapter, NSSelectorFromString(selector));
+            if (!method || strcmp(method_getTypeEncoding(method), "B16@0:8") || !DGOperationMatchesMethod(@"true0", method)) {
+                if (![searchFailures containsObject:name]) {
+                    [searchFailures addObject:name]; record(@"Search adapter unavailable or incompatible", 1);
+                }
+                return; // Preflight both methods before changing either.
+            }
+        }
+        for (NSString *selector in selectors) {
+            NSString *key = [name stringByAppendingFormat:@"|%@", selector];
+            if (searchHooks[key]) continue; // Never stack over a later replacement.
+            NSDictionary *spec = @{@"class":name, @"selector":selector, @"class_method":@YES,
+                                    @"types":@"B16@0:8", @"operation":@"true0"};
+            if (DGInstallHook(spec, enabled, record)) {
+                IMP imp = method_getImplementation(class_getClassMethod(adapter, NSSelectorFromString(selector)));
+                searchHooks[key] = @{@"spec":spec, @"imp":[NSValue valueWithPointer:(const void *)imp]};
+            }
+        }
+    }
 }
 
 BOOL DGInstallHook(NSDictionary *spec, DGEnabled enabled, DGRecord record) {
@@ -144,6 +211,23 @@ BOOL DGInstallHook(NSDictionary *spec, DGEnabled enabled, DGRecord record) {
         block = ^(id self, id result, id error, BOOL flag) {
             ((void (*)(id, SEL, id, id, BOOL))original)(self, sel, result, error, flag);
             if (enabled()) DGRecordFeedCompletion(event, result, error, record);
+        };
+    } else if ([kind isEqualToString:@"guestSearchAdapter"]) {
+        block = ^Class(id self) {
+            Class adapter = ((Class (*)(id, SEL))original)(self, sel);
+            if (enabled()) DGConfigureSearchAdapter(adapter, enabled, record);
+            return adapter;
+        };
+    } else if ([kind isEqualToString:@"observeSearchStatus"]) {
+        block = ^BOOL(id self, id code, id message) {
+            BOOL result = ((BOOL (*)(id, SEL, id, id))original)(self, sel, code, message);
+            if (enabled()) {
+                record(@"Search status checks", 1);
+                if (result) record(@"Search status limit reported", 1);
+                if ([code isKindOfClass:NSNumber.class])
+                    record([NSString stringWithFormat:@"Search status code %lld", [code longLongValue]], 1);
+            }
+            return result; // Keep server/app status and all state changes intact.
         };
     } else return NO;
     IMP replacement = imp_implementationWithBlock(block);

@@ -1,0 +1,102 @@
+{
+  "source_sha256": "3444d6045147b772e8f5e7e844c38a0f72464f34a4eb1af5c5df5f9433d706af",
+  "gateways": [
+    {
+      "class": "AWESearchResultHybridViewController",
+      "binary": "AWESearchFramework",
+      "kind": "class",
+      "methods": [
+        {
+          "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+          "types": "#16@0:8",
+          "imp": "0xcd20ac"
+        },
+        {
+          "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+          "types": "#16@0:8",
+          "imp": "0xcccf88"
+        },
+        {
+          "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+          "types": "#16@0:8",
+          "imp": "0xcd24d0"
+        }
+      ]
+    },
+    {
+      "class": "AWESearchHomeNewStyleDetailBottomBarController",
+      "binary": "AWESearchFramework",
+      "kind": "class",
+      "methods": [
+        {
+          "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+          "types": "#16@0:8",
+          "imp": "0xbf1544"
+        }
+      ]
+    },
+    {
+      "class": "AWESearchModuleService",
+      "binary": "AWESearchFramework",
+      "kind": "class",
+      "methods": [
+        {
+          "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+          "types": "#16@0:8",
+          "imp": "0xc556f0"
+        }
+      ]
+    },
+    {
+      "class": "AWESearchBaseUtility",
+      "binary": "AwemeCore",
+      "kind": "class",
+      "methods": [
+        {
+          "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+          "types": "#16@0:8",
+          "imp": "0x185f7ab8"
+        }
+      ]
+    },
+    {
+      "class": "AWECustomSearchBar",
+      "binary": "AwemeCore",
+      "kind": "class",
+      "methods": [
+        {
+          "selector": "aAWESearchModuleServiceDOUYINSSAdaperClass",
+          "types": "#16@0:8",
+          "imp": "0x185bfd68"
+        }
+      ]
+    },
+    {
+      "class": "AWESearchFrequencyManager",
+      "binary": "AwemeCore",
+      "kind": "instance",
+      "methods": [
+        {
+          "selector": "checkHitLimitWithStatusCode:andStatusMsg:",
+          "types": "B32@0:8@16@24",
+          "imp": "0x18561894"
+        }
+      ]
+    }
+  ],
+  "runtime_adapter_methods": {
+    "selectors": [
+      "enableGuestSearch",
+      "hasRemainingGuestSearchCount"
+    ],
+    "types_expected": "B16@0:8",
+    "static_implementation_verified": false,
+    "installation": "Resolve original adapter class and verify both actual method signatures before installation; never invent a missing method."
+  },
+  "server_status": {
+    "code_observed_in_disassembly": 2483,
+    "meaning": "checkHitLimitWithStatusCode compares NSNumber(2483) and sets shouldLoginLimit; not interpreted as HTTP status",
+    "result_changed": false
+  },
+  "runtime_tested": false
+}
