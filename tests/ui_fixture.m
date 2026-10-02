@@ -222,7 +222,16 @@ static UIView *findID(UIView *root,NSString *identifier) {
 @end
 @implementation _TtC18AWESearchSwiftImpl17SearchSettingView
 @end
+@interface YYTextLayout : NSObject
+@property(nonatomic,strong) NSAttributedString *text;
+@property(nonatomic,strong) id container;
++ (instancetype)layoutWithContainer:(id)container text:(NSAttributedString *)text;
+@end
+@implementation YYTextLayout
++ (instancetype)layoutWithContainer:(id)container text:(NSAttributedString *)text {YYTextLayout *layout=[self new];layout.container=container;layout.text=text;return layout;}
+@end
 @interface YYLabel : UIView
+@property(nonatomic,strong) YYTextLayout *textLayout;
 @property (copy, nonatomic) NSString *text;
 @property (copy, nonatomic) NSAttributedString *attributedText;
 @property (strong, nonatomic) UIFont *font;
@@ -443,7 +452,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(!DGMediaFixtureShortcut(self.window,CGPointMake(280,300)),@"presented modal prevents resolving underlying player");
     [host dismissViewControllerAnimated:NO completion:nil];
     AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
-    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.text=@"视频很好，谢谢！";[comments.view addSubview:native];
+    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.textLayout=[YYTextLayout layoutWithContainer:[NSObject new] text:[[NSAttributedString alloc] initWithString:@"视频很好，谢谢！"]];[comments.view addSubview:native];
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"隐藏的评论";hidden.hidden=YES;[comments.view addSubview:hidden];
     UILabel *name=label(comments.view,@"Username must not be captured",140);ServalMarkdownView *analysis=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(10,380,320,50)];analysis.content=@"AI summary must not be captured";[comments.view addSubview:analysis];[comments viewDidAppear:NO];[comments.view layoutIfNeeded];
     check([DGMediaReadVisibleComments(comments.view) isEqual:@[@"视频很好，谢谢！"]],@"GTX captures only visible native comment text excluding names hidden comments and AI");
@@ -458,7 +467,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     int translatedRequests=atomic_load(&commentRequests);
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
     check(atomic_load(&commentRequests)==translatedRequests,@"translated visible cells are not sent again on subsequent scans");
-    native.text=@"\u65b0\u7684\u8bc4\u8bba";
+    native.textLayout=nil;native.text=@"\u65b0\u7684\u8bc4\u8bba";
     mediaWait(^BOOL{return atomic_load(&commentRequests)>translatedRequests && [native.text containsString:@"Video r\u1ea5t hay"];});
     check(atomic_load(&commentRequests)==translatedRequests+1 && [native.text containsString:@"Video r\u1ea5t hay"],@"reused native cell is translated for its new source");
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *offscreen=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,1500,320,40)];offscreen.text=@"\u8fd8\u6709\u4e00\u6761";[comments.view addSubview:offscreen];

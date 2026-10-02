@@ -12,6 +12,7 @@ static BOOL DGVoiceURL(NSURL *url) {
 NSURLRequest *DGVbeeRequest(NSDictionary *config,NSString *text) {
     if (![config[@"voice_code"] isEqual:DGVoice] || ![config[@"app_id"] isKindOfClass:NSString.class] || ![[NSUUID alloc] initWithUUIDString:config[@"app_id"]] || ![config[@"token"] isKindOfClass:NSString.class] || ![config[@"token"] length] || ![text isKindOfClass:NSString.class] || !text.length || text.length>2000) return nil;
     NSMutableURLRequest *r=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://vbee.vn/api/v1/tts"]];r.HTTPMethod=@"POST";r.timeoutInterval=90;
+    r.HTTPShouldHandleCookies=NO;
     [r setValue:[@"Bearer " stringByAppendingString:config[@"token"]] forHTTPHeaderField:@"Authorization"];[r setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
     r.HTTPBody=[NSJSONSerialization dataWithJSONObject:@{@"app_id":config[@"app_id"],@"response_type":@"direct",@"input_text":text,@"voice_code":DGVoice,@"audio_type":@"mp3",@"bitrate":@128,@"speed_rate":@1.0} options:0 error:NULL];return r;
 }
@@ -55,6 +56,11 @@ static NSString *DGVoiceDigest(NSString *text) {
 - (void)start:(NSArray *)cues {
     [self cancel];if (!DGCaptionValidCues(cues) || !DGVbeeRequest(self.config,cues.firstObject[@"text"])) {[self finish:nil failure:@"Chưa cấu hình Vbee hoặc phụ đề chưa hợp lệ."];return;}
     self.cues=cues;self.files=[NSMutableDictionary new];self.next=0;self.inflight=0;self.assembling=NO;
+    // Bound durable cue audio to 128 MiB. Files in the current run remain referenced until export.
+    NSArray *old=[NSFileManager.defaultManager contentsOfDirectoryAtURL:self.cache includingPropertiesForKeys:@[NSURLFileSizeKey,NSURLContentModificationDateKey] options:0 error:NULL];
+    old=[old sortedArrayUsingComparator:^NSComparisonResult(NSURL *a,NSURL *b) {NSDate *x=nil,*y=nil;[a getResourceValue:&x forKey:NSURLContentModificationDateKey error:NULL];[b getResourceValue:&y forKey:NSURLContentModificationDateKey error:NULL];return [x compare:y];}];
+    unsigned long long total=0;for (NSURL *file in old) {NSNumber *size=nil;[file getResourceValue:&size forKey:NSURLFileSizeKey error:NULL];total+=size.unsignedLongLongValue;}
+    for (NSURL *file in old) {if (total<=128ULL*1024*1024) break;NSNumber *size=nil;[file getResourceValue:&size forKey:NSURLFileSizeKey error:NULL];if ([NSFileManager.defaultManager removeItemAtURL:file error:NULL]) total-=size.unsignedLongLongValue;}
     self.groups=[NSMutableDictionary new];self.unique=[NSMutableArray new];
     for (NSUInteger i=0;i<cues.count;i++) {
         NSString *digest=DGVoiceDigest([DGVoice stringByAppendingString:cues[i][@"text"]]);
@@ -99,7 +105,6 @@ static NSString *DGVoiceDigest(NSString *text) {
         for (NSUInteger i=0;i<cues.count;i++) {
             AVURLAsset *asset=[AVURLAsset URLAssetWithURL:files[@(i)] options:nil];AVAssetTrack *source=[asset tracksWithMediaType:AVMediaTypeAudio].firstObject;
             double duration=CMTimeGetSeconds(asset.duration),start=[cues[i][@"start"] doubleValue],slot=[cues[i][@"end"] doubleValue]-start;
-            if (i+1<cues.count) slot=MAX(slot,[cues[i+1][@"start"] doubleValue]-start);
             if (!source || !isfinite(duration) || duration<=0 || slot<=0 || duration/slot>3.0) {failure=@"Một câu lồng tiếng quá dài so với mốc video. Giữ phụ đề để tránh giọng đọc bị méo hoặc lệch.";break;}
             CMTime position=CMTimeMakeWithSeconds(start,600),length=asset.duration;
             if (![track insertTimeRange:CMTimeRangeMake(kCMTimeZero,length) ofTrack:source atTime:position error:NULL]) {failure=@"Không ghép được mốc audio Vbee.";break;}

@@ -37,8 +37,14 @@ jobs:
       - name: Subtitle and GTX request/cache regressions
         run: |
           clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
-            src/DGGemini.m src/DGTranslation.m src/DGSource.m src/DGVbee.m src/DGMedia.m tests/media_tests.m -framework Foundation -framework AVFoundation -o build/media_tests
+            src/DGGemini.m src/DGTranslation.m src/DGSource.m src/DGVbee.m src/DGMedia.m tests/media_tests.m -framework Foundation -framework AVFoundation -framework CoreMedia -o build/media_tests
           build/media_tests
+      - name: Vbee audio timeline and cancellation regressions
+        run: |
+          clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
+            src/DGGemini.m src/DGTranslation.m src/DGSource.m src/DGMedia.m src/DGVbee.m tests/audio_tests.m \
+            -framework Foundation -framework AVFoundation -framework CoreMedia -o build/audio_tests
+          build/audio_tests
       - name: Record source and toolchain
         run: |
           git rev-parse HEAD > build/SOURCE_COMMIT

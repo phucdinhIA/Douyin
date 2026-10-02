@@ -6,7 +6,7 @@ SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 xcrun --sdk iphoneos clang -arch arm64 -isysroot "$SDK" \
   -miphoneos-version-min=15.0 -fobjc-arc -fblocks -O2 -Wall -Wextra -Werror \
   -dynamiclib src/DGPolicy.m src/DGHook.m src/DGGemini.m src/DGTranslation.m src/DGGeminiUI.m src/DGSource.m src/DGVbee.m src/DGComments.m src/DGAudioUI.m src/DGMedia.m src/DGMediaUI.m src/DouyinGuest.m \
-  -framework Foundation -framework UIKit -framework CoreGraphics -framework AVFoundation -framework MediaPlayer \
+  -framework Foundation -framework UIKit -framework CoreGraphics -framework AVFoundation -framework CoreMedia -framework MediaPlayer \
   -Wl,-install_name,@rpath/DouyinGuest.dylib -o build/DouyinGuest.dylib
 codesign --force --sign - --timestamp=none build/DouyinGuest.dylib
 codesign --verify --strict build/DouyinGuest.dylib

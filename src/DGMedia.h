@@ -4,6 +4,7 @@
 FOUNDATION_EXPORT NSURL *DGCaptionVideoURL(NSString *videoID);
 FOUNDATION_EXPORT NSURLRequest *DGGTXRequest(NSString *source);
 FOUNDATION_EXPORT NSString *DGGTXAnswer(NSData *data, NSInteger status, NSString **failure);
+FOUNDATION_EXPORT BOOL DGDeepgramNeedsUpload(NSData *data,NSInteger status);
 FOUNDATION_EXPORT NSArray<NSDictionary *> *DGCaptionSegments(NSData *data, NSString **failure);
 FOUNDATION_EXPORT BOOL DGCaptionValidCues(NSArray *cues);
 FOUNDATION_EXPORT NSString *DGCaptionTextAt(NSArray<NSDictionary *> *cues, NSTimeInterval time);

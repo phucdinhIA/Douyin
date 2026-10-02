@@ -26,6 +26,9 @@ static void DGAMute(id owner,BOOL muted) {Method m=DGAMethod(owner,@"setMuted:",
 @property(nonatomic) BOOL interrupted;
 @property(nonatomic) BOOL seeking;
 @property(nonatomic) NSUInteger generation;
+@property(nonatomic) BOOL lastPlaying;
+@property(nonatomic) NSTimeInterval lastObserved;
+@property(nonatomic) NSTimeInterval lastClock;
 - (void)tick;
 - (void)resign;
 - (void)activate;
@@ -42,7 +45,8 @@ static DGAudioController *DGAudio;
     if (!self.ownsMute) {self.mutedBefore=DGABool(self.owner,@"isMute");self.ownsMute=YES;}DGAMute(self.owner,YES);
 }
 - (void)resign {
-    self.capturedPlaying=DGABool(self.owner,@"isPlaying");
+    // Native observers may already have paused on the same notification.
+    self.capturedPlaying=DGABool(self.owner,@"isPlaying") || (self.lastPlaying && NSProcessInfo.processInfo.systemUptime-self.lastObserved<0.25);
     if (![NSUserDefaults.standardUserDefaults boolForKey:@"DGBackgroundEnabled"] || !self.capturedPlaying || !self.owner.view.window || self.owner.view.hidden || self.interrupted) return;
     id raw=DGAObject(self.owner,@"currentPlayURL");NSURL *url=[raw isKindOfClass:NSURL.class] ? raw : [raw isKindOfClass:NSString.class] ? [NSURL URLWithString:raw] : nil;
     if (!url) {
@@ -50,7 +54,7 @@ static DGAudioController *DGAudio;
         id first=[list isKindOfClass:NSArray.class] ? [list firstObject] : nil;
         if ([first isKindOfClass:NSString.class]) url=[NSURL URLWithString:first];
     }
-    double time=DGATime(self.owner);
+    double time=DGATime(self.owner);if (!isfinite(time)) time=self.lastClock;
     if (!DGSourceURLAllowed(url) || !isfinite(time) || time<0 || !DGAMethod(self.owner,@"setPlayerSeekTime:completion:",@"v32@0:8d16@?24") || !DGAMethod(self.owner,@"setMuted:",@"v20@0:8B16")) {if (self.record) self.record(@"Background source or player ABI unavailable",1);return;}
     if (![self session]) return;[self mute];self.background=[AVPlayer playerWithURL:url];self.background.muted=self.voice!=nil;
     NSUInteger generation=++self.generation;__weak DGAudioController *weakSelf=self;
@@ -73,10 +77,12 @@ static DGAudioController *DGAudio;
     if (self.record) self.record(@"Background foreground resync",1);
 }
 - (void)tick {
-    if (!self.voice) return;
     BOOL foreground=UIApplication.sharedApplication.applicationState==UIApplicationStateActive;
+    if (foreground && self.owner) {self.lastPlaying=DGABool(self.owner,@"isPlaying");self.lastClock=DGATime(self.owner);self.lastObserved=NSProcessInfo.processInfo.systemUptime;}
+    if (!self.voice) return;
     double time=foreground ? DGATime(self.owner) : CMTimeGetSeconds(self.background.currentTime);
     BOOL playing=foreground ? DGABool(self.owner,@"isPlaying") : self.background.rate>0;
+    double duration=CMTimeGetSeconds(self.voice.currentItem.duration);if (isfinite(duration) && time>=duration) {[self.voice pause];return;}
     if (self.interrupted || !isfinite(time) || time<0 || (!foreground && !self.background)) {[self.voice pause];return;}
     double delta=fabs(CMTimeGetSeconds(self.voice.currentTime)-time);float rate=1;
     Method nativeRate=DGAMethod(self.owner,@"getCurrentPlaybackRate",@"f16@0:8");if (foreground && nativeRate) rate=((float (*)(id,SEL))method_getImplementation(nativeRate))(self.owner,NSSelectorFromString(@"getCurrentPlaybackRate"));
@@ -95,6 +101,7 @@ static DGAudioController *DGAudio;
     self.generation++;[self.background pause];self.background=nil;[self.voice pause];self.voice=nil;self.seeking=NO;
     if (self.ownsMute) {DGAMute(self.owner,self.mutedBefore);self.ownsMute=NO;}
     if (self.voiceFile) [NSFileManager.defaultManager removeItemAtURL:self.voiceFile error:NULL];self.voiceFile=nil;
+    self.lastPlaying=NO;self.lastObserved=0;
 }
 @end
 void DGAudioInstall(void (^record)(NSString *,NSUInteger)) {

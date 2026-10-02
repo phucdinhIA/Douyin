@@ -1,5 +1,7 @@
 #import <Foundation/Foundation.h>
 #import "DGMedia.h"
+#import "DGVbee.h"
+#import "DGSource.h"
 #include <stdatomic.h>
 #include <math.h>
 static NSUInteger checks;
@@ -46,6 +48,17 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
 @end
 static void waitFor(BOOL (^finished)(void)) {NSDate *deadline=[NSDate dateWithTimeIntervalSinceNow:8];while (!finished() && deadline.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
 int main(void) {@autoreleasepool {
+    check(DGDeepgramNeedsUpload(json(@{@"err_code":@"REMOTE_CONTENT_ERROR"}),400),@"verified CDN rejection enables binary fallback");
+    check(!DGDeepgramNeedsUpload(json(@{@"err_code":@"REMOTE_CONTENT_ERROR"}),200) && !DGDeepgramNeedsUpload(json(@{@"err_code":@"INVALID_AUTH"}),401) && !DGDeepgramNeedsUpload(json(@{@"err_code":@"INVALID_QUERY_PARAMETER"}),400) && !DGDeepgramNeedsUpload(json(@{}),400),@"successful paid transcription auth quota and invalid language do not trigger fallback");
+    check(DGSourceURLAllowed([NSURL URLWithString:@"https://v95-aw.douyinvod.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"https://evil-douyinvod.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"http://www.douyin.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"https://user:pass@www.douyin.com/media"]),@"source download and background player restrict hosts schemes and credentials");
+    NSDictionary *voice=@{@"app_id":@"00000000-0000-0000-0000-000000000001",@"token":@"synthetic-vbee",@"voice_code":@"hn_male_manhdung_news_48k-fhg"};
+    NSURLRequest *vr=DGVbeeRequest(voice,@"Xin chào");NSDictionary *vb=[NSJSONSerialization JSONObjectWithData:vr.HTTPBody options:0 error:NULL];
+    check([vr.URL.absoluteString isEqual:@"https://vbee.vn/api/v1/tts"] && [vb[@"response_type"] isEqual:@"direct"] && [vb[@"voice_code"] isEqual:voice[@"voice_code"] && !vr.HTTPShouldHandleCookies && !vb[@"callback_url"],@"Vbee uses validated direct mode male Vietnamese voice and isolated credentials");
+    check(!DGVbeeRequest(voice,@"") && !DGVbeeRequest(@{},@"Xin chào"),@"unconfigured Vbee never makes a request");
+    NSDictionary *voiceResult=@{@"status":@1,@"result":@{@"status":@"SUCCESS",@"app_id":voice[@"app_id"],@"voice_code":voice[@"voice_code"],@"audio_link":@"https://vbee.vn/audio/sample.mp3"}};NSString *voiceFailure=nil;
+    check(DGVbeeAudioURL(json(voiceResult),200,voice,&voiceFailure)!=nil,@"verified direct Vbee success yields audio URL");
+    NSMutableDictionary *badVoice=[voiceResult mutableCopy];NSMutableDictionary *badResult=[voiceResult[@"result"] mutableCopy];badResult[@"audio_link"]=@"https://evil.example/steal";badVoice[@"result"]=badResult;
+    check(!DGVbeeAudioURL(json(badVoice),200,voice,&voiceFailure) && !DGVbeeAudioURL(json(voiceResult),401,voice,&voiceFailure),@"Vbee rejects untrusted audio host and auth failures without leaking response text");
     check([DGCaptionVideoURL(@"7683814443658054955").absoluteString isEqual:@"https://www.douyin.com/video/7683814443658054955"],@"native video ID produces canonical HTTPS URL");
     check(!DGCaptionVideoURL(@"../wrong") && !DGCaptionVideoURL(@"123") && !DGCaptionVideoURL(@"７６８３８１４４４３６５８０５４９５５"),@"video ID rejects paths short IDs and non-ASCII digits");
     NSURLRequest *request=DGGTXRequest(@"你好 & + ? 😀");NSURLComponents *components=[NSURLComponents componentsWithURL:request.URL resolvingAgainstBaseURL:NO];NSMutableDictionary *query=[NSMutableDictionary new];for (NSURLQueryItem *item in components.queryItems) query[item.name]=item.value;

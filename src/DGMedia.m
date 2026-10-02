@@ -11,6 +11,9 @@ static BOOL DGHasHan(NSString *text) {
     return NO;
 }
 static id DGJSON(NSData *data) {return [data isKindOfClass:NSData.class] && data.length<=16*1024*1024 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL] : nil;}
+BOOL DGDeepgramNeedsUpload(NSData *data,NSInteger status) {
+    id root=DGJSON(data);return status==400 && [root isKindOfClass:NSDictionary.class] && [root[@"err_code"] isEqual:@"REMOTE_CONTENT_ERROR"];
+}
 static NSString *DGJSONText(id value) {NSData *data=[NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];return data ? [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] : nil;}
 static BOOL DGKey(NSString *key) {return DGString(key,512) && [key rangeOfCharacterFromSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].location==NSNotFound;}
 static NSURLRequest *DGRequest(NSString *url,NSString *method,id body,NSString *authorization,NSString *header) {
@@ -260,8 +263,7 @@ static NSString *DGCaptionDigest(NSString *source) {
     [self emit:@"deepgram" failure:nil];
     NSMutableURLRequest *request=[DGRequest(@"https://api.deepgram.com/v1/listen?model=nova-3&language=zh-CN&smart_format=true&punctuate=true&utterances=true&utt_split=0.5",@"POST",@{@"url":url.absoluteString},[@"Token " stringByAppendingString:self.config[@"deepgram_api_key"]],@"Authorization") mutableCopy];request.timeoutInterval=540;
     [self request:request completion:^(NSData *data,NSInteger status,NSString *failure) {
-        id errorRoot=DGJSON(data);NSString *code=[errorRoot isKindOfClass:NSDictionary.class] ? errorRoot[@"err_code"] : nil;
-        if (!failure && status==400 && [code isEqual:@"REMOTE_CONTENT_ERROR"]) {
+        if (!failure && DGDeepgramNeedsUpload(data,status)) {
             if (self.event) self.event(@"Captions Deepgram remote fetch rejected");
             [self uploadSource:url duration:duration];return;
         }
