@@ -10,4 +10,5 @@ FOUNDATION_EXPORT NSString *DGGeminiReadSummary(UIView *root);
 #ifdef DG_GEMINI_FIXTURE
 void DGGeminiTranslationFixtureConfiguration(NSURLSessionConfiguration *configuration,NSURL *cacheURL);
 void DGGeminiTranslationFixtureTick(UIViewController *owner,NSTimeInterval time);
+void DGGeminiTranslationFixtureTimers(BOOL enabled);
 #endif

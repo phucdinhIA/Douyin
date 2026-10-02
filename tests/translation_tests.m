@@ -27,9 +27,9 @@ int main(void) {@autoreleasepool {
     session.update=^(NSString *status,NSString *text) {state=status;output=text;};
     [session observeSource:source at:10];check(sends==0 && !session.active,@"ordinary comments and inactive observations never call API");
     [session enterAt:10];[session observeSource:@"" at:11];check(sends==0 && session.waiting,@"opening AI before text arrives makes no empty request");
-    [session observeSource:@"流式" at:12];[session observeSource:source at:14];[session observeSource:source at:16];
-    check(sends==0,@"streaming changes reset three-second stability delay");
-    [session observeSource:source at:17];check(sends==1 && [state isEqual:@"sending"],@"stable visible analysis sends exactly one request");
+    [session observeSource:@"流式" at:12];[session observeSource:source at:12.5];[session observeSource:source at:13];
+    check(sends==0,@"streaming changes reset short 750ms stability delay");
+    [session observeSource:source at:13.25];check(sends==1 && [state isEqual:@"sending"],@"stable visible analysis sends without a fixed four-second entry delay");
     [session enterAt:18];[session observeSource:source at:19];check(sends==1,@"repeated entry and polling deduplicate in-flight work");
     reply(@"Bản dịch 42",nil);check([state isEqual:@"ready"] && [output isEqual:@"Bản dịch 42"],@"completed request displayed");
     [session observeSource:@"new partial" at:20];check(sends==1,@"later streaming updates do not start automatic paid loop");
@@ -63,5 +63,10 @@ int main(void) {@autoreleasepool {
     DGTranslationSession *whitespace=[[DGTranslationSession alloc] initWithStore:[[DGTranslationStore alloc] initWithURL:nil] sender:^(NSString *text,void (^completion)(NSString *,NSString *)) {received=text;completion(@"dịch",nil);} cancel:^{}];
     [whitespace enterAt:0];[whitespace observeSource:spaced at:0];[whitespace observeSource:spaced at:4];
     check([received isEqual:spaced],@"source whitespace is preserved so renderer recheck and digest cannot falsely report changed analysis");
+    __block NSUInteger immediate=0;
+    DGTranslationSession *completed=[[DGTranslationSession alloc] initWithStore:[[DGTranslationStore alloc] initWithURL:nil] sender:^(NSString *text,void (^completion)(NSString *,NSString *)) {(void)text;++immediate;completion(@"hoàn tất",nil);} cancel:^{}];
+    [completed enterAt:0];[completed observeSource:source complete:YES at:0.1];check(immediate==1,@"verified native completion sends immediately on first nonempty observation");
+    [completed leave];[completed enterAt:1];[completed observeSource:source at:1.1];check(immediate==1 && !completed.waiting,@"cache hit displays immediately without debounce or another request");
+    [completed leave];[completed enterAt:2];[completed observeSource:@"" complete:YES at:2.1];check(immediate==1 && completed.waiting,@"completion flag cannot send empty source");
     printf("Translation contract checks passed: %lu\n",(unsigned long)checks);
 }return 0;}

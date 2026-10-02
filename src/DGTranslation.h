@@ -18,6 +18,7 @@
                        cancel:(void (^)(void))cancel;
 - (void)enterAt:(NSTimeInterval)time;
 - (void)observeSource:(NSString *)source at:(NSTimeInterval)time;
+- (void)observeSource:(NSString *)source complete:(BOOL)complete at:(NSTimeInterval)time;
 - (void)leave;
 - (void)retryAt:(NSTimeInterval)time;
 @end

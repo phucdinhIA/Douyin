@@ -28,6 +28,37 @@ static atomic_int translationRequests;
 @implementation ServalMarkdownView
 - (NSString *)getContent {return self.content;}
 @end
+@interface LynxServalMarkdownViewWrapper : ServalMarkdownView
+@end
+@implementation LynxServalMarkdownViewWrapper
+@end
+@interface LynxMarkdownViewV2 : UIView {
+    LynxServalMarkdownViewWrapper *_markdownView;
+}
+- (instancetype)initWithContent:(NSString *)content;
+@end
+@implementation LynxMarkdownViewV2
+- (instancetype)initWithContent:(NSString *)content {
+    if ((self=[super initWithFrame:CGRectMake(0,0,300,100)])) {_markdownView=[LynxServalMarkdownViewWrapper new];_markdownView.content=content;}return self;
+}
+@end
+@interface LynxMarkdownShadowNode : NSObject {NSString *_content;}
+- (instancetype)initWithContent:(NSString *)content;
+@end
+@implementation LynxMarkdownShadowNode
+- (instancetype)initWithContent:(NSString *)content {if ((self=[super init])) _content=[content copy];return self;}
+@end
+@interface LynxMarkdownBundle : NSObject
+@property(nonatomic,strong) LynxMarkdownShadowNode *node;
+@property(nonatomic) BOOL content_complete;
+@end
+@implementation LynxMarkdownBundle
+@end
+@interface LynxMarkdownView : UIView
+@property(nonatomic,strong) LynxMarkdownBundle *bundle;
+@end
+@implementation LynxMarkdownView
+@end
 @interface AWESearchAIGCQueryContext : NSObject
 @property(nonatomic,copy) NSString *query;
 @end
@@ -43,6 +74,7 @@ static atomic_int translationRequests;
 @interface AWEFeedDoubleColumnCommentAIParseViewController : AWEFeedDoubleColumnAIParseViewController
 @property(nonatomic) NSUInteger nativeEntries;
 @property(nonatomic,strong) UIViewController *capturedPresentation;
+@property(nonatomic,strong) UIViewController *contentVC;
 - (void)commentAIParseTabDidEnter;
 - (void)commentAIParseTabWillLeave;
 @end
@@ -281,7 +313,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-network-error.png"];
 
     AWELeftSideBarFixtureView *sidebar=[[AWELeftSideBarFixtureView alloc] initWithFrame:self.window.bounds];sidebar.backgroundColor=UIColor.systemGroupedBackgroundColor;
-    title=label(sidebar,@"Sidebar fixture • 0.12.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
+    title=label(sidebar,@"Sidebar fixture • 0.13.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
     UILabel *settings=label(sidebar,@"设置",105);settings.frame=CGRectMake(285,105,32,22);settings.font=[UIFont systemFontOfSize:16];
     NSArray *sections=@[
         @[@"常用功能",@[@"观看历史",@"离线缓存",@"稍后再看",@"抖音创作者中心",@"直播广场",@"使用管理助手",@"我的二维码",@"未成年人保护"],@[@"clock",@"arrow.down.circle",@"play.rectangle",@"person.crop.circle",@"video",@"timer",@"qrcode",@"shield"]],
@@ -307,7 +339,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     AWESearchResultFixtureView *searchCanvas=[[AWESearchResultFixtureView alloc] initWithFrame:self.window.bounds];
     searchCanvas.backgroundColor=UIColor.systemBackgroundColor;
     AWESearchFilterCollectionViewCell *filters=[[AWESearchFilterCollectionViewCell alloc] initWithFrame:self.window.bounds];[searchCanvas addSubview:filters];
-    title=label(filters,@"Search controls fixture • 0.12.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(filters,@"Search controls fixture • 0.13.0",80);title.frame=CGRectMake(20,80,width-40,30);
     NSArray *searchWords=@[@"综合排序",@"视频",@"用户",@"直播",@"一周内",@"最多点赞",@"切换为单列模式",@"切换为双列模式",@"相关搜索",@"大家都在搜",@"没有搜索到相关内容",@"试试换个搜索词"];
     CGFloat rowY=140;
     for (NSUInteger i=0;i<searchWords.count;i++) {
@@ -323,14 +355,14 @@ static NSUInteger countText(UIView *view, NSString *text) {
 
     AWESettingsFixtureViewController *settingsScreen=[AWESettingsFixtureViewController new];settingsScreen.view.backgroundColor=UIColor.systemBackgroundColor;
     NSArray *settingsWords=@[@"设置",@"账号管理",@"个性化内容推荐",@"通知消息管理",@"私信和通话通知",@"字体大小",@"缓存设置",@"后台播放设置",@"小窗播放设置",@"字幕设置",@"黑名单管理",@"隐私政策及简明版"];
-    title=label(settingsScreen.view,@"Settings fixture • 0.12.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(settingsScreen.view,@"Settings fixture • 0.13.0",80);title.frame=CGRectMake(20,80,width-40,30);
     for (NSUInteger i=0;i<settingsWords.count;i++) { UILabel *item=label(settingsScreen.view,settingsWords[i],135+i*43);item.frame=CGRectMake(20,135+i*43,180,36); }
     screen=settingsScreen;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-settings.png"];
 
     AWECommentFixtureView *commentCanvas=[[AWECommentFixtureView alloc] initWithFrame:self.window.bounds];commentCanvas.backgroundColor=UIColor.systemBackgroundColor;
     AWECommentVCHeaderBarView *commentHeader=[[AWECommentVCHeaderBarView alloc] initWithFrame:CGRectMake(16,70,width-32,150)];[commentCanvas addSubview:commentHeader];
-    title=label(commentHeader,@"Comment controls fixture • 0.12.0",0);title.frame=CGRectMake(4,0,width-40,28);title.font=[UIFont boldSystemFontOfSize:17];
+    title=label(commentHeader,@"Comment controls fixture • 0.13.0",0);title.frame=CGRectMake(4,0,width-40,28);title.font=[UIFont boldSystemFontOfSize:17];
     UILabel *headerCount=label(commentHeader,@"评论 1081",45);headerCount.frame=CGRectMake(4,45,170,28);
     UILabel *collection=label(commentHeader,@"观看完整合集：示例合集",82);collection.frame=CGRectMake(4,82,width-40,30);
     UILabel *summary=label(commentHeader,@"AI 解析",118);summary.frame=CGRectMake(4,118,130,28);
@@ -353,7 +385,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-comments.png"];
 
     AWENetworkErrorFixtureView *featured=[[AWENetworkErrorFixtureView alloc] initWithFrame:self.window.bounds];featured.backgroundColor=UIColor.systemBackgroundColor;
-    title=label(featured,@"Featured narrow-label fixture • 0.12.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
+    title=label(featured,@"Featured narrow-label fixture • 0.13.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
     UILabel *featuredTitle=label(featured,@"网络错误",320);featuredTitle.frame=CGRectMake((width-60)/2,320,60,30);featuredTitle.textAlignment=NSTextAlignmentCenter;
     UILabel *errorDetail=label(featured,@"请检查网络连接后重试",365);errorDetail.frame=CGRectMake((width-120)/2,365,120,30);errorDetail.textAlignment=NSTextAlignmentCenter;
     UIButton *retryButton=[UIButton buttonWithType:UIButtonTypeSystem];retryButton.frame=CGRectMake((width-100)/2,415,100,42);[retryButton setTitle:@"重试" forState:UIControlStateNormal];[featured addSubview:retryButton];
@@ -362,7 +394,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-featured-narrow.png"];
 
     UIView *live=[[UIView alloc] initWithFrame:self.window.bounds];live.backgroundColor=UIColor.systemBackgroundColor;
-    title=label(live,@"LIVE controls fixture • 0.12.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:18];
+    title=label(live,@"LIVE controls fixture • 0.13.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:18];
     _TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView *tags=[[_TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView alloc] initWithFrame:CGRectMake(20,140,width-40,44)];[live addSubview:tags];
     NSArray *cn=@[@"明星",@"聊天",@"唱歌",@"团播",@"颜值"];
     CGFloat slot=(width-40)/5;
@@ -388,6 +420,13 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([aiState[@"configured"] boolValue] && [aiState[@"native_send_hook"] boolValue] && [aiState[@"native_entry_hook"] boolValue] && [aiState[@"native_leave_hook"] boolValue],@"Gemini fixture installs three exact comment-AI hooks with a synthetic key");
     AWEFeedDoubleColumnCommentAIParseViewController *ai=[AWEFeedDoubleColumnCommentAIParseViewController new];
     ai.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=ai;[self.window layoutIfNeeded];
+    ai.contentVC=[UIViewController new];[ai.contentVC loadViewIfNeeded];
+    UIView *drawnRoot=[[UIView alloc] initWithFrame:CGRectMake(0,0,300,300)];
+    LynxMarkdownViewV2 *v2=[[LynxMarkdownViewV2 alloc] initWithContent:@"V2 源内容，不是 UILabel。"];[drawnRoot addSubview:v2];
+    check([DGGeminiReadSummary(drawnRoot) isEqual:@"V2 源内容，不是 UILabel。"] && v2.subviews.count==0,@"V2 captures backing renderer ivar without a bundle getter or visible text subviews");
+    [v2 removeFromSuperview];LynxMarkdownView *legacy=[[LynxMarkdownView alloc] initWithFrame:CGRectMake(0,0,300,100)];legacy.bundle=[LynxMarkdownBundle new];legacy.bundle.node=[[LynxMarkdownShadowNode alloc] initWithContent:@"原始完整分析\n"];legacy.bundle.content_complete=YES;[drawnRoot addSubview:legacy];
+    check([DGGeminiReadSummary(drawnRoot) isEqual:@"原始完整分析\n"] && legacy.subviews.count==0,@"legacy custom-drawn markdown captures exact shadow-node source without UILabel scanning");
+    legacy.hidden=YES;check(!DGGeminiReadSummary(drawnRoot).length,@"hidden custom-drawn renderer is still excluded");legacy.hidden=NO;
     ServalMarkdownView *markdown=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(12,100,width-24,180)];markdown.content=@"内容由AI生成。这个视频讨论摄影技巧。";[ai.view addSubview:markdown];
     UILabel *privateComment=label(ai.view,@"This unrelated comment must not be sent to Google",300);
     UILabel *aiTabs=label(ai.view,@"Bình luận     Phân tích AI",62);aiTabs.frame=CGRectMake(12,62,width-24,32);aiTabs.font=[UIFont boldSystemFontOfSize:18];
@@ -401,7 +440,8 @@ static NSUInteger countText(UIView *view, NSString *text) {
     markdown.hidden=YES;check(DGGeminiReadSummary(ai.view).length==0,@"hidden analysis is not captured");markdown.hidden=NO;
     NSTimeInterval translationTime=NSProcessInfo.processInfo.systemUptime;
     DGGeminiTranslationFixtureTick(ai,translationTime);check(atomic_load(&translationRequests)==0,@"entry waits for source stability without an immediate API charge");
-    DGGeminiTranslationFixtureTick(ai,translationTime+4);DGGeminiTranslationFixtureTick(ai,translationTime+8);
+    check(((UITextView *)findID(ai.view,@"gemini-translation-text")).hidden && [findID(ai.view,@"gemini-translation-panel") hitTest:CGPointMake(100,200) withEvent:nil]==nil,@"original analysis remains visible and scrollable while capture or translation is pending");
+    DGGeminiTranslationFixtureTick(ai,translationTime+0.75);DGGeminiTranslationFixtureTick(ai,translationTime+1);
     UITextView *viText=(UITextView *)findID(ai.view,@"gemini-translation-text");
     NSDate *translationDeadline=[NSDate dateWithTimeIntervalSinceNow:5];
     while (![viText.text containsString:@"kỹ thuật chụp ảnh"] && translationDeadline.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];
@@ -411,6 +451,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     UIView *viPanel=findID(ai.view,@"gemini-translation-panel");
     check(!viPanel.hidden && viText.frame.size.height>200 && CGRectGetMaxY(viPanel.frame)<=CGRectGetMinY(findID(ai.view,@"gemini-comment-entry").frame),@"Vietnamese analysis scroll panel fits above Q&A button");
     check([DGGeminiReadSummary(ai.view) isEqual:captured] && [markdown.content isEqual:captured],@"translated overlay never replaces or contaminates original Q&A context");
+    check([viText.text containsString:@"kỹ thuật chụp ảnh"],@"empty contentVC falls back to actual owner renderer and produces translation");
     [self saveWindowImage:@"ui-gemini-translation.png"];
     UISegmentedControl *language=(UISegmentedControl *)findID(ai.view,@"gemini-translation-language");language.selectedSegmentIndex=1;[language sendActionsForControlEvents:UIControlEventValueChanged];
     check(viText.hidden && [viPanel hitTest:CGPointMake(100,200) withEvent:nil]==nil,@"original toggle restores native content and passes scrolling touches through overlay");
@@ -423,6 +464,12 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(viPanel.hidden && ![DGGeminiSnapshot()[@"translation_active"] boolValue],@"backgrounding stops automatic translation activity");
     [NSNotificationCenter.defaultCenter postNotificationName:UIApplicationDidBecomeActiveNotification object:nil];translationTime=NSProcessInfo.processInfo.systemUptime;DGGeminiTranslationFixtureTick(ai,translationTime);DGGeminiTranslationFixtureTick(ai,translationTime+4);
     check(!viPanel.hidden && atomic_load(&translationRequests)==1,@"returning to an explicitly opened AI tab restores cached translation without billing");
+    [ai commentAIParseTabWillLeave];DGGeminiTranslationFixtureTimers(YES);[ai commentAIParseTabDidEnter];
+    NSDate *trackingDeadline=[NSDate dateWithTimeIntervalSinceNow:2];
+    UILabel *translationStatus=(UILabel *)findID(ai.view,@"gemini-translation-status");
+    while (![translationStatus.text containsString:@"Không gọi API lại"] && trackingDeadline.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runMode:UITrackingRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+    check([translationStatus.text containsString:@"Không gọi API lại"] && atomic_load(&translationRequests)==1,@"real common-mode timer captures cached analysis while UIKit is in scroll tracking mode");
+    [ai commentAIParseTabWillLeave];DGGeminiTranslationFixtureTimers(NO);
     [ai commentAIParseTabWillLeave];markdown.content=@"新的分析\n";[ai commentAIParseTabDidEnter];translationTime=NSProcessInfo.processInfo.systemUptime;DGGeminiTranslationFixtureTick(ai,translationTime);DGGeminiTranslationFixtureTick(ai,translationTime+4);
     [ai viewWillDisappear:NO];[ai viewDidAppear:NO];translationTime=NSProcessInfo.processInfo.systemUptime;DGGeminiTranslationFixtureTick(ai,translationTime);DGGeminiTranslationFixtureTick(ai,translationTime+4);
     check([((UILabel *)findID(ai.view,@"gemini-translation-status")).text containsString:@"Yêu cầu trước đã dừng"],@"returning after cancelling a sent request does not automatically spend a second request in same tab entry");

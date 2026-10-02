@@ -1,0 +1,12 @@
+{
+  "patch_version": "0.12.0-test",
+  "ios": "18.5",
+  "reported_original_analysis_visible_after_seconds": 2,
+  "gemini_summary_unavailable": 198,
+  "gemini_translation_failed": 1,
+  "gemini_translation_sent_counter_present": false,
+  "native_entry_hook": true,
+  "native_leave_hook": true,
+  "translation_disappear_hook": true,
+  "interpretation": "Polling ran, but captured source remained empty. No translation request was recorded. Exact runtime renderer/root was not reported by 0.12 diagnostics."
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "class": "ServalMarkdownView",
+    "ivars": [],
+    "methods": [
+      {
+        "selector": "getContent",
+        "types": "@16@0:8",
+        "imp": "0x7aa5774"
+      }
+    ]
+  },
+  {
+    "class": "LynxMarkdownBundle",
+    "ivars": [],
+    "methods": [
+      {
+        "selector": "content_complete",
+        "types": "B16@0:8",
+        "imp": "0x1549f2ac"
+      },
+      {
+        "selector": "node",
+        "types": "@16@0:8",
+        "imp": "0x154ab71c"
+      }
+    ]
+  },
+  {
+    "class": "LynxMarkdownShadowNode",
+    "ivars": [
+      {
+        "name": "_content",
+        "types": "@\"NSString\"",
+        "offset": 16
+      }
+    ],
+    "methods": []
+  },
+  {
+    "class": "LynxMarkdownView",
+    "ivars": [],
+    "methods": [
+      {
+        "selector": "bundle",
+        "types": "@16@0:8",
+        "imp": "0x15145400"
+      }
+    ]
+  },
+  {
+    "class": "LynxMarkdownViewV2",
+    "ivars": [
+      {
+        "name": "_markdownView",
+        "types": "@\"LynxServalMarkdownViewWrapper\"",
+        "offset": 8
+      }
+    ],
+    "methods": []
+  }
+]

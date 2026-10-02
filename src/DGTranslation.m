@@ -73,17 +73,21 @@ static NSString *DGTranslationDigest(NSString *source) {
 - (void)enterAt:(NSTimeInterval)time {
     if (self.active) return;
     self.active=YES;self.waiting=YES;self.entered=time;self.changed=time;self.source=nil;++self.generation;
-    if (self.update) self.update(@"waiting",@"Đang chờ phần phân tích tải ổn định…");
+    if (self.update) self.update(@"waiting",@"Đang lấy nội dung phân tích AI…");
 }
 - (void)observeSource:(NSString *)source at:(NSTimeInterval)time {
+    [self observeSource:source complete:NO at:time];
+}
+- (void)observeSource:(NSString *)source complete:(BOOL)complete at:(NSTimeInterval)time {
     if (!self.active || !self.waiting) return;
     source=source ?: @"";
-    if (![self.source isEqualToString:source]) {self.source=[source copy];self.changed=time;}
-    if (time-self.entered>=60) {self.waiting=NO;if (self.update) self.update(@"failed",@"Chưa lấy được phân tích ổn định. Bấm Dịch lại khi nội dung đã tải xong.");return;}
-    if (![source stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length || source.length>24000 || time-self.entered<4 || time-self.changed<3) return;
-    self.waiting=NO;
+    BOOL changed=![self.source isEqualToString:source];if (changed) {self.source=[source copy];self.changed=time;}
+    if (time-self.entered>=20) {self.waiting=NO;if (self.update) self.update(@"failed",source.length ? @"Phân tích vẫn đang thay đổi. Bấm Dịch lại để thử khi nội dung đã xong." : @"Phân tích đã hiện nhưng chưa đọc được chữ từ renderer. Bấm Đọc lại hoặc gửi Copy diagnostics.");return;}
+    if (![source stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length || source.length>24000) return;
     NSString *cached=[self.store translationForSource:source];
-    if (cached) {if (self.update) self.update(@"cached",cached);return;}
+    if (cached) {self.waiting=NO;if (self.update) self.update(@"cached",cached);return;}
+    if (!complete && time-self.changed<0.75) {if (changed && self.update) self.update(@"settling",@"Đã lấy phân tích · chuẩn bị dịch…");return;}
+    self.waiting=NO;
     if (self.update) self.update(@"sending",@"Đang dịch sang tiếng Việt bằng Gemini…");
     NSUInteger request=self.generation;__weak DGTranslationSession *weakSelf=self;
     self.sender(source,^(NSString *answer,NSString *failure) {
