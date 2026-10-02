@@ -449,8 +449,8 @@ int main(void) {
         serializer.error=[NSError errorWithDomain:@"com.aweme.network.error" code:-11001 userInfo:@{NSLocalizedDescriptionKey:@"PRIVATE-html-payload"}];
         NSHTTPURLResponse *http=[[NSHTTPURLResponse alloc] initWithURL:[NSURL URLWithString:@"https://private.invalid/?cookie=PRIVATE"] statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:@{@"Content-Type":@"text/html"}];
         NSError *resultError=nil;
-        id result=[serializer response:http json:@"PRIVATE-html" error:nil resultError:&resultError];
-        check(result==serializer.output && resultError==serializer.error && serializer.calls==1,@"JSON observer preserves output and NSError pointer and forwards once");
+        id jsonResult=[serializer response:http json:@"PRIVATE-html" error:nil resultError:&resultError];
+        check(jsonResult==serializer.output && resultError==serializer.error && serializer.calls==1,@"JSON observer preserves output and NSError pointer and forwards once");
         check([newEvents[@"JSON response error AwemeNetwork -11001"] unsignedIntegerValue]==1 &&
             [newEvents[@"JSON response HTTP 200"] unsignedIntegerValue]==1 && [newEvents[@"JSON response content type html"] unsignedIntegerValue]==1 &&
             [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,@"JSON classification reveals shape and HTTP status without body, URL, headers or secrets");

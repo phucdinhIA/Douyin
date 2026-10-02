@@ -559,7 +559,7 @@ static void DGInstallNative(void) {
     UIViewController *presenter = window.rootViewController;
     while (presenter.presentedViewController) presenter = presenter.presentedViewController;
     if (!presenter || [presenter isKindOfClass:UIAlertController.class]) return;
-    NSString *message = [NSString stringWithFormat:@"Test build • 40.7.0 (406019)\nNative hooks: %lu/%lu active\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)DGActiveHookCount(), (unsigned long)hookSpecs.count];
+    NSString *message = [NSString stringWithFormat:@"Test build • 40.6.0 (406019)\nNative hooks: %lu/%lu active\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)DGActiveHookCount(), (unsigned long)hookSpecs.count];
     UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Douyin Guest" message:message preferredStyle:UIAlertControllerStyleAlert];
     NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls", @"Search diagnostics", @"Background audio"];
     NSArray *keys = @[@"DGGuestEnabled", @"DGAdsEnabled", @"DGEnglishEnabled", @"DGSearchEnabled", @"DGBackgroundEnabled"];
@@ -583,7 +583,7 @@ static void DGInstallNative(void) {
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.7.0-test", @"app_version": @"40.7.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        NSMutableDictionary *report = [@{@"patch_version": @"0.7.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled)), @"background_audio": @(atomic_load(&backgroundEnabled))};
         report[@"search_adapter_hooks"] = DGSearchAdapterSnapshot();
         report[@"native_hooks_active"] = @(DGActiveHookCount());
@@ -607,7 +607,7 @@ __attribute__((constructor)) static void DGStart(void) {
         BOOL supportedID = [bundle.bundleIdentifier isEqualToString:@"com.ss.iphone.ugc.Aweme"] ||
                            [bundle.bundleIdentifier hasPrefix:@"com.ss.iphone.ugc.Aweme."];
         if (!supportedID ||
-            ![[bundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] isEqualToString:@"40.7.0"] ||
+            ![[bundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] isEqualToString:@"40.6.0"] ||
             ![[bundle objectForInfoDictionaryKey:@"CFBundleVersion"] isEqualToString:@"406019"]) return;
         id words = DGReadJSON(@"translations"), specs = DGReadJSON(@"hooks");
         if (![words isKindOfClass:NSDictionary.class] || ![specs isKindOfClass:NSArray.class]) return;
