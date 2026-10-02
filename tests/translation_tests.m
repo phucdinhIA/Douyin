@@ -59,5 +59,9 @@ int main(void) {@autoreleasepool {
     [@"corrupt" writeToURL:url atomically:YES encoding:NSUTF8StringEncoding error:NULL];
     reloaded=[[DGTranslationStore alloc] initWithURL:url];check(![reloaded translationForSource:source],@"corrupt cache safely becomes cache miss");
     [NSFileManager.defaultManager removeItemAtURL:url error:NULL];
+    NSString *spaced=[@"\n" stringByAppendingFormat:@"%@\n",source];__block NSString *received;
+    DGTranslationSession *whitespace=[[DGTranslationSession alloc] initWithStore:[[DGTranslationStore alloc] initWithURL:nil] sender:^(NSString *text,void (^completion)(NSString *,NSString *)) {received=text;completion(@"dịch",nil);} cancel:^{}];
+    [whitespace enterAt:0];[whitespace observeSource:spaced at:0];[whitespace observeSource:spaced at:4];
+    check([received isEqual:spaced],@"source whitespace is preserved so renderer recheck and digest cannot falsely report changed analysis");
     printf("Translation contract checks passed: %lu\n",(unsigned long)checks);
 }return 0;}

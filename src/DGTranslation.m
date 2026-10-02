@@ -77,10 +77,10 @@ static NSString *DGTranslationDigest(NSString *source) {
 }
 - (void)observeSource:(NSString *)source at:(NSTimeInterval)time {
     if (!self.active || !self.waiting) return;
-    source=[source stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    source=source ?: @"";
     if (![self.source isEqualToString:source]) {self.source=[source copy];self.changed=time;}
     if (time-self.entered>=60) {self.waiting=NO;if (self.update) self.update(@"failed",@"Chưa lấy được phân tích ổn định. Bấm Dịch lại khi nội dung đã tải xong.");return;}
-    if (!source.length || source.length>24000 || time-self.entered<4 || time-self.changed<3) return;
+    if (![source stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length || source.length>24000 || time-self.entered<4 || time-self.changed<3) return;
     self.waiting=NO;
     NSString *cached=[self.store translationForSource:source];
     if (cached) {if (self.update) self.update(@"cached",cached);return;}
