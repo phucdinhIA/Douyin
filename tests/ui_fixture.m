@@ -345,6 +345,11 @@ static NSUInteger countText(UIView *view, NSString *text) {
         UILabel *tab=label(liveTabs,liveCN[i],0);tab.frame=CGRectMake(i*70,0,63,32);[tab layoutIfNeeded];
         CGFloat needed=[tab.text sizeWithAttributes:@{NSFontAttributeName:tab.font}].width;
         check([tab.text isEqual:liveEN[i]] && needed*tab.minimumScaleFactor<=tab.bounds.size.width,@"LIVE category translates and fits narrow label");
+        tab.frame=CGRectMake(i*70,0,32,32);[tab setNeedsLayout];[tab layoutIfNeeded];
+        needed=[tab.text sizeWithAttributes:@{NSFontAttributeName:tab.font}].width;
+        check(needed*0.65<=32,@"LIVE category has a readable compact option at 32 points");
+        tab.frame=CGRectMake(i*70,0,63,32);[tab setNeedsLayout];[tab layoutIfNeeded];
+        check([tab.text isEqual:liveEN[i]],@"LIVE category restores full label when width grows");
     }
     HTSLiveRoomTitleFixtureView *liveRoom=[[HTSLiveRoomTitleFixtureView alloc] initWithFrame:CGRectMake(0,0,180,35)];[parent addSubview:liveRoom];
     HTSLiveChatFixtureView *liveChat=[[HTSLiveChatFixtureView alloc] initWithFrame:CGRectMake(0,0,180,35)];[parent addSubview:liveChat];

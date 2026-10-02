@@ -411,7 +411,7 @@ int main(void) {
         [imageFeed failed:outer];
         check(imageFeed.arguments[0]==outer && [newEvents[@"TestImageFeed failed: error BDImage 900014"] unsignedIntegerValue]==1 &&
               [newEvents[@"TestImageFeed failed: underlying 1 error URL -1001"] unsignedIntegerValue]==1,@"image domain and underlying URL are distinguished without changing native error/retry");
-        NSError *unknown=[NSError errorWithDomain:@"PRIVATE-domain" code:-1001 userInfo:nil];[imageFeed failed:unknown];
+        NSError *unknownDomainError=[NSError errorWithDomain:@"PRIVATE-domain" code:-1001 userInfo:nil];[imageFeed failed:unknownDomainError];
         check([newEvents[@"TestImageFeed failed: error App -1001"] unsignedIntegerValue]==1 &&
               [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,@"unknown-domain code is not mislabeled as URL and private fields never enter diagnostics");
         TestCyclicError *cycle=[[TestCyclicError alloc] initWithDomain:@"kAWEDCFeedErrorDomain" code:-4 userInfo:nil];cycle.next=cycle;

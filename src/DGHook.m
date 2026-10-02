@@ -43,11 +43,13 @@ static NSString *DGErrorCategory(NSError *error) {
     if ([domain isEqualToString:NSCocoaErrorDomain]) return @"Cocoa";
     if ([domain isEqualToString:@"kCFErrorDomainCFNetwork"]) return @"CFNetwork";
     // Fixed strings verified in build 406019. Unknown domains never leave the app.
-    NSDictionary *known = @{@"BDWebImageErrorDomain":@"BDImage",
+    static NSDictionary *known;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ known = @{@"BDWebImageErrorDomain":@"BDImage",
         @"BDWebImageHeifDecoderErrorDomain":@"BDHeif", @"BDWebImageVvicDecoderErrorDomain":@"BDVvic",
         @"kTTNetworkErrorDomain":@"TTNetwork", @"kAWEDCFeedErrorDomain":@"DCFeed",
         @"AWEDataLayerNetworkErrorDomain":@"DataNetwork", @"AWEDataLayerBaseErrorDomain":@"DataLayer",
-        @"kAWEDCFeedAISearchSecurityErrorDomain":@"DCSearchSecurity", @"AWEDCFeedAISearchErrorDomain":@"DCSearch"};
+        @"kAWEDCFeedAISearchSecurityErrorDomain":@"DCSearchSecurity", @"AWEDCFeedAISearchErrorDomain":@"DCSearch"}; });
     return known[domain] ?: @"App";
 }
 
