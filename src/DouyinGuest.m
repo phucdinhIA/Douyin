@@ -7,6 +7,7 @@
 #include <string.h>
 #import "DGPolicy.h"
 #import "DGHook.h"
+#import "DGGeminiUI.h"
 
 static atomic_bool guestEnabled, adsEnabled, englishEnabled, searchEnabled, backgroundEnabled, feedCompatEnabled;
 static NSDictionary<NSString *, NSString *> *translations;
@@ -458,6 +459,7 @@ static NSUInteger DGActiveHookCount(void) {
 }
 
 static void DGInstallNative(void) {
+    DGGeminiInstall(^(NSString *event,NSUInteger count) {DGCount(event,count);});
     for (NSDictionary *spec in hookSpecs) {
         NSString *key = DGHookKey(spec);
         NSValue *implementation = installed[key];
@@ -579,13 +581,21 @@ static void DGInstallNative(void) {
         }]];
     }
     __weak UIAlertController *weakSheet=sheet;
+    [sheet addAction:[UIAlertAction actionWithTitle:@"Gemini Q&A" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+        [weakSheet dismissViewControllerAnimated:YES completion:^{DGGeminiPresentFrom(presenter);}];
+    }]];
+    BOOL geminiDisabled=[NSUserDefaults.standardUserDefaults boolForKey:@"DGGeminiDisabled"];
+    [sheet addAction:[UIAlertAction actionWithTitle:geminiDisabled ? @"Gemini routing: OFF" : @"Gemini routing: ON" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+        [NSUserDefaults.standardUserDefaults setBool:!geminiDisabled forKey:@"DGGeminiDisabled"];
+    }]];
     for (NSNumber *link in @[@NO,@YES]) {
         [sheet addAction:[UIAlertAction actionWithTitle:link.boolValue ? @"Open public profile link" : @"Find public profiles (web)" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
             [weakSheet dismissViewControllerAnimated:YES completion:^{[self presentPublicFinder:presenter profileLink:link.boolValue];}];
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.10.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        NSMutableDictionary *report = [@{@"patch_version": @"0.11.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        report[@"gemini"]=DGGeminiSnapshot();
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled)), @"background_audio": @(atomic_load(&backgroundEnabled)), @"feed_compatibility": @(atomic_load(&feedCompatEnabled))};
         report[@"search_adapter_hooks"] = DGSearchAdapterSnapshot();
         report[@"native_hooks_active"] = @(DGActiveHookCount());

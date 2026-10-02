@@ -1,0 +1,58 @@
+[
+  {
+    "binary": "AwemeCore",
+    "class_name": "ServalMarkdownView",
+    "selector": "getContent",
+    "types": "@16@0:8",
+    "imp": "0x7aa5774"
+  },
+  {
+    "binary": "AwemeCore",
+    "class_name": "AWEFeedDoubleColumnAIParseViewController",
+    "selector": "inputViewSendQueryContext:sourceFrom:",
+    "types": "v32@0:8@16q24",
+    "imp": "0x1084fa50"
+  },
+  {
+    "binary": "AwemeCore",
+    "class_name": "AWEFeedDoubleColumnAIParseViewController",
+    "selector": "contentVC",
+    "types": "@16@0:8",
+    "imp": "0x1084ff28"
+  },
+  {
+    "binary": "AwemeCore",
+    "class_name": "AWEFeedDoubleColumnCommentAIParseViewController",
+    "selector": "commentAIParseTabDidEnter",
+    "types": "v16@0:8",
+    "imp": "0x1085211c"
+  },
+  {
+    "binary": "AwemeCore",
+    "class_name": "AWEFeedDoubleColumnCommentAIParseViewController",
+    "selector": "commentAIParseTabWillLeave",
+    "types": "v16@0:8",
+    "imp": "0x10852194"
+  },
+  {
+    "binary": "AwemeCore",
+    "class_name": "AWESearchAIGCQueryContext",
+    "selector": "query",
+    "types": "@16@0:8",
+    "imp": "0x187d992c"
+  },
+  {
+    "binary": "AwemeCore",
+    "class_name": "LynxMarkdownView",
+    "selector": "bundle",
+    "types": "@16@0:8",
+    "imp": "0x15145400"
+  },
+  {
+    "binary": "AwemeCore",
+    "class_name": "LynxMarkdownBundleV2",
+    "selector": "markdownView",
+    "types": "@16@0:8",
+    "imp": "0x271ffa70"
+  }
+]

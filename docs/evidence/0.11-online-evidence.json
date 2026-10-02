@@ -1,0 +1,30 @@
+[
+  {
+    "name": "models",
+    "url": "https://ai.google.dev/gemini-api/docs/models",
+    "http": 200,
+    "sha256": "6e950f3ccca61aeb00747a1591586c1ddc9cb4cfe09f6911f4e27a41cd6c11ef",
+    "utc": "2026-10-02T07:55:46.839693+00:00"
+  },
+  {
+    "name": "text",
+    "url": "https://ai.google.dev/gemini-api/docs/text-generation",
+    "http": 200,
+    "sha256": "e5f581242a826d174421b6817db6122050135e26ccab5e90b511fda08bd33c2a",
+    "utc": "2026-10-02T07:55:47.215559+00:00"
+  },
+  {
+    "name": "keys",
+    "url": "https://ai.google.dev/gemini-api/docs/api-key",
+    "http": 200,
+    "sha256": "064ef35e71ed1c2652e7a0c37f87597d6f332d00061d712a25f9ba252ad6adf3",
+    "utc": "2026-10-02T07:55:46.827691+00:00"
+  },
+  {
+    "name": "errors",
+    "url": "https://ai.google.dev/gemini-api/docs/troubleshooting",
+    "http": 200,
+    "sha256": "895d90eeec1b5afc398769d3d5c691c229b8cac8f5c448d0dbc77a842a44f02a",
+    "utc": "2026-10-02T07:55:46.791581+00:00"
+  }
+]

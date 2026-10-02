@@ -34,7 +34,7 @@ class PackagingTests(unittest.TestCase):
         source=(ROOT/'src/DouyinGuest.m').read_text(encoding='utf8')
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleShortVersionString"] isEqualToString:@"40.6.0"',source)
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleVersion"] isEqualToString:@"406019"',source)
-        self.assertIn('@"patch_version": @"0.10.0-test", @"app_version": @"40.6.0"',source)
+        self.assertIn('@"patch_version": @"0.11.0-test", @"app_version": @"40.6.0"',source)
     def test_injection_preserves_offsets_code_and_input(self):
         original = binary(); snapshot = bytes(original)
         modified = patch.inject_load_command(original)
@@ -94,6 +94,17 @@ class PackagingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path=pathlib.Path(directory)/'input';path.write_bytes(b'known bytes')
             self.assertEqual(patch.sha256(path),hashlib.sha256(b'known bytes').hexdigest())
+    def test_personal_gemini_config_has_only_explicit_credential(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=pathlib.Path(directory)/'gemini-private.json'
+            path.write_text(json.dumps({'api_key':'synthetic-test-key'}),encoding='utf8')
+            self.assertEqual(json.loads(patch.private_gemini_payload(path)),{'api_key':'synthetic-test-key'})
+    def test_personal_config_rejects_headers_endpoints_and_invalid_keys(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=pathlib.Path(directory)/'gemini-private.json'
+            for value in [[],{'api_key':''},{'api_key':'line\nbreak'},{'api_key':123},{'api_key':'x','endpoint':'https://other.example'},{'api_key':'x'*513}]:
+                path.write_text(json.dumps(value),encoding='utf8')
+                with self.subTest(value_type=type(value).__name__),self.assertRaises(ValueError):patch.private_gemini_payload(path)
     def test_transport_hook_rejects_out_of_scope_resources(self):
         hooks,words=patch.validate_resources(ROOT/'resources')
         transport=next(x for x in hooks if x['operation']=='preferStandardFeed')

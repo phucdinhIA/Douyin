@@ -1,0 +1,39 @@
+[
+  {
+    "model": "gemini-3.8-flash",
+    "http": 200,
+    "seconds": 3.06,
+    "text": "Nội dung do AI tạo ra, chỉ mang tính chất tham khảo. Lời khuyên trong video không nhất thiết phù hợp với tất cả mọi người, vui lòng tự đánh giá dựa trên tình hình của bản thân.",
+    "usage": {
+      "promptTokenCount": 44,
+      "candidatesTokenCount": 45,
+      "totalTokenCount": 654,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 44
+        }
+      ],
+      "thoughtsTokenCount": 565,
+      "serviceTier": "standard"
+    }
+  },
+  {
+    "model": "gemini-3.5-flash-lite",
+    "http": 200,
+    "seconds": 1.2,
+    "text": "Nội dung do AI tạo ra, chỉ mang tính tham khảo. Các gợi ý trong video không nhất thiết phù hợp với tất cả mọi người, vui lòng cân nhắc dựa trên hoàn cảnh của chính bạn.",
+    "usage": {
+      "promptTokenCount": 44,
+      "candidatesTokenCount": 42,
+      "totalTokenCount": 86,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 44
+        }
+      ],
+      "serviceTier": "standard"
+    }
+  }
+]

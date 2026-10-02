@@ -225,8 +225,15 @@ def clone_info(info: zipfile.ZipInfo, name: str) -> zipfile.ZipInfo:
     result._compresslevel = 1
     return result
 
+def private_gemini_payload(path: pathlib.Path):
+    config = json.loads(path.read_text(encoding='utf-8'))
+    if not isinstance(config, dict) or set(config) != {'api_key'} or not isinstance(config['api_key'], str) or not 1 <= len(config['api_key']) <= 512 or any(c.isspace() for c in config['api_key']):
+        raise ValueError('Invalid personal Gemini config')
+    return json.dumps(config, ensure_ascii=True).encode('utf-8')
+
+
 def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
-          library_sha256: str, resource_dir: pathlib.Path = ROOT/'resources'):
+          library_sha256: str, resource_dir: pathlib.Path = ROOT/'resources', gemini_config: pathlib.Path = None):
     source, library, output = source.resolve(), library.resolve(), output.resolve()
     if output == source or output == library or output.exists() or output.with_suffix('.validation.json').exists():
         raise ValueError('Output must be a new file distinct from inputs')
@@ -237,6 +244,9 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
     library_data = library.read_bytes()
     dependencies = validate_library(library_data)
     hooks, words = validate_resources(resource_dir)
+    private_payload = None
+    if gemini_config is not None:
+        private_payload = private_gemini_payload(gemini_config)
     changes, removals, corrections, hashes = [], [], [], {}
     thinning_allowlists = []
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -296,6 +306,8 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
                 APP+'DouyinGuest.bundle/translations.json': (resource_dir/'translations.json').read_bytes(),
                 APP+'DouyinGuest.bundle/Info.plist': plistlib.dumps({'CFBundleIdentifier':'local.douyin.guest.resources','CFBundleName':'DouyinGuest','CFBundleVersion':'1','CFBundlePackageType':'BNDL'},fmt=plistlib.FMT_BINARY),
             }
+            if private_payload is not None:
+                additions[APP+'DouyinGuest.bundle/gemini-private.json'] = private_payload
             for name, payload in additions.items():
                 entry = zipfile.ZipInfo(name, date_time=(2026,10,1,0,0,0))
                 entry.external_attr = (0o100755 if name.endswith('.dylib') else 0o100644)<<16
@@ -334,5 +346,6 @@ if __name__ == '__main__':
     parser.add_argument('library',type=pathlib.Path)
     parser.add_argument('output',type=pathlib.Path)
     parser.add_argument('--library-sha256',required=True)
+    parser.add_argument('--gemini-config',type=pathlib.Path,help='Local personal config, excluded from source and CI')
     args = parser.parse_args()
-    build(args.source,args.library,args.output,args.library_sha256)
+    build(args.source,args.library,args.output,args.library_sha256,gemini_config=args.gemini_config)

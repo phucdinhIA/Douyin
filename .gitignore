@@ -8,3 +8,5 @@ dist/
 __pycache__/
 .DS_Store
 local-validation.json
+gemini-private.json
+private/
