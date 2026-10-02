@@ -318,7 +318,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     UILabel *roomName=label(room,@"明星",0);roomName.frame=CGRectMake(0,0,170,36);
     HTSLiveChatFixtureView *chat=[[HTSLiveChatFixtureView alloc] initWithFrame:CGRectMake(20,530,width-40,55)];[live addSubview:chat];
     UILabel *chatMessage=label(chat,@"聊天",0);chatMessage.frame=CGRectMake(0,0,170,36);
-    UILabel *note=label(live,@"Chinese below the tools is sample room/chat content and remains unchanged.",620);note.frame=CGRectMake(20,620,width-40,66);note.numberOfLines=3;note.font=[UIFont systemFontOfSize:14];
+    UILabel *liveNote=label(live,@"Chinese below the tools is sample room/chat content and remains unchanged.",620);liveNote.frame=CGRectMake(20,620,width-40,66);liveNote.numberOfLines=3;liveNote.font=[UIFont systemFontOfSize:14];
     screen=[UIViewController new];screen.view=live;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     check([roomName.text isEqual:@"明星"] && [chatMessage.text isEqual:@"聊天"],@"LIVE visual sample protects room titles and chat content");
     [self saveWindowImage:@"ui-live.png"];
