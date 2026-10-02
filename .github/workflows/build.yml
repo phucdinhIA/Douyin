@@ -55,5 +55,6 @@ jobs:
             build/ui-fixture/ui-live.png
             build/ui-fixture/ui-public-finder.png
             build/ui-fixture/ui-public-profile.png
+            build/ui-fixture/ui-feed-compat.png
           if-no-files-found: warn
           retention-days: 14

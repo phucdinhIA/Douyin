@@ -3,6 +3,7 @@
 #import <objc/runtime.h>
 #import <dispatch/dispatch.h>
 #include <string.h>
+#include <stdatomic.h>
 
 static NSObject *searchLock;
 static NSMutableDictionary<NSString *, NSDictionary *> *searchHooks;
@@ -94,12 +95,83 @@ static void DGRecordFeedList(NSString *event, id items, NSUInteger removed, DGRe
     if (count && removed == count) record([event stringByAppendingString:@" all items filtered"], 1);
 }
 
+// Only dispatch getters whose ABI was checked, including the native TT response.
+static Method DGGetter(id object, NSString *name, const char *types) {
+    if (!object) return NULL;
+    Method method=class_getInstanceMethod(object_getClass(object),NSSelectorFromString(name));
+    return method && !strcmp(method_getTypeEncoding(method),types) ? method : NULL;
+}
+
+static NSInteger DGHTTPStatus(id response, NSString **mime) {
+    if ([response isKindOfClass:NSHTTPURLResponse.class]) {
+        *mime=[response MIMEType]; return [response statusCode];
+    }
+    Class tt=NSClassFromString(@"TTHttpResponse");
+    if (!tt || ![response isKindOfClass:tt]) return 0;
+    Method status=DGGetter(response,@"statusCode","q16@0:8");
+    Method type=DGGetter(response,@"MIMEType","@16@0:8");
+    if (!status || !type) return 0;
+    id value=((id (*)(id,SEL))method_getImplementation(type))(response,NSSelectorFromString(@"MIMEType"));
+    if ([value isKindOfClass:NSString.class]) *mime=value;
+    return ((NSInteger (*)(id,SEL))method_getImplementation(status))(response,NSSelectorFromString(@"statusCode"));
+}
+
+static void DGRecordJSONData(NSData *data, DGRecord record) {
+    NSUInteger length=data.length;
+    NSString *size=length==0 ? @"empty" : length<=1024 ? @"up to 1KiB" :
+        length<=65536 ? @"up to 64KiB" : length<=2097152 ? @"up to 2MiB" : @"over 2MiB";
+    record([@"JSON data size " stringByAppendingString:size],1);
+    const unsigned char *bytes=data.bytes;
+    NSUInteger start=0;
+    if (length>=3 && bytes[0]==0xef && bytes[1]==0xbb && bytes[2]==0xbf) start=3;
+    // Fixed classifications only: never log the payload, URL or error description.
+    while (start<length && start<64 && (bytes[start]==' ' || bytes[start]=='\r' || bytes[start]=='\n' || bytes[start]=='\t')) ++start;
+    NSString *prefix=@"other";
+    if (!length) prefix=@"empty";
+    else if (length>=2 && bytes[0]==0x1f && bytes[1]==0x8b) prefix=@"gzip";
+    else if (start<length) {
+        if (bytes[start]=='{') prefix=@"object";
+        else if (bytes[start]=='[') prefix=@"array";
+        else if (bytes[start]=='<') prefix=@"markup";
+        else if (bytes[start]>='0' && bytes[start]<='9') prefix=@"numeric";
+    }
+    record([@"JSON data prefix " stringByAppendingString:prefix],1);
+    // Secondary decoder is diagnostic only, bounded across concurrent callbacks.
+    static atomic_uint probes;
+    if (!length || length>2097152 || atomic_fetch_add(&probes,1)>=32) return;
+    id decoded=[NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
+    NSString *shape=[decoded isKindOfClass:NSDictionary.class] ? @"dictionary" :
+        [decoded isKindOfClass:NSArray.class] ? @"array" : decoded ? @"other" : @"invalid";
+    record([@"JSON strict decode " stringByAppendingString:shape],1);
+}
+
+static BOOL DGHasStandardFeedController(id manager) {
+    Method getter=DGGetter(manager,@"dataController","@16@0:8");
+    if (!getter) return NO;
+    id controller=((id (*)(id,SEL))method_getImplementation(getter))(manager,NSSelectorFromString(@"dataController"));
+    Class native=NSClassFromString(@"AWEDCFeedDefaultDataControllerWrapper");
+    if (!native || ![controller isKindOfClass:native]) return NO;
+    for (NSString *name in @[@"fetchDataWithRequestParams:args:completion:",
+        @"refreshDataWithRequestParams:args:completion:",@"loadMoreDataWithRequestParams:args:completion:"]) {
+        if (!DGGetter(controller,name,"v40@0:8@16@24@?32")) return NO;
+    }
+    Method innerGetter=DGGetter(controller,@"dataController","@16@0:8");
+    if (!innerGetter) return NO;
+    id inner=((id (*)(id,SEL))method_getImplementation(innerGetter))(controller,NSSelectorFromString(@"dataController"));
+    Class defaultController=NSClassFromString(@"AWEDCFeedDefaultDataController");
+    if (!defaultController || ![inner isKindOfClass:defaultController]) return NO;
+    for (NSString *name in @[@"initFetchWithCompletion:",@"refreshWithCompletion:",@"loadMoreWithCompletion:"])
+        if (!DGGetter(inner,name,"v24@0:8@?16")) return NO;
+    return YES;
+}
+
 static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
     NSString *returnType;
     NSArray<NSString *> *arguments;
     NSString *boolean = [NSString stringWithUTF8String:@encode(BOOL)];
     if ([kind isEqualToString:@"false0"] || [kind isEqualToString:@"true0"] ||
-        [kind isEqualToString:@"backgroundSwitch"] || [kind isEqualToString:@"observeBool0"]) {
+        [kind isEqualToString:@"backgroundSwitch"] || [kind isEqualToString:@"observeBool0"] ||
+        [kind isEqualToString:@"preferStandardFeed"]) {
         returnType = boolean; arguments = @[@"@", @":"];
     } else if ([kind isEqualToString:@"backgroundState"]) {
         returnType = @"q"; arguments = @[@"@", @":"];
@@ -190,7 +262,18 @@ static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecor
     IMP original = method_getImplementation(method);
     id block = nil;
     NSString *event = [NSString stringWithFormat:@"%@ %@", name, selectorName];
-    if ([kind isEqualToString:@"backgroundSwitch"] || [kind isEqualToString:@"observeBool0"]) {
+    if ([kind isEqualToString:@"preferStandardFeed"]) {
+        block=^BOOL(id self) {
+            BOOL native=((BOOL (*)(id,SEL))original)(self,sel);
+            if (!enabled()) return native;
+            record(native ? @"DC transport original chunk" : @"DC transport original standard",1);
+            if (!native) return NO;
+            // Native fetch/refresh/load-more choose their existing non-chunk branch.
+            // Do not reissue requests or change URLs, credentials, cursors or states.
+            if (!DGHasStandardFeedController(self)) { record(@"DC transport compatibility unavailable",1); return native; }
+            record(@"DC transport standard selected",1); return NO;
+        };
+    } else if ([kind isEqualToString:@"backgroundSwitch"] || [kind isEqualToString:@"observeBool0"]) {
         block = ^BOOL(id self) {
             BOOL value = ((BOOL (*)(id,SEL))original)(self,sel);
             if (!enabled()) return value;
@@ -314,7 +397,16 @@ static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecor
     } else if ([kind isEqualToString:@"observeFeedRequest"]) {
         block = ^(id self,NSUInteger requestType,id response,id error) {
             ((void (*)(id,SEL,NSUInteger,id,id))original)(self,sel,requestType,response,error);
-            if (enabled()) DGRecordFeedCompletion(event,response,error,record);
+            if (enabled()) {
+                DGRecordFeedCompletion(event,response,error,record);
+                NSString *request=requestType==1 ? @"initial" : requestType==2 ? @"refresh" : requestType==3 ? @"load more" : @"other";
+                record([@"DC completion request " stringByAppendingString:request],1);
+                Method count=DGGetter(self,@"sectionModelCount","q16@0:8");
+                if (count) {
+                    NSInteger value=((NSInteger (*)(id,SEL))method_getImplementation(count))(self,NSSelectorFromString(@"sectionModelCount"));
+                    record(value>0 ? @"DC completion has sections" : @"DC completion no sections",1);
+                }
+            }
         };
     } else if ([kind isEqualToString:@"observeError1"]) {
         block = ^(id self,id error) {
@@ -345,14 +437,15 @@ static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecor
                 NSString *shape=[json isKindOfClass:NSDictionary.class] ? @"dictionary" :
                     [json isKindOfClass:NSData.class] ? @"data" : [json isKindOfClass:NSString.class] ? @"string" : json ? @"other" : @"nil";
                 record([@"JSON response input " stringByAppendingString:shape],1);
-                if ([response isKindOfClass:NSHTTPURLResponse.class]) {
-                    NSInteger status=[response statusCode];
-                    if (status>=100 && status<=599) record([NSString stringWithFormat:@"JSON response HTTP %ld",(long)status],1);
-                    NSString *mime=[[response MIMEType] lowercaseString];
-                    NSString *type=[mime isEqualToString:@"application/json"] ? @"json" :
-                        [mime isEqualToString:@"text/html"] ? @"html" : [mime isEqualToString:@"application/octet-stream"] ? @"binary" : @"other";
-                    record([@"JSON response content type " stringByAppendingString:type],1);
-                }
+                NSString *rawMime=nil;
+                NSInteger status=DGHTTPStatus(response,&rawMime);
+                if (status>=100 && status<=599) record([NSString stringWithFormat:@"JSON response HTTP %ld",(long)status],1);
+                NSString *mime=[[[rawMime componentsSeparatedByString:@";"] firstObject] lowercaseString];
+                mime=[mime stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
+                NSString *type=[mime isEqualToString:@"application/json"] ? @"json" :
+                    [mime isEqualToString:@"text/html"] ? @"html" : [mime isEqualToString:@"application/octet-stream"] ? @"binary" : mime.length ? @"other" : @"unknown";
+                record([@"JSON response content type " stringByAppendingString:type],1);
+                if ([json isKindOfClass:NSData.class]) DGRecordJSONData(json,record);
                 if ([responseError isKindOfClass:NSError.class]) DGRecordError(@"JSON transport",responseError,record);
             }
             return result;

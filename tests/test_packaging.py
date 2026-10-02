@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import contextlib
 import io
 import plistlib
@@ -33,7 +34,7 @@ class PackagingTests(unittest.TestCase):
         source=(ROOT/'src/DouyinGuest.m').read_text(encoding='utf8')
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleShortVersionString"] isEqualToString:@"40.6.0"',source)
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleVersion"] isEqualToString:@"406019"',source)
-        self.assertIn('@"patch_version": @"0.7.0-test", @"app_version": @"40.6.0"',source)
+        self.assertIn('@"patch_version": @"0.8.0-test", @"app_version": @"40.6.0"',source)
     def test_injection_preserves_offsets_code_and_input(self):
         original = binary(); snapshot = bytes(original)
         modified = patch.inject_load_command(original)
@@ -77,7 +78,7 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(entry.compress_type,zipfile.ZIP_STORED)
     def test_resources_validate_and_no_identity_hooks(self):
         hooks,words=patch.validate_resources(ROOT/'resources')
-        self.assertEqual(len(hooks),75)
+        self.assertEqual(len(hooks),76)
         self.assertEqual(words['首页'],'Home')
         self.assertFalse(any(x['selector'] in ['isLogin','isLoggedIn','hasMore','isAds'] for x in hooks))
         self.assertEqual(sum(x['feature']=='search' for x in hooks),5)
@@ -93,6 +94,18 @@ class PackagingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path=pathlib.Path(directory)/'input';path.write_bytes(b'known bytes')
             self.assertEqual(patch.sha256(path),hashlib.sha256(b'known bytes').hexdigest())
+    def test_transport_hook_rejects_out_of_scope_resources(self):
+        hooks,words=patch.validate_resources(ROOT/'resources')
+        transport=next(x for x in hooks if x['operation']=='preferStandardFeed')
+        with tempfile.TemporaryDirectory() as directory:
+            resource=pathlib.Path(directory)
+            (resource/'translations.json').write_text(json.dumps(words),encoding='utf8')
+            for changes in [{'class':'AWEUserService'},{'selector':'isLogin'},
+                            {'class_method':True},{'operation':'false0'},{'feature':'guest'}]:
+                invalid=[{**x,**changes} if x is transport else x for x in hooks]
+                (resource/'hooks.json').write_text(json.dumps(invalid),encoding='utf8')
+                with self.subTest(changes=changes),self.assertRaises(ValueError):
+                    patch.validate_resources(resource)
     def test_build_removes_device_thinning_without_weakening_capabilities(self):
         main = {'CFBundleIdentifier':'com.ss.iphone.ugc.Aweme', 'CFBundleShortVersionString':'40.6.0',
                 'CFBundleVersion':'406019', 'UISupportedDevices':['iPhone9,1'],

@@ -1,0 +1,23 @@
+[
+  {
+    "name": "apple-json",
+    "url": "https://developer.apple.com/tutorials/data/documentation/foundation/jsonserialization.json",
+    "status": 200,
+    "bytes": 37483,
+    "sha256": "c2ea8c863761055f6ca2b499711dcf5743f16f2085465661f465aa8a8d573e8f"
+  },
+  {
+    "name": "rfc9112",
+    "url": "https://www.rfc-editor.org/rfc/rfc9112.txt",
+    "status": 200,
+    "bytes": 109913,
+    "sha256": "e4f426bac6206b67fdf9e0da826154f70588db2133a0a86b15cde4ff725d8937"
+  },
+  {
+    "name": "dyyy",
+    "url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/DYYY.xm",
+    "status": 200,
+    "bytes": 293000,
+    "sha256": "6f005f7903bf315947662ea478136db0db6a21e7dd2d53a426491d10fc94408a"
+  }
+]

@@ -3,6 +3,53 @@
 #import "DGPolicy.h"
 #import "DGHook.h"
 
+@interface TTHttpResponse : NSObject
+@property NSInteger statusCode;
+@property (strong) NSString *MIMEType;
+@end
+@implementation TTHttpResponse
+@end
+
+@interface AWEDCFeedDefaultDataController : NSObject
+- (void)initFetchWithCompletion:(void (^)(id,NSError *))completion;
+- (void)refreshWithCompletion:(void (^)(id,NSError *))completion;
+- (void)loadMoreWithCompletion:(void (^)(id,NSError *))completion;
+@end
+@implementation AWEDCFeedDefaultDataController
+- (void)initFetchWithCompletion:(void (^)(id,NSError *))completion {if (completion) completion(nil,nil);}
+- (void)refreshWithCompletion:(void (^)(id,NSError *))completion {[self initFetchWithCompletion:completion];}
+- (void)loadMoreWithCompletion:(void (^)(id,NSError *))completion {[self initFetchWithCompletion:completion];}
+@end
+
+@interface AWEDCFeedDefaultDataControllerWrapper : NSObject
+@property NSUInteger calls;
+@property (strong) id parameters;
+@property (strong) id arguments;
+@property (strong) id result;
+@property (strong) NSError *error;
+@property (strong) id dataController;
+- (void)fetchDataWithRequestParams:(id)params args:(id)args completion:(void (^)(id,NSError *))completion;
+- (void)refreshDataWithRequestParams:(id)params args:(id)args completion:(void (^)(id,NSError *))completion;
+- (void)loadMoreDataWithRequestParams:(id)params args:(id)args completion:(void (^)(id,NSError *))completion;
+@end
+@implementation AWEDCFeedDefaultDataControllerWrapper
+- (void)fetchDataWithRequestParams:(id)params args:(id)args completion:(void (^)(id,NSError *))completion {
+    self.calls++;self.parameters=params;self.arguments=args;if (completion) completion(self.result,self.error);
+}
+- (void)refreshDataWithRequestParams:(id)params args:(id)args completion:(void (^)(id,NSError *))completion { [self fetchDataWithRequestParams:params args:args completion:completion]; }
+- (void)loadMoreDataWithRequestParams:(id)params args:(id)args completion:(void (^)(id,NSError *))completion { [self fetchDataWithRequestParams:params args:args completion:completion]; }
+@end
+@interface TestFeedManager : NSObject
+@property NSUInteger decisions;
+@property NSUInteger chunkCalls;
+@property BOOL nativeChunk;
+@property (strong) id dataController;
+- (BOOL)shouldRequestWithChunk;
+@end
+@implementation TestFeedManager
+- (BOOL)shouldRequestWithChunk {self.decisions++;return self.nativeChunk;}
+@end
+
 @interface TestJSON : NSObject
 @property NSUInteger calls;
 @property (strong) NSError *error;
@@ -458,6 +505,65 @@ int main(void) {
         check(serializer.calls==2 && [newEvents isEqual:before],@"nullable result-error pointer is forwarded safely");
         observeJSON=NO;[serializer response:http json:@{} error:nil resultError:&resultError];
         check(serializer.calls==3 && resultError==serializer.error && [newEvents isEqual:before],@"JSON observation OFF preserves native failure without collecting events");
+        observeJSON=YES;
+        TTHttpResponse *tt=[TTHttpResponse new];tt.statusCode=200;tt.MIMEType=@"application/json; charset=utf-8";
+        NSData *valid=[@"{\"status_code\":2483,\"private\":\"PRIVATE\"}" dataUsingEncoding:NSUTF8StringEncoding];
+        jsonResult=[serializer response:tt json:valid error:nil resultError:&resultError];
+        check(jsonResult==serializer.output && resultError==serializer.error && serializer.calls==4 &&
+            [newEvents[@"JSON strict decode dictionary"] unsignedIntegerValue]==1 &&
+            [newEvents[@"JSON response content type json"] unsignedIntegerValue]==1,
+            @"TT response ABI reads MIME/status and bounded JSON probe never converts failure into success");
+        [serializer response:tt json:[@"[1,2]" dataUsingEncoding:NSUTF8StringEncoding] error:nil resultError:&resultError];
+        [serializer response:tt json:[@"{\"partial\":" dataUsingEncoding:NSUTF8StringEncoding] error:nil resultError:&resultError];
+        unsigned char gzip[]={0x1f,0x8b};
+        [serializer response:tt json:[NSData dataWithBytes:gzip length:2] error:under resultError:&resultError];
+        check([newEvents[@"JSON strict decode array"] unsignedIntegerValue]==1 &&
+            [newEvents[@"JSON strict decode invalid"] unsignedIntegerValue]==2 &&
+            [newEvents[@"JSON data prefix gzip"] unsignedIntegerValue]==1 &&
+            [newEvents[@"JSON transport error URL -1001"] unsignedIntegerValue]==1,
+            @"array, incomplete JSON and gzip remain original errors with fixed classifications");
+        before=[newEvents copy];
+        [serializer response:tt json:[NSMutableData dataWithLength:2097153] error:nil resultError:&resultError];
+        check([newEvents[@"JSON data size over 2MiB"] unsignedIntegerValue]==1 &&
+            [newEvents[@"JSON strict decode invalid"] isEqual:before[@"JSON strict decode invalid"]],
+            @"oversized response is not reparsed");
+        [serializer response:tt json:NSData.data error:nil resultError:&resultError];
+        tt.statusCode=403;tt.MIMEType=@"PRIVATE-mime";
+        [serializer response:tt json:[@"<html>PRIVATE</html>" dataUsingEncoding:NSUTF8StringEncoding] error:nil resultError:&resultError];
+        check([newEvents[@"JSON response HTTP 403"] unsignedIntegerValue]==1 &&
+            [newEvents[@"JSON response content type other"] unsignedIntegerValue]>=1 &&
+            [newEvents[@"JSON data prefix markup"] unsignedIntegerValue]==1 &&
+            [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,
+            @"empty, HTML, server HTTP failure and unknown MIME never expose response content");
+
+        __block BOOL compatibility=YES;
+        Method transportMethod=class_getInstanceMethod(TestFeedManager.class,@selector(shouldRequestWithChunk));
+        check(DGInstallHook(@{@"class":@"TestFeedManager",@"selector":@"shouldRequestWithChunk",@"operation":@"preferStandardFeed",@"types":[NSString stringWithUTF8String:method_getTypeEncoding(transportMethod)]},^BOOL{return compatibility;},recordNew),@"native standard transport decision installs with checked BOOL ABI");
+        TestFeedManager *manager=[TestFeedManager new];manager.nativeChunk=YES;
+        check(manager.shouldRequestWithChunk && manager.decisions==1,@"missing standard controller retains original transport");
+        manager.dataController=[NSObject new];
+        check(manager.shouldRequestWithChunk && manager.decisions==2,@"unverified standard controller retains original transport");
+        AWEDCFeedDefaultDataControllerWrapper *standard=[AWEDCFeedDefaultDataControllerWrapper new];manager.dataController=standard;
+        check(manager.shouldRequestWithChunk && manager.decisions==3,@"wrapper without underlying standard controller retains native transport");
+        standard.dataController=[AWEDCFeedDefaultDataController new];
+        check(!manager.shouldRequestWithChunk && manager.decisions==4,@"compatible native controller selects standard path and evaluates original once");
+        manager.nativeChunk=NO;check(!manager.shouldRequestWithChunk && manager.decisions==5,@"original standard mode remains standard");
+        compatibility=NO;manager.nativeChunk=YES;check(manager.shouldRequestWithChunk && manager.decisions==6,@"OFF restores original chunk decision");
+        compatibility=YES;
+        NSDictionary *params=@{@"cursor":@45,@"PRIVATE-auth":@"PRIVATE"};id args=@{@"reason":@2};
+        standard.result=@{@"has_more":@NO,@"cursor":@67,@"items":@[@"video"]};
+        __block NSUInteger completions=0;
+        for (NSString *methodName in @[@"fetchDataWithRequestParams:args:completion:",@"refreshDataWithRequestParams:args:completion:",@"loadMoreDataWithRequestParams:args:completion:"]) {
+            check(!manager.shouldRequestWithChunk,@"initial, refresh and load more can select native standard branch");
+            SEL methodSelector=NSSelectorFromString(methodName);
+            void (^completion)(id,NSError *)=^(id result,NSError *error){completions++;check(result==standard.result && error==standard.error,@"standard completion preserves model and failure identity");};
+            ((void (*)(id,SEL,id,id,id))[standard methodForSelector:methodSelector])(standard,methodSelector,params,args,completion);
+            check(standard.parameters==params && standard.arguments==args,@"cursor, credentials and request args stay untouched");
+            standard.error=[NSError errorWithDomain:@"com.bytedance.AwemeError" code:2483 userInfo:nil];
+        }
+        check(completions==3 && standard.calls==3 && [standard.result[@"has_more"] isEqual:@NO] &&
+            [standard.result[@"cursor"] isEqual:@67] && [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,
+            @"transport selection does not duplicate requests, fabricate pagination or clear server restriction");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
     return 0;
