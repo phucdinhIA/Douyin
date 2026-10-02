@@ -1,5 +1,6 @@
 #import "DGSource.h"
 #import <AVFoundation/AVFoundation.h>
+#include <math.h>
 BOOL DGSourceURLAllowed(NSURL *url) {
     NSString *h=url.host.lowercaseString;
     return [url.scheme isEqual:@"https"] && !url.user && !url.password &&
@@ -43,7 +44,12 @@ BOOL DGSourceURLAllowed(NSURL *url) {
     [exporter exportAsynchronouslyWithCompletionHandler:^{
         DGSourceDownload *owner=weakSelf;
         if (!owner || owner.cancelled) {[NSFileManager.defaultManager removeItemAtURL:audio error:NULL];[NSFileManager.defaultManager removeItemAtURL:file error:NULL];return;}
-        if (exporter.status==AVAssetExportSessionStatusCompleted) {[NSFileManager.defaultManager removeItemAtURL:file error:NULL];owner.file=audio;[owner finish:audio failure:nil];}
+        AVURLAsset *extracted=exporter.status==AVAssetExportSessionStatusCompleted ? [AVURLAsset URLAssetWithURL:audio options:nil] : nil;
+        double originalSeconds=CMTimeGetSeconds(asset.duration),audioSeconds=CMTimeGetSeconds(extracted.duration);
+        AVAssetTrack *sourceTrack=[asset tracksWithMediaType:AVMediaTypeAudio].firstObject;
+        // A track beginning late can lose leading silence during audio-only export.
+        BOOL aligned=extracted && isfinite(originalSeconds) && isfinite(audioSeconds) && fabs(originalSeconds-audioSeconds)<=0.1 && CMTimeGetSeconds(sourceTrack.timeRange.start)<=0.1;
+        if (aligned) {[NSFileManager.defaultManager removeItemAtURL:file error:NULL];owner.file=audio;[owner finish:audio failure:nil];}
         else {[NSFileManager.defaultManager removeItemAtURL:audio error:NULL];[owner finish:file failure:nil];} // Verified MP4 binary upload is also accepted by Nova-3.
     }];
     [session finishTasksAndInvalidate];

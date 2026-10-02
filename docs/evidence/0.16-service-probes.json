@@ -64,5 +64,23 @@
     "model": "gemini-3.5-flash-lite",
     "automatic_retries": 0
   },
-  "scope": "Real external service probes on Windows using one recent 13.536-second public Douyin video; native AVFoundation export and physical iPhone acceptance are separate checks."
+  "scope": "Real external service probes on Windows using one recent 13.536-second public Douyin video; native AVFoundation export and physical iPhone acceptance are separate checks.",
+  "second_video_asr": {
+    "actor_duration": 37.300000000000004,
+    "url_http": 200,
+    "url_seconds": 11.36,
+    "url_err_code": null,
+    "final_http": 200,
+    "asr_duration": 37.243,
+    "words": 0
+  },
+  "third_video_asr": {
+    "http": 200,
+    "seconds": 12.17,
+    "err_code": null,
+    "actor_duration": 67.467,
+    "asr_duration": 67.454,
+    "words": 209
+  },
+  "second_video_note": "HTTP 200 with valid media duration but no recognized speech: no fabricated subtitles or dubbing."
 }

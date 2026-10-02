@@ -329,12 +329,16 @@ static NSData *mediaBody(NSURLRequest *request) {
         for (NSDictionary *cue in input) [rows addObject:@{@"id":cue[@"id"],@"text":@[@"Xin chào",@"Trung Quốc",@"Cảm ơn"][[cue[@"id"] unsignedIntegerValue]]}];
         data=mediaJSON(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":[[NSString alloc] initWithData:mediaJSON(@{@"translations":rows}) encoding:NSUTF8StringEncoding]}]},@"finishReason":@"STOP"}]});
     } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);if (atomic_load(&gtxThrottle)) {status=429;data=mediaJSON(@{});}else data=mediaJSON(@[@[@[@"Video rất hay, cảm ơn bạn!",@"视频很好，谢谢！"]]]);}
+    else if ([request.URL.host isEqual:@"vbee.vn"]) {
+        if ([request.URL.path isEqual:@"/api/v1/tts"]) data=mediaJSON(@{@"status":@1,@"result":@{@"status":@"SUCCESS",@"app_id":@"00000000-0000-0000-0000-000000000001",@"voice_code":@"hn_male_manhdung_news_48k-fhg",@"audio_link":@"https://vbee.vn/audio/tone.wav"}});
+        else data=[NSData dataWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"]];
+    }
     else {status=500;data=mediaJSON(@{});}
     [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
 - (void)stopLoading {}
 @end
-static void mediaWait(BOOL (^finished)(void)) {NSDate *until=[NSDate dateWithTimeIntervalSinceNow:5];while (!finished() && until.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
+static void mediaWait(BOOL (^finished)(void)) {NSDate *until=[NSDate dateWithTimeIntervalSinceNow:10];while (!finished() && until.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
 
 @interface FixtureGuestAdapter : NSObject
 + (BOOL)enableGuestSearch;
@@ -468,6 +472,12 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.1)<0.1,@"dubbing follows backward seek or video loop");
     player.playing=YES;DGAudioFixtureTick();check([DGAudioSnapshot()[@"dubbing_rate"] floatValue]>0,@"native play resumes dubbed audio");
     player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"changing video restores original mute state and releases old voice");
+    DGMediaFixtureVbee(@{@"app_id":@"00000000-0000-0000-0000-000000000001",@"token":@"synthetic-vbee",@"voice_code":@"hn_male_manhdung_news_48k-fhg"});
+    DGMediaFixtureConfiguration(cfg,nil);player.model=model;player.playback=0.5;player.playing=YES;
+    check(DGMediaFixtureShortcut(self.window,CGPointMake(280,300)) && !player.playing,@"full subtitle and Vbee flow pauses before starting work");
+    mediaWait(^BOOL {return ![DGMediaSnapshot()[@"caption_running"] boolValue];});
+    check([DGAudioSnapshot()[@"dubbing_active"] boolValue] && player.muted && player.playing && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"complete mock subtitle Gemini Vbee export and native audio integration resumes current video with aligned dubbing");
+    player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"switching video after complete flow releases previous dubbing and restores audio");DGMediaFixtureVbee(@{});
     AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.textLayout=[YYTextLayout layoutWithContainer:[NSObject new] text:[[NSAttributedString alloc] initWithString:@"视频很好，谢谢！"]];[comments.view addSubview:native];
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"隐藏的评论";hidden.hidden=YES;[comments.view addSubview:hidden];

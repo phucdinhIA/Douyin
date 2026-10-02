@@ -1,0 +1,155 @@
+{
+  "scope": "Read-only static Objective-C metadata from the original 40.6.0 binary; guarded at runtime before invocation. Private completion block arguments are not assumed.",
+  "records": [
+    {
+      "class": "AWECommentTreeContainerViewController",
+      "binary": "AwemeCore",
+      "category": null,
+      "methods": [
+        {
+          "selector": "viewWillDisappear:",
+          "types": "v20@0:8B16",
+          "imp": "0x7fd008"
+        },
+        {
+          "selector": "viewDidAppear:",
+          "types": "v20@0:8B16",
+          "imp": "0x7fd040"
+        }
+      ]
+    },
+    {
+      "class": "YYLabel",
+      "binary": "AwemeCore",
+      "category": null,
+      "methods": [
+        {
+          "selector": "setAttributedText:",
+          "types": "v24@0:8@16",
+          "imp": "0x12fee930"
+        },
+        {
+          "selector": "setTextLayout:",
+          "types": "v24@0:8@16",
+          "imp": "0x13e4c71c"
+        },
+        {
+          "selector": "textLayout",
+          "types": "@16@0:8",
+          "imp": "0x13d55984"
+        }
+      ]
+    },
+    {
+      "class": "YYTextLayout",
+      "binary": "AwemeCore",
+      "category": null,
+      "methods": [
+        {
+          "selector": "container",
+          "types": "@16@0:8",
+          "imp": "0x131ad7e4"
+        },
+        {
+          "selector": "text",
+          "types": "@16@0:8",
+          "imp": "0x13148958"
+        },
+        {
+          "selector": "layoutWithContainer:text:",
+          "types": "@32@0:8@16@24",
+          "imp": "0x131461c4"
+        }
+      ]
+    },
+    {
+      "class": "AWEURLModel",
+      "binary": "AwemeCore",
+      "category": null,
+      "methods": [
+        {
+          "selector": "URLList",
+          "types": "@16@0:8",
+          "imp": "0x123de300"
+        }
+      ]
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "binary": "AwemeCore",
+      "category": null,
+      "methods": [
+        {
+          "selector": "setModel:",
+          "types": "v24@0:8@16",
+          "imp": "0x13b650f0"
+        },
+        {
+          "selector": "viewWillDisappear:",
+          "types": "v20@0:8B16",
+          "imp": "0x14c80fb4"
+        },
+        {
+          "selector": "viewDidAppear:",
+          "types": "v20@0:8B16",
+          "imp": "0x14dadf60"
+        },
+        {
+          "selector": "currentPlayURL",
+          "types": "@16@0:8",
+          "imp": "0x1d371bfc"
+        },
+        {
+          "selector": "isPlaying",
+          "types": "B16@0:8",
+          "imp": "0x13e7fcb0"
+        },
+        {
+          "selector": "pause",
+          "types": "B16@0:8",
+          "imp": "0x14e2aa18"
+        },
+        {
+          "selector": "currentPlaybackTime",
+          "types": "d16@0:8",
+          "imp": "0x13d13514"
+        },
+        {
+          "selector": "setPlayerSeekTime:completion:",
+          "types": "v32@0:8d16@?24",
+          "imp": "0x153cfe20"
+        },
+        {
+          "selector": "resumePlayVideo",
+          "types": "v16@0:8",
+          "imp": "0x14e68080"
+        },
+        {
+          "selector": "setMuted:",
+          "types": "v20@0:8B16",
+          "imp": "0x1d38d070"
+        },
+        {
+          "selector": "isMute",
+          "types": "B16@0:8",
+          "imp": "0x1d38d164"
+        },
+        {
+          "selector": "getCurrentPlaybackRate",
+          "types": "f16@0:8",
+          "imp": "0x1d39543c"
+        },
+        {
+          "selector": "model",
+          "types": "@16@0:8",
+          "imp": "0x13b560f8"
+        },
+        {
+          "selector": "itemID",
+          "types": "@16@0:8",
+          "imp": "0x1d3984e4"
+        }
+      ]
+    }
+  ]
+}
