@@ -375,6 +375,8 @@ static NSUInteger countText(UIView *view, NSString *text) {
     player.playback=1.5;DGMediaFixtureTick(player);check(caption.hidden,@"speech gap hides previous cue");
     player.playback=5.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"Cảm ơn"] && !caption.hidden,@"seek forward uses actual native playback time");
     player.playback=0.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin chào"],@"seek backward and video loop restore first cue");
+    [player.view layoutIfNeeded];[button layoutIfNeeded];
+    check([button.currentTitle isEqual:@"Tắt phụ đề Việt"] && [button.titleLabel.text isEqual:button.currentTitle] && button.titleLabel.bounds.size.width>40,@"caption button retains visible title after asynchronous stage updates");
     [self saveWindowImage:@"ui-captions.png"];int requests=atomic_load(&mediaRequests);
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];check(caption.hidden,@"subtitle off hides overlay immediately");
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];DGMediaFixtureTick(player);check(!caption.hidden && atomic_load(&mediaRequests)==requests,@"subtitle re-enable uses complete cache without API cost");
