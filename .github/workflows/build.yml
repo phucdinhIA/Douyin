@@ -32,8 +32,6 @@ jobs:
           clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
             src/DGGemini.m src/DGTranslation.m tests/translation_tests.m -framework Foundation -o build/translation_tests
           build/translation_tests
-      - name: UIKit fixture on iPhone 15 Simulator
-        run: python3 scripts/test_ui_simulator.py
       - name: Subtitle and GTX request/cache regressions
         run: |
           clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
@@ -45,6 +43,8 @@ jobs:
             src/DGGemini.m src/DGTranslation.m src/DGSource.m src/DGMedia.m src/DGVbee.m tests/audio_tests.m \
             -framework Foundation -framework AVFoundation -framework CoreMedia -o build/audio_tests
           build/audio_tests
+      - name: UIKit fixture on iPhone 15 Simulator
+        run: python3 scripts/test_ui_simulator.py
       - name: Record source and toolchain
         run: |
           git rev-parse HEAD > build/SOURCE_COMMIT

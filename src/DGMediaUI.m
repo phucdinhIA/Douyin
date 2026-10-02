@@ -114,10 +114,11 @@ NSArray *DGMediaReadVisibleComments(UIView *root) {
 @property(nonatomic,strong) UIButton *button;
 - (void)open;
 @end
+static void DGAttachComments(UIViewController *owner);
 @implementation DGCommentEntry
 - (void)open {
     if (!self.owner.view.window || self.owner.presentedViewController) return;
-    DGMediaOpenComments(self.owner.view.window);
+    DGCommentsStop(self.owner);DGAttachComments(self.owner);DGMediaCount(@"GTX manual queue restart");
 }
 @end
 @interface DGCaptionEntry : NSObject
@@ -243,13 +244,18 @@ static void DGAttachCaption(UIViewController *owner) {
     DGVisibleCaption=entry;entry.button.hidden=NO;entry.status.hidden=NO;[surface bringSubviewToFront:entry.button];[surface bringSubviewToFront:entry.status];[surface bringSubviewToFront:entry.caption];DGMediaCount(@"Captions UI attached");
 }
 static void DGAttachComments(UIViewController *owner) {
-    DGCommentsStart(owner,DGNewMediaClient(YES),DGMediaRecord);
     DGVisibleCaption.button.hidden=YES;DGVisibleCaption.status.hidden=YES;DGVisibleCaption.caption.hidden=YES;
     DGCommentEntry *entry=objc_getAssociatedObject(owner,&DGCommentKey);
     if (!entry) {
         entry=[DGCommentEntry new];entry.owner=owner;entry.button=[UIButton buttonWithType:UIButtonTypeSystem];entry.button.accessibilityIdentifier=@"gtx-comments-button";entry.button.backgroundColor=UIColor.secondarySystemBackgroundColor;entry.button.layer.cornerRadius=10;entry.button.titleLabel.font=[UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];[entry.button setTitle:@"Dịch bình luận" forState:UIControlStateNormal];[entry.button addTarget:entry action:@selector(open) forControlEvents:UIControlEventTouchUpInside];entry.button.translatesAutoresizingMaskIntoConstraints=NO;[owner.view addSubview:entry.button];
         [NSLayoutConstraint activateConstraints:@[[entry.button.topAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.topAnchor constant:50],[entry.button.trailingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.trailingAnchor constant:-12],[entry.button.widthAnchor constraintEqualToConstant:132],[entry.button.heightAnchor constraintEqualToConstant:34]]];objc_setAssociatedObject(owner,&DGCommentKey,entry,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }entry.button.hidden=NO;[owner.view bringSubviewToFront:entry.button];
+    __weak DGCommentEntry *weakEntry=entry;
+    DGCommentsStart(owner,DGNewMediaClient(YES),^(NSString *name,NSUInteger count) {
+        if (DGMediaRecord) DGMediaRecord(name,count);
+        NSString *title=[name isEqual:@"GTX visible source captured"] ? @"GTX · đang dịch" : [name isEqual:@"GTX automatic ready"] ? @"GTX · đã dịch" : [name isEqual:@"GTX automatic failed"] ? @"GTX lỗi · thử lại" : [name isEqual:@"GTX automatic rate limited"] ? @"GTX giới hạn · thử lại" : nil;
+        if (title) [weakEntry.button setTitle:title forState:UIControlStateNormal];
+    });
 }
 static BOOL DGMediaNativeController(UIViewController *owner,BOOL comments) {
     for (NSString *name in comments ? @[@"AWECommentContainerViewController",@"AWECommentFullScreenContainerViewController",@"AWECommentTreeContainerViewController",@"_TtC33AWECommentPanelContainerSwiftImpl35CommentContainerInnerViewController"] : @[@"AWEPlayVideoViewController"]) {

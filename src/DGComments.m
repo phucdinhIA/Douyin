@@ -83,7 +83,10 @@ static void DGWriteTranslation(UIView *view,NSString *source,NSString *answer) {
         s.pending=nil;if (answer) s.answers[next]=answer;
         if (s.record) s.record(answer ? @"GTX automatic ready" : @"GTX automatic failed",1);
         // Stop this panel's queue after transport/quota failure; avoid a request storm.
-        if (failure) {s.active=NO;[s.timer invalidate];s.timer=nil;return;}[s scan];
+        if (failure) {
+            if ([failure containsString:@"giới hạn"] && s.record) s.record(@"GTX automatic rate limited",1);
+            s.active=NO;[s.timer invalidate];s.timer=nil;return;
+        }[s scan];
     }];
 }
 - (void)stop {self.active=NO;self.generation++;[self.timer invalidate];self.timer=nil;[self.client cancel];self.pending=nil;}

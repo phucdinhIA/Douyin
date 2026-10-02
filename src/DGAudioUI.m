@@ -71,7 +71,7 @@ static DGAudioController *DGAudio;
     if (self.record) self.record(@"Background companion prepared",1);
 }
 - (void)activate {
-    if (!self.background) return;double time=CMTimeGetSeconds(self.background.currentTime);BOOL play=self.background.rate>0 && !self.interrupted;self.generation++;
+    if (!self.background) return;double time=CMTimeGetSeconds(self.background.currentTime);BOOL play=(self.background.rate>0 || (self.reportedSourceFailure && self.capturedPlaying)) && !self.interrupted;self.generation++;
     [self.background pause];self.background=nil;
     MPNowPlayingInfoCenter.defaultCenter.nowPlayingInfo=self.previousNowPlaying;self.previousNowPlaying=nil;
     Method seek=DGAMethod(self.owner,@"setPlayerSeekTime:completion:",@"v32@0:8d16@?24");Method resume=DGAMethod(self.owner,@"resumePlayVideo",@"v16@0:8");
@@ -79,6 +79,7 @@ static DGAudioController *DGAudio;
     if (seek && isfinite(time)) ((void (*)(id,SEL,double,id))method_getImplementation(seek))(self.owner,NSSelectorFromString(@"setPlayerSeekTime:completion:"),time,nil);
     if (!self.voice && self.ownsMute) {DGAMute(self.owner,self.mutedBefore);self.ownsMute=NO;}
     if (play && resume) ((void (*)(id,SEL))method_getImplementation(resume))(self.owner,NSSelectorFromString(@"resumePlayVideo"));
+    else {Method pause=DGAMethod(self.owner,@"pause",@"B16@0:8");if (pause) ((BOOL (*)(id,SEL))method_getImplementation(pause))(self.owner,NSSelectorFromString(@"pause"));}
     if (self.record) self.record(@"Background foreground resync",1);
 }
 - (void)tick {

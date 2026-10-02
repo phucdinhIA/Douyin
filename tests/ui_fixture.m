@@ -415,10 +415,11 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(shortcutCount==1 && atomic_load(&mediaRequests)==0,@"shortcut attachment is idempotent and fewer than four taps have no action configured");
     check(DGMediaFixtureShortcut(self.window,CGPointMake(280,300)),@"four-tap production routing starts current visible video");
     check(!player.playing && player.pauseCalls==1 && [DGMediaSnapshot()[@"caption_waiting"] boolValue],@"video pauses before subtitle provider requests start");
-    int pendingRequests=atomic_load(&mediaRequests);DGMediaFixtureShortcut(self.window,CGPointMake(280,300));
-    check([DGMediaSnapshot()[@"caption_running"] boolValue] && atomic_load(&mediaRequests)==pendingRequests,@"repeated four taps neither cancel nor duplicate pending subtitle work");
+    DGMediaFixtureShortcut(self.window,CGPointMake(280,300));
+    check([DGMediaSnapshot()[@"caption_running"] boolValue],@"repeated four taps neither cancel nor duplicate pending subtitle work");
     player.playing=YES;DGMediaFixtureTick(player);check(!player.playing && player.pauseCalls==2,@"native playback cannot run ahead while subtitles are being prepared");
     mediaWait(^BOOL{return ![DGMediaSnapshot()[@"caption_running"] boolValue];});DGMediaFixtureTick(player);
+    check(atomic_load(&mediaRequests)==4,@"idempotent shortcut completes with exactly one Apify run ASR and translation request");
     check(player.playing && player.resumeCalls==1 && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"complete subtitles resume the same video once");
     check(!caption.hidden && [caption.text isEqual:@"Xin chào"],@"caption extraction transcription translation and overlay complete via mock pipeline");
     DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin chào"],@"paused playback holds caption without advancing wall time");
