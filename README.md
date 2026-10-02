@@ -1,13 +1,15 @@
-# Douyin — bản thử cá nhân 0.15
+# Douyin — bản thử cá nhân 0.16
 
-Douyin 40.6.0/build 406019/arm64, tên hiển thị **Douyin**. Ký/cài IPA riêng bằng Sideloadly.
+Douyin 40.6.0/build 406019/arm64, tên ứng dụng **Douyin**. Bản này sửa các lỗi người dùng báo ở 0.15 và thêm lồng tiếng Việt Vbee.
 
-- **Chạm nhanh 4 lần bằng một ngón vào vùng video** để bật phụ đề Việt, kể cả khi nút không hiện. Video tạm dừng trước Apify → Deepgram Nova-3 tiếng Trung → Gemini tiếng Việt, và chỉ phát lại khi track đã hoàn tất/cache. Chạm 4 lần khi đang chạy không hủy hoặc gửi thêm yêu cầu. Có lỗi: video vẫn dừng; **Bỏ qua · phát video** cho xem tiếp. Sau khi bỏ qua, chạm 4 lần để thử lại thủ công. Nút **Hủy phụ đề** hủy và cho phát tiếp.
-- Trong bình luận, bấm **Dịch bình luận**, chọn dòng để dịch GTX. Nếu thiếu nút: hai ngón chạm 3 lần → **Dịch bình luận · GTX**. Nguồn đọc từ label/model ô bình luận đang thấy, giữ nguyên bản gốc. GTX không dùng key trả phí.
-- Dịch phân tích AI/Gemini giữ như bản người dùng đã xác nhận hoạt động. Cache phụ đề/bình luận riêng, không tự retry API trả phí. Ưu tiên video dưới 10 phút; prerecorded toàn clip, lần đầu cần chờ API. Chi tiết dịch vụ ở [nghiên cứu 0.14](docs/MEDIA-0.14.md).
+- Mở biểu tượng bình luận: GTX tự dịch các bình luận đang nhìn thấy ngay tại chỗ. Cuộn tới bình luận mới để dịch tiếp. Bỏ qua tên tác giả, chữ đang nhập, phần AI và bình luận ngoài màn hình. Nút GTX cho biết đang dịch/lỗi và cho thử lại thủ công. Google GTX là endpoint miễn phí không có SLA; khi giới hạn mạng/quota, giữ chữ gốc và báo trạng thái.
+- **Chạm nhanh 4 lần bằng một ngón vào vùng video** để bật phụ đề/lồng tiếng cho video đó. Video dừng trước Apify → Nova-3 tiếng Trung → Gemini tiếng Việt → Vbee giọng nam Mạnh Dũng. Nếu CDN chặn Deepgram lấy URL, app tải nguồn và gửi âm thanh trực tiếp. Chỉ phát lại sau khi phụ đề hoàn chỉnh và audio đã tải, ghép, về đúng mốc. Nếu Vbee lỗi, thông báo lỗi và dùng phụ đề đã hoàn tất; không tự tổng hợp lại trả phí.
+- Audio từng câu được đặt đúng khoảng phụ đề, giữ khoảng lặng và điều chỉnh tốc độ bằng spectral time-pitch khi cần. Tua/dừng/lặp bám clock video; đổi video hủy công việc cũ và trả lại tiếng gốc. Audio không vừa khoảng ở mức tối đa 3x sẽ được báo lỗi và dùng phụ đề. Cần đợi lần xử lý đầu; cache giảm gọi API cho lần sau. Video không có lời nói nhận dạng được sẽ được báo rõ. Ưu tiên video dưới 10 phút; không hứa mọi clip có phụ đề hoặc lồng tiếng tức thì.
+- Phát nền dùng player riêng từ nguồn video hiện tại, audio playback session, điều khiển dừng/phát ở màn hình khóa và đồng bộ lại khi vào app. Tôn trọng trạng thái pause, thay đổi video, ngắt tai nghe và cuộc gọi. Phần này chưa được nghiệm thu trên iPhone thật.
+- Bản dịch phân tích AI bỏ thẻ `<mark>` nhưng giữ nội dung. Luồng hỏi đáp Gemini vẫn nhận bản phân tích gốc.
 
-0.14 đã bị người dùng báo lỗi trên iPhone: GTX không đọc được nguồn và phụ đề chưa bắt đầu request. 0.15 sửa routing, lớp phủ nút, phạm vi đọc và điều khiển pause. Đã đạt 21 Python, 29 Gemini, 36 dịch AI, 49 media và 184 UIKit checks trên iPhone 15 Simulator/iOS 18.2; build arm64 warnings-as-errors. Đây là mock/lớp giả, chưa nghiệm thu Douyin thật trên iPhone. GTX probe Windows lần này trả HTTP 429; app báo giới hạn và chỉ thử lại khi chọn dòng, không hứa endpoint miễn phí luôn sẵn sàng.
+Đã đạt 56 media, 10 audio timeline, 29 Gemini, 36 dịch AI, 21 Python và 193 UIKit checks trên iPhone 15 Simulator/iOS 18.2; build arm64 warnings-as-errors. Provider probes thực: clip 13,5 giây bị HTTP 460 ở CDN đã nhận dạng thành công bằng binary upload, Gemini dịch giữ mốc và Vbee tạo đủ ba câu; clip 67 giây được nhận dạng 209 từ. Các kiểm tra này **không thay thế việc chạy Douyin thật trên iPhone**.
 
-IPA: `dist/Douyin-40.6.0-0.15.0-iPhone15-FOUR-TAPS-PRIVATE-TEST.ipa`. SHA-256: `0291eecc939c0b0fd47aa5cc88a25c81cdaa70451d8a0cfc3b09f1b08ea8ab5a`. Đã đối chiếu 5,631 mục, 0 mismatch; core gốc giữ nguyên. Key cá nhân chỉ trong IPA riêng, không ở Git/CI.
+IPA cá nhân: `dist/Douyin-40.6.0-0.16.0-VIETSUB-VBEE-PRIVATE-TEST.ipa`. SHA-256: `1bfe8a615ff3863527f6ddaf2a7295c6cc515a211d1d795ea3374bdf8f967139`. Key/token riêng chỉ nằm trong cấu hình ngoài Git và IPA riêng.
 
-[Kế hoạch](docs/PLAN-0.15.md) · [Test iPhone](docs/DEVICE_TESTS.md) · [Trạng thái](docs/STATUS.md) · [Validation](docs/VALIDATION.json) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37011642974).
+[Kế hoạch](docs/PLAN-0.16.md) · [Nghiên cứu và probe](docs/evidence/0.16-service-probes.json) · [Test iPhone](docs/DEVICE_TESTS.md) · [Trạng thái](docs/STATUS.md) · [Validation](docs/VALIDATION.json) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37021955203).

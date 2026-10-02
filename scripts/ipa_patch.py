@@ -129,6 +129,7 @@ def validate_library(data: bytes):
         '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation',
         '/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics',
         '/System/Library/Frameworks/AVFoundation.framework/AVFoundation',
+        '/System/Library/Frameworks/AVFAudio.framework/AVFAudio',
         '/System/Library/Frameworks/CoreMedia.framework/CoreMedia',
         '/System/Library/Frameworks/MediaPlayer.framework/MediaPlayer',
     }

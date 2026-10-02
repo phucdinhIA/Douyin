@@ -1,0 +1,791 @@
+{
+  "checks" : [
+    {
+      "name" : "default Background audio applies only native preference getters without overwriting original values",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category translates and fits narrow label",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category has a readable compact option at 32 points",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category restores full label when width grows",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category translates and fits narrow label",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category has a readable compact option at 32 points",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category restores full label when width grows",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category translates and fits narrow label",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category has a readable compact option at 32 points",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category restores full label when width grows",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category translates and fits narrow label",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category has a readable compact option at 32 points",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category restores full label when width grows",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category translates and fits narrow label",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category has a readable compact option at 32 points",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE category restores full label when width grows",
+      "passed" : true
+    },
+    {
+      "name" : "exact LIVE category words are preserved in user room\/chat content",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE label reuse into chat restores original text fitting",
+      "passed" : true
+    },
+    {
+      "name" : "fixture uses delegate lifecycle without a Scene Manifest",
+      "passed" : true
+    },
+    {
+      "name" : "diagnostics gesture keeps normal touches",
+      "passed" : true
+    },
+    {
+      "name" : "legacy window gets exactly one diagnostics gesture",
+      "passed" : true
+    },
+    {
+      "name" : "delegate-window fallback works with an empty Scene enumeration and stays idempotent",
+      "passed" : true
+    },
+    {
+      "name" : "text assigned before window attachment translates",
+      "passed" : true
+    },
+    {
+      "name" : "attached label text updates translate",
+      "passed" : true
+    },
+    {
+      "name" : "nil label text does not crash",
+      "passed" : true
+    },
+    {
+      "name" : "translated label fitting survives UIKit internal setters",
+      "passed" : true
+    },
+    {
+      "name" : "repeated translated text retains fitting",
+      "passed" : true
+    },
+    {
+      "name" : "reused label restores original font settings",
+      "passed" : true
+    },
+    {
+      "name" : "caption text matching dictionary is preserved",
+      "passed" : true
+    },
+    {
+      "name" : "comment ancestor prevents content translation",
+      "passed" : true
+    },
+    {
+      "name" : "button title set before attachment translates",
+      "passed" : true
+    },
+    {
+      "name" : "disabled title fallback follows a later normal-title update",
+      "passed" : true
+    },
+    {
+      "name" : "clearing button title does not preserve stale translations",
+      "passed" : true
+    },
+    {
+      "name" : "UIKit attributed translation preserves styling",
+      "passed" : true
+    },
+    {
+      "name" : "mixed attributed styles are not rewritten",
+      "passed" : true
+    },
+    {
+      "name" : "nil attributed text does not crash",
+      "passed" : true
+    },
+    {
+      "name" : "placeholder translates while typed search content stays intact",
+      "passed" : true
+    },
+    {
+      "name" : "AI input placeholder translates without altering the user's question",
+      "passed" : true
+    },
+    {
+      "name" : "tab title localization",
+      "passed" : true
+    },
+    {
+      "name" : "all configured labels pass through actual UIKit hooks in a settings context",
+      "passed" : true
+    },
+    {
+      "name" : "configured labels or their compact variants fit a 120pt control at 16pt font",
+      "passed" : true
+    },
+    {
+      "name" : "screenshot sidebar labels translate and fit 94pt grid controls",
+      "passed" : true
+    },
+    {
+      "name" : "sidebar recent-user nickname matching a menu label stays intact",
+      "passed" : true
+    },
+    {
+      "name" : "narrow Settings control uses a compact title and survives app fitting resets",
+      "passed" : true
+    },
+    {
+      "name" : "widening a compact label restores its full English title",
+      "passed" : true
+    },
+    {
+      "name" : "plain label preserves a font change after translation and window attachment",
+      "passed" : true
+    },
+    {
+      "name" : "reusing a compact control clears translation state",
+      "passed" : true
+    },
+    {
+      "name" : "compact attributed controls preserve styling",
+      "passed" : true
+    },
+    {
+      "name" : "network error controls translate without suppressing the error",
+      "passed" : true
+    },
+    {
+      "name" : "experience channel label translates and remains present",
+      "passed" : true
+    },
+    {
+      "name" : "padded control title translates and receives fitting after attachment",
+      "passed" : true
+    },
+    {
+      "name" : "search filters translate within a protected result controller while result content remains original",
+      "passed" : true
+    },
+    {
+      "name" : "profile control tabs translate without rewriting profile titles",
+      "passed" : true
+    },
+    {
+      "name" : "comment header translates while the comment body stays original",
+      "passed" : true
+    },
+    {
+      "name" : "Swift app control class names are recognized",
+      "passed" : true
+    },
+    {
+      "name" : "custom YYLabel translates before attachment and fits narrow controls above the minimum scale",
+      "passed" : true
+    },
+    {
+      "name" : "custom label widens back to full title and original font",
+      "passed" : true
+    },
+    {
+      "name" : "custom multiline label restores full text and leaves wrapping to its own renderer",
+      "passed" : true
+    },
+    {
+      "name" : "custom label preserves a later app font change",
+      "passed" : true
+    },
+    {
+      "name" : "custom label reuse restores the last app font",
+      "passed" : true
+    },
+    {
+      "name" : "custom attributed control preserves color during fitting",
+      "passed" : true
+    },
+    {
+      "name" : "custom mixed attributed styles are left intact",
+      "passed" : true
+    },
+    {
+      "name" : "custom result content is not translated or shrunk",
+      "passed" : true
+    },
+    {
+      "name" : "custom nil\/reused labels clear without a crash",
+      "passed" : true
+    },
+    {
+      "name" : "search gateway observation preserves native guest policy and quota in fixture",
+      "passed" : true
+    },
+    {
+      "name" : "search diagnostics distinguish an observed adapter from installed modifications",
+      "passed" : true
+    },
+    {
+      "name" : "native empty config fields translate before any view\/window or text measurement exists",
+      "passed" : true
+    },
+    {
+      "name" : "renderer measuring its config receives the English width",
+      "passed" : true
+    },
+    {
+      "name" : "empty config with a separate character link range preserves its source text and action span",
+      "passed" : true
+    },
+    {
+      "name" : "Featured-sized narrow error labels remain complete after app resets fitting",
+      "passed" : true
+    },
+    {
+      "name" : "toast config localization happens before toast measures its text",
+      "passed" : true
+    },
+    {
+      "name" : "AI chrome disclaimer translates in an explicitly identified header",
+      "passed" : true
+    },
+    {
+      "name" : "AI disclaimer preserves reference-only meaning in a narrow control",
+      "passed" : true
+    },
+    {
+      "name" : "AI disclaimer restores complete English text when widened",
+      "passed" : true
+    },
+    {
+      "name" : "actual native comment header name supports dynamic count and fitting",
+      "passed" : true
+    },
+    {
+      "name" : "mixed collection link style and original title survive native header and UILabel localization",
+      "passed" : true
+    },
+    {
+      "name" : "YYLabel fitting preserves mixed collection link spans instead of flattening them",
+      "passed" : true
+    },
+    {
+      "name" : "comment content resembling a rating or reply control remains unchanged outside an explicit control island",
+      "passed" : true
+    },
+    {
+      "name" : "explicit reply button translates inside a protected comment cell",
+      "passed" : true
+    },
+    {
+      "name" : "comment login notice is readable and still reports the actual account requirement",
+      "passed" : true
+    },
+    {
+      "name" : "survey-specific getter translates exact question\/options before Lynx consumption and preserves IDs",
+      "passed" : true
+    },
+    {
+      "name" : "Lynx evaluation config translates proven rating fields while arbitrary nested payload stays original",
+      "passed" : true
+    },
+    {
+      "name" : "five survey ratings fit actual 64.2pt columns at 12pt without splitting a word or ellipsis",
+      "passed" : true
+    },
+    {
+      "name" : "SDK lookup selects the bundled English value for the original key",
+      "passed" : true
+    },
+    {
+      "name" : "missing SDK English entry preserves original text rather than exposing a key",
+      "passed" : true
+    },
+    {
+      "name" : "bundled SDK English format entry retains its numeric placeholder",
+      "passed" : true
+    },
+    {
+      "name" : "dark appearance preserves text and fitting",
+      "passed" : true
+    },
+    {
+      "name" : "creator profile title is not globally translated as a control label",
+      "passed" : true
+    },
+    {
+      "name" : "diagnostics sheet can actually be presented on legacy window",
+      "passed" : true
+    },
+    {
+      "name" : "settings expose six switches, GTX fallback, Gemini actions, two public web actions, copy and close",
+      "passed" : true
+    },
+    {
+      "name" : "feed transport compatibility is exposed and enabled by default",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-feed-compat.png",
+      "passed" : true
+    },
+    {
+      "name" : "public finder presents a native name-entry prompt without making a network request",
+      "passed" : true
+    },
+    {
+      "name" : "public finder identifies the destination and guest availability limits",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-public-finder.png",
+      "passed" : true
+    },
+    {
+      "name" : "profile-link prompt uses the URL keyboard and official-link wording",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-public-profile.png",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-network-error.png",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-sidebar.png",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-search.png",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-settings.png",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-comments.png",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-featured-narrow.png",
+      "passed" : true
+    },
+    {
+      "name" : "LIVE visual sample protects room titles and chat content",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-live.png",
+      "passed" : true
+    },
+    {
+      "name" : "Gemini fixture installs three exact comment-AI hooks with a synthetic key",
+      "passed" : true
+    },
+    {
+      "name" : "V2 captures backing renderer ivar without a bundle getter or visible text subviews",
+      "passed" : true
+    },
+    {
+      "name" : "legacy custom-drawn markdown captures exact shadow-node source without UILabel scanning",
+      "passed" : true
+    },
+    {
+      "name" : "hidden custom-drawn renderer is still excluded",
+      "passed" : true
+    },
+    {
+      "name" : "creating comments controller without AI-tab entry never starts translation",
+      "passed" : true
+    },
+    {
+      "name" : "comment-AI entry calls native lifecycle once per entry",
+      "passed" : true
+    },
+    {
+      "name" : "Gemini entry does not stack duplicate controls",
+      "passed" : true
+    },
+    {
+      "name" : "summary extraction reads only the markdown renderer and preserves its source",
+      "passed" : true
+    },
+    {
+      "name" : "hidden analysis is not captured",
+      "passed" : true
+    },
+    {
+      "name" : "entry waits for source stability without an immediate API charge",
+      "passed" : true
+    },
+    {
+      "name" : "original analysis remains visible and scrollable while capture or translation is pending",
+      "passed" : true
+    },
+    {
+      "name" : "explicit AI entry translates exactly once through isolated mock transport",
+      "passed" : true
+    },
+    {
+      "name" : "translated AI highlights preserve text without displaying HTML mark tags",
+      "passed" : true
+    },
+    {
+      "name" : "Vietnamese analysis scroll panel fits above Q&A button",
+      "passed" : true
+    },
+    {
+      "name" : "translated overlay never replaces or contaminates original Q&A context",
+      "passed" : true
+    },
+    {
+      "name" : "empty contentVC falls back to actual owner renderer and produces translation",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-gemini-translation.png",
+      "passed" : true
+    },
+    {
+      "name" : "original toggle restores native content and passes scrolling touches through overlay",
+      "passed" : true
+    },
+    {
+      "name" : "toggling Vietnamese does not charge another request",
+      "passed" : true
+    },
+    {
+      "name" : "Gemini entry hides on AI-tab leave",
+      "passed" : true
+    },
+    {
+      "name" : "leaving AI stops polling and hides translation",
+      "passed" : true
+    },
+    {
+      "name" : "same analysis reopening shows persistent cache without billing",
+      "passed" : true
+    },
+    {
+      "name" : "backgrounding stops automatic translation activity",
+      "passed" : true
+    },
+    {
+      "name" : "returning to an explicitly opened AI tab restores cached translation without billing",
+      "passed" : true
+    },
+    {
+      "name" : "real common-mode timer captures cached analysis while UIKit is in scroll tracking mode",
+      "passed" : true
+    },
+    {
+      "name" : "returning after cancelling a sent request does not automatically spend a second request in same tab entry",
+      "passed" : true
+    },
+    {
+      "name" : "Gemini OFF cannot auto-translate on tab entry",
+      "passed" : true
+    },
+    {
+      "name" : "Gemini OFF retains original submit policy without taking over",
+      "passed" : true
+    },
+    {
+      "name" : "other AI screens are not routed to Gemini",
+      "passed" : true
+    },
+    {
+      "name" : "enabled native submit routes a draft to Gemini without calling native login or sending it automatically",
+      "passed" : true
+    },
+    {
+      "name" : "Gemini diagnostics do not expose the configured key",
+      "passed" : true
+    },
+    {
+      "name" : "Gemini draft identifies Google and the captured context without auto-sending",
+      "passed" : true
+    },
+    {
+      "name" : "Gemini multiline input and Send fit portrait safe area",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-gemini.png",
+      "passed" : true
+    },
+    {
+      "name" : "Fast mode updates model disclosure",
+      "passed" : true
+    },
+    {
+      "name" : "captured context can be reviewed and edited separately from Douyin's analysis",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-gemini-context.png",
+      "passed" : true
+    },
+    {
+      "name" : "Gemini UI does not rewrite original Douyin analysis",
+      "passed" : true
+    },
+    {
+      "name" : "media installs only seven verified native ABI hooks",
+      "passed" : true
+    },
+    {
+      "name" : "video appearance adds one opt-in button and sends no provider requests",
+      "passed" : true
+    },
+    {
+      "name" : "four taps require one finger and preserve native video touches without delay",
+      "passed" : true
+    },
+    {
+      "name" : "shortcut attachment is idempotent and fewer than four taps have no action configured",
+      "passed" : true
+    },
+    {
+      "name" : "four-tap production routing starts current visible video",
+      "passed" : true
+    },
+    {
+      "name" : "video pauses before subtitle provider requests start",
+      "passed" : true
+    },
+    {
+      "name" : "repeated four taps neither cancel nor duplicate pending subtitle work",
+      "passed" : true
+    },
+    {
+      "name" : "native playback cannot run ahead while subtitles are being prepared",
+      "passed" : true
+    },
+    {
+      "name" : "idempotent shortcut completes with exactly one Apify run ASR and translation request",
+      "passed" : true
+    },
+    {
+      "name" : "complete subtitles resume the same video once",
+      "passed" : true
+    },
+    {
+      "name" : "caption extraction transcription translation and overlay complete via mock pipeline",
+      "passed" : true
+    },
+    {
+      "name" : "paused playback holds caption without advancing wall time",
+      "passed" : true
+    },
+    {
+      "name" : "speech gap hides previous cue",
+      "passed" : true
+    },
+    {
+      "name" : "seek forward uses actual native playback time",
+      "passed" : true
+    },
+    {
+      "name" : "seek backward and video loop restore first cue",
+      "passed" : true
+    },
+    {
+      "name" : "caption button retains visible title after asynchronous stage updates",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-captions.png",
+      "passed" : true
+    },
+    {
+      "name" : "subtitle off hides overlay immediately",
+      "passed" : true
+    },
+    {
+      "name" : "subtitle re-enable uses complete cache without API cost",
+      "passed" : true
+    },
+    {
+      "name" : "changing native video model cancels and clears prior subtitles",
+      "passed" : true
+    },
+    {
+      "name" : "manual cancellation restores playback rather than leaving video paused",
+      "passed" : true
+    },
+    {
+      "name" : "provider failure holds video until subtitles exist or user explicitly skips",
+      "passed" : true
+    },
+    {
+      "name" : "four taps after failure cannot automatically spend another paid request",
+      "passed" : true
+    },
+    {
+      "name" : "explicit skip after failure restores playback",
+      "passed" : true
+    },
+    {
+      "name" : "background cancels pipeline without unexpectedly resuming video",
+      "passed" : true
+    },
+    {
+      "name" : "late-install recovery adds UI without automatically starting paid work",
+      "passed" : true
+    },
+    {
+      "name" : "shortcut resolves embedded visible player beneath native sibling overlay and excludes hidden player",
+      "passed" : true
+    },
+    {
+      "name" : "four taps on native controls do not start captions",
+      "passed" : true
+    },
+    {
+      "name" : "presented modal prevents resolving underlying player",
+      "passed" : true
+    },
+    {
+      "name" : "local dubbing activates audio playback session and mutes original source",
+      "passed" : true
+    },
+    {
+      "name" : "native pause also holds dubbed audio",
+      "passed" : true
+    },
+    {
+      "name" : "dubbing seeks forward to the actual native video clock",
+      "passed" : true
+    },
+    {
+      "name" : "dubbing follows backward seek or video loop",
+      "passed" : true
+    },
+    {
+      "name" : "native play resumes dubbed audio",
+      "passed" : true
+    },
+    {
+      "name" : "changing video restores original mute state and releases old voice",
+      "passed" : true
+    },
+    {
+      "name" : "full subtitle and Vbee flow pauses before starting work",
+      "passed" : true
+    },
+    {
+      "name" : "complete mock subtitle Gemini Vbee export and native audio integration resumes current video with aligned dubbing",
+      "passed" : true
+    },
+    {
+      "name" : "switching video after complete flow releases previous dubbing and restores audio",
+      "passed" : true
+    },
+    {
+      "name" : "GTX captures only visible native comment text excluding names hidden comments and AI",
+      "passed" : true
+    },
+    {
+      "name" : "GTX reads audited model from custom-drawn cell inside zero-size non-clipping wrapper",
+      "passed" : true
+    },
+    {
+      "name" : "GTX respects clipping wrappers and does not send invisible comment model",
+      "passed" : true
+    },
+    {
+      "name" : "GTX excludes offscreen model cells",
+      "passed" : true
+    },
+    {
+      "name" : "opening ordinary comments automatically translates visible native text in place",
+      "passed" : true
+    },
+    {
+      "name" : "automatic GTX preserves author name and hidden text",
+      "passed" : true
+    },
+    {
+      "name" : "translated visible cells are not sent again on subsequent scans",
+      "passed" : true
+    },
+    {
+      "name" : "reused native cell is translated for its new source",
+      "passed" : true
+    },
+    {
+      "name" : "offscreen comment is not translated or charged a request",
+      "passed" : true
+    },
+    {
+      "name" : "scrolling another comment into view starts automatic GTX",
+      "passed" : true
+    },
+    {
+      "name" : "closing comment session cancels automatic work",
+      "passed" : true
+    },
+    {
+      "name" : "render visual fixture ui-gtx-comments.png",
+      "passed" : true
+    }
+  ],
+  "count" : 193,
+  "device" : "iPhone",
+  "fitting_observation" : {
+    "adjusts" : true,
+    "lines" : 1,
+    "minimum_scale" : 0.64999997615814209,
+    "text" : "More options"
+  },
+  "ios" : "18.2",
+  "overflow_labels" : [
+
+  ],
+  "passed" : true,
+  "scope" : "UIKit fixture only; original Douyin app and network were not executed",
+  "translation_entries_tested" : 898
+}

@@ -1,17 +1,19 @@
-# Trạng thái 0.15.0-test
+# Trạng thái 0.16.0-test
 
-Đã sửa đường vào phụ đề/GTX và đóng gói bản thử riêng. Chạm 4 lần vào video bật pipeline; pause đến khi track hoàn tất. Lỗi giữ pause và có nút bỏ qua. GTX đọc thêm model ô bình luận, phạm vi window và có đường vào menu.
+Đã triển khai GTX tự dịch trong bảng bình luận, sửa tải nguồn Deepgram bị CDN chặn, thêm Vbee ghép audio theo cue và player phát nền, đồng thời bỏ thẻ mark khỏi bản dịch AI. 0.15 đã được người dùng báo lỗi trên iPhone; bản 0.16 chưa được người dùng xác nhận trên thiết bị thật.
 
-`dist/Douyin-40.6.0-0.15.0-iPhone15-FOUR-TAPS-PRIVATE-TEST.ipa`; 704,944,764 byte. SHA-256 `0291eecc939c0b0fd47aa5cc88a25c81cdaa70451d8a0cfc3b09f1b08ea8ab5a`. Source `ab44048ab94a964d33d2aec435e9edf3dd548eda`.
+IPA: `dist/Douyin-40.6.0-0.16.0-VIETSUB-VBEE-PRIVATE-TEST.ipa`; 704,980,031 byte. SHA-256 `1bfe8a615ff3863527f6ddaf2a7295c6cc515a211d1d795ea3374bdf8f967139`. Library `0b1924111a509f61784c2ba7bfccaa92d2f7125ca6c8334c3e4016327adc58c1`. Source biên dịch `5291cace67d9318e2a45faf6fafe6b02907b1cca`.
 
 | Kiểm tra | Kết quả |
 |---|---|
-| iPhone 0.14 | Người dùng báo phụ đề/GTX không chạy; GTX source unavailable 4 lần, chưa thấy request phụ đề |
-| Routing/điều khiển 0.15 | Bốn chạm, player nhúng/lifecycle bỏ qua/lớp phủ, pause/ready/error/skip/cancel/background đã qua fixture |
-| GTX 0.15 | Model/label, render sibling, wrapper 0-size, clipping/offscreen; cache/429/thử lại thủ công đã qua fixture |
-| GTX thật | Probe Windows trả 429, chưa xác nhận dịch thành công trong lượt này; không phải test transport iPhone |
-| CI | [Run 37011642974](https://github.com/phucdinhIA/Douyin/actions/runs/37011642974); 21 Python/29 Gemini/36 AI/49 media/184 UIKit đạt |
-| IPA | 5,631 mục đối chiếu, 0 mismatch; main/localized display name Douyin |
-| Nghiệm thu | Douyin thật trên iPhone cho hai chức năng mới vẫn cần kiểm tra; dịch AI được người dùng xác nhận trước đó |
+| Python đóng gói | 21 đạt |
+| Gemini / dịch AI | 29 / 36 đạt |
+| Media / Vbee audio timeline | 56 / 10 đạt |
+| UIKit iPhone 15 Simulator | 193 đạt, không overflow |
+| API thật | GTX 200; Nova-3 binary 200; Gemini 200; ba câu Vbee 200 |
+| Đối chiếu IPA | 5,632 mục, 0 mismatch; core gốc giữ nguyên |
+| Douyin thật trên iPhone | Chưa nghiệm thu |
 
-[Kế hoạch](PLAN-0.15.md) · [Test](DEVICE_TESTS.md) · [Validation](VALIDATION.json) · [Lịch sử 0.14](evidence/status-0.14.0.md). Featured/Tips, phát nền, xoay/search không có bằng chứng sửa mới trong bản này.
+Phát nền có đường AVPlayer/audio session mới và kiểm tra điều khiển audio cục bộ, nhưng các chuyển trạng thái native trên iOS 18.5 cần kiểm tra thiết bị. GTX miễn phí có thể trả 429; Vbee có thể lỗi token/số dư hoặc câu quá dài để khớp mốc. App báo lỗi, không tự gọi lại các API trả phí. Video dừng trong lúc chuẩn bị; có nút hủy/bỏ qua để xem tiếp.
+
+[Kế hoạch](PLAN-0.16.md) · [Validation](VALIDATION.json) · [Hướng dẫn nghiệm thu](DEVICE_TESTS.md) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37021955203).
