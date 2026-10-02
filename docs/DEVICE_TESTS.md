@@ -1,11 +1,12 @@
-# Nghiệm thu 0.9 — iPhone 15 / iOS 18.5
+# Nghiệm thu 0.10 — iPhone 15/iOS18.5
 
-Ký/cài IPA 0.9 bằng Sideloadly cùng định danh trước đó; giữ dữ liệu app và bản đã ký cũ. Đóng hẳn/mở lại app. Hai ngón tay chạm ba lần → Douyin Guest → Feed compatibility ON. Copy diagnostics phải ghi 0.9.0-test/app40.6.0/expected78.
+Ký/cài bằng Sideloadly cùng định danh trước đó; giữ data và bản đã ký cũ. Đóng/mở lại app. Hai ngón tay chạm ba lần → Douyin Guest: Feed compatibility ON, Background audio ON. Copy diagnostics phải ghi 0.10.0-test/expected79.
 
-1. **Featured:** mở riêng, Retry một lần nếu cần, kéo xuống refresh rồi cuộn vài trang. Ghi có video mới hay chỉ lặp/không có video, có conversion/CSP/Retry che nội dung không. Copy diagnostics ngay.
-2. **Tips:** đóng/mở lại để tách bộ đếm phiên, mở Tips, chờ 30 giây rồi mở video và cuộn thêm trang. Ghi có hết nháy danh sách rồi quay về Retry không; có video mới không. Copy diagnostics ngay.
-3. **Nếu vẫn lỗi:** gửi JSON theo từng tab và thông báo chính xác. Counter `enableChunkRequest standard format selected` cho thấy định dạng được chuyển; `DC transport standard selected` cho thấy outer manager chuyển luồng; Installed chỉ cho biết gắn hook. Nếu không thấy counter selection, cần xác định controller thực sự thay vì tiếp tục đoán decoder.
-4. **Đối chiếu/rollback:** Feed compatibility OFF rồi restart; thử lại một lần mỗi tab, giữ nguyên tùy chọn khác. Không xóa data/cache. Giữ bản đã ký trước đó nếu cần quay lại.
-5. **Hồi quy:** feed thường/Nearby/LIVE, bình luận/ảnh, Search/web finder, âm thanh khi khóa màn hình, video ngang theo [bộ test 0.7](evidence/device_tests-0.7.0.md). CI không thay thế kiểm tra thiết bị.
+1. Featured riêng: Retry một lần nếu cần, refresh và cuộn vài trang. Ghi video có xuất hiện/video mới hay lặp/Retry/conversion error. Copy diagnostics.
+2. Tips riêng: restart để tách phiên, mở Tips, chờ 30 giây, mở video và cuộn vài trang. Ghi nháy/error/CSP và video mới. Copy diagnostics.
+3. Phát nền: restart, phát video thường có âm thanh, khóa máy 30 giây rồi mở khóa. Ghi có âm thanh, có bị lặp/đứt hay không. Thử thêm tạm dừng thủ công trước khi khóa: phải giữ im lặng. Copy diagnostics ngay.
+4. Nếu feed vẫn lỗi: xem DC normal/inner controller; DC normal body builder calls và tidy negotiation removed. Nếu không có removal, thao tác định dạng chưa sửa yêu cầu này. Nếu âm thanh vẫn lỗi: xem Background notification recovery selected hoặc rejection model/delegate/module inactive/user paused/ABI/native eligibility denied. Không cần payload/cookie/token.
+5. Đối chiếu: OFF đúng tùy chọn liên quan rồi restart; thử lại một lần. Không xóa data/cache, không Retry liên tục. Quay về bản đã ký trước nếu cần.
+6. Hồi quy: feed thường/LIVE/Nearby, bình luận/ảnh, web finder, tiếng Anh ở các nút AI native và video ngang. Câu hỏi người dùng/bình luận/AI answer không bị sửa nội dung. Chat AI authenticated chưa được mở guest.
 
-Không cần Retry liên tục. Bản này vẫn là TEST cho đến khi refresh/phân trang và lỗi hiển thị được xác nhận trên iPhone.
+**Chưa nghiệm thu máy thật; đây vẫn là TEST.**

@@ -1,101 +1,76 @@
 {
-  "candidate": "Douyin-40.6.0-Guest-0.9.0-iPhone15-TEST.ipa",
-  "patch_version": "0.9.0-test",
+  "candidate": "Douyin-40.6.0-Guest-0.10.0-iPhone15-TEST.ipa",
+  "patch_version": "0.10.0-test",
   "app_version": "40.6.0",
   "app_build": "406019",
   "source_sha256": "3444d6045147b772e8f5e7e844c38a0f72464f34a4eb1af5c5df5f9433d706af",
-  "output_sha256": "20200a54134741c6f8e80f16bd6655ab9115941cb8d4b50cf893cec2edf519aa",
-  "library_sha256": "8f1f564654b7cc8234fee64129ea53136d502b77f7d1c11b6e7dd15375ea276d",
-  "output_size_bytes": 704851094,
-  "compiled_commit": "8c594db4f6654382747e2d0ca6911652c9c94809",
+  "output_sha256": "c6d934945066f8830642e3ff5a3b64cc832b4730651b932f7fb4221753b31f9b",
+  "library_sha256": "afd1915a66fcbec2127deaf99cc82c45f5f482ba970c3abd6cb74e26b0a3b4d4",
+  "output_size_bytes": 704852866,
+  "compiled_commit": "94a4e21cd75846b8abab5eb9dd7bd38012d24ccb",
   "ci_runs_successful": [
-    36969913287
+    36979226991
   ],
   "ci_runs_failed": [
-    36969528493,
-    36969768804
+    36978370806,
+    36978636243
   ],
-  "prior_ci_failure": "Test fixtures corrected: ABI drift needs a new subclass override; CSP domain is classified at feed observer, while JSON probe deliberately accepts conversion-domain errors only. Product source unchanged by these test corrections.",
-  "ci_retried_attempts": [
-    {
-      "run": 36969913287,
-      "attempt": 1,
-      "conclusion": "failure",
-      "reason": "simctl launch of UIKit fixture timed out after 180 seconds; Foundation and arm64 passed; same source rerun requested"
-    },
-    {
-      "run": 36969913287,
-      "attempt": 2,
-      "conclusion": "success",
-      "same_source": true
-    }
-  ],
-  "python_tests_passed": 17,
+  "python_tests_passed": 18,
   "foundation_policy_and_hook_regressions_passed": true,
   "warnings_as_errors_build_passed": true,
   "library_adhoc_signature_verified": true,
   "toolchain_text": "Xcode 15.4\nBuild version 15F31d\n17.5",
   "uikit_fixture": {
     "passed": true,
-    "checks_passed": 101,
+    "checks_passed": 105,
     "device": "iPhone 15 Simulator",
     "ios": "18.2",
-    "translation_entries_tested": 893,
+    "translation_entries_tested": 898,
     "overflow_labels": [],
     "scope": "UIKit fixture only; original Douyin app and network were not executed",
-    "evidence": "evidence/ui-results-0.9.0.json",
+    "evidence": "evidence/ui-results-0.10.0.json",
     "visuals_reviewed": [
-      "evidence/ui-sidebar-0.9.0.png",
-      "evidence/ui-network-error-0.9.0.png",
-      "evidence/ui-search-0.9.0.png",
-      "evidence/ui-settings-0.9.0.png",
-      "evidence/ui-comments-0.9.0.png",
-      "evidence/ui-featured-narrow-0.9.0.png",
-      "evidence/ui-live-0.9.0.png",
-      "evidence/ui-public-finder-0.9.0.png",
-      "evidence/ui-public-profile-0.9.0.png",
-      "evidence/ui-feed-compat-0.9.0.png"
+      "evidence/ui-sidebar-0.10.0.png",
+      "evidence/ui-network-error-0.10.0.png",
+      "evidence/ui-search-0.10.0.png",
+      "evidence/ui-settings-0.10.0.png",
+      "evidence/ui-comments-0.10.0.png",
+      "evidence/ui-featured-narrow-0.10.0.png",
+      "evidence/ui-live-0.10.0.png",
+      "evidence/ui-public-finder-0.10.0.png",
+      "evidence/ui-public-profile-0.10.0.png",
+      "evidence/ui-feed-compat-0.10.0.png"
     ]
   },
-  "fixed_native_hooks": 78,
+  "fixed_native_hooks": 79,
   "new_native_hook_signatures_statically_verified": 2,
-  "translation_entries": 893,
+  "translation_entries": 898,
   "previous_candidate_user_report": {
-    "patch_version": "0.8.0-test",
+    "patch_version": "0.9.0-test",
+    "active_hooks": 78,
+    "expected_hooks": 78,
     "ios": "18.5",
-    "active_hooks": 76,
-    "expected_hooks": 76,
-    "report_relationship": "second report cumulative; counters overlap and do not count unique tab requests",
-    "first": {
-      "dc_callbacks": 11,
-      "dc_aweme_network_minus11001": 11,
-      "dc_original_standard": 11,
-      "json_http_200": 13,
-      "json_data_empty": 2,
-      "json_data_numeric": 11,
-      "json_strict_invalid": 11
-    },
-    "cumulative_second": {
-      "dc_callbacks": 20,
-      "dc_aweme_network_minus11001": 12,
-      "dc_unknown_domain_minus4": 7,
-      "dc_success": 1,
-      "dc_refresh": 19,
-      "dc_loadmore": 1,
-      "dc_original_standard": 12,
-      "dc_original_chunk": 8,
-      "dc_compatibility_unavailable": 8,
-      "dc_standard_selected": 0,
-      "json_http_200": 22,
-      "json_data_empty": 10,
-      "json_data_numeric": 12,
-      "json_strict_invalid": 12
-    },
-    "user_report": "Featured Retry shows no videos; Tips displays new videos intermittently then an error page and CSP-Domain error -4",
-    "interpretation": "0.8 never selected the compatibility transport in reported sessions. Body format/native parser mismatch or incomplete chunk stream is plausible, not a proven deployed-server cause. HTTP200 does not prove JSON. No physical 0.9 acceptance yet."
+    "reports_are_cumulative": true,
+    "dc_callbacks": 22,
+    "dc_conversion_errors": 13,
+    "dc_csp_minus4": 9,
+    "dc_refresh": 22,
+    "dc_standard_original": 13,
+    "dc_chunk_original": 9,
+    "dc_compat_unavailable": 9,
+    "dc_standard_selected": 0,
+    "direct_format_hook_invocations_reported": 0,
+    "json_callbacks_http200_mime_json": 25,
+    "json_data_empty": 12,
+    "json_numeric_prefix_strict_invalid": 13,
+    "background_notification_calls": 4,
+    "background_notify_original_no": 8,
+    "background_entry_calls_reported": 0,
+    "user_report": "Featured and Tips now show no videos; background audio does not work; AI chat prompts login",
+    "interpretation": "installed hooks are not invoked paths; neither format selection nor background entry is demonstrated; no proven server/auth cause"
   },
   "feed_compatibility_default": true,
-  "feed_compatibility_strategy": "verified direct controller enableChunkRequest selects NO, aligning native tidy negotiation with normal loader; outer manager accepts these native controllers; all original decisions once, OFF/native ABI drift retain original behavior",
+  "feed_compatibility_strategy": "original standard body builder once; remove only is_tidy string true from temporary mutable request; preserve config, other fields, response/status/auth/pagination; fixed actual-loader category diagnostics",
   "request_or_response_fabrication": false,
   "authentication_or_quota_rewritten": false,
   "json_diagnostic_limits": {
@@ -105,7 +80,7 @@
     "repair_or_server_status_rewrite": false
   },
   "runtime_tested": false,
-  "runtime_tested_scope": "0.9 physical device; native Douyin/server not executed by contract or UIKit fixtures",
+  "runtime_tested_scope": "0.10 physical device; no native Douyin/server executed in fixture",
   "featured_tips_network_root_cause_resolved": false,
   "featured_tips_pagination_verified_on_device": false,
   "background_screen_lock_audio_verified_on_device": false,
@@ -137,7 +112,7 @@
     "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页 1.heic",
     "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页.heic"
   ],
-  "status": "0.9 native feed-format compatibility implemented, built and contract/fixture/archive validated; physical-device acceptance required",
+  "status": "0.10 normal-feed negotiation and guarded background notification recovery built and fixture/archive verified; iPhone acceptance remains required",
   "zip_entries_read_back_and_sha256_verified": 5629,
   "unchanged_entries_independent_crc_size_mode_comparison": 5620,
   "unchanged_files_independent_audit_sha256_comparison": 4977,
@@ -154,5 +129,9 @@
     "UIInterfaceOrientationLandscapeRight"
   ],
   "ipad_and_extension_orientation_values_unchanged": true,
-  "original_background_modes_unchanged": true
+  "original_background_modes_unchanged": true,
+  "prior_ci_failure": "Foundation fixture caught a duplicate variable name and was corrected. UIKit caught overflow of new AI disclaimer at 120pt; added compact reference-only variant and narrow/wide recovery checks before rebuilding.",
+  "background_recovery_strategy": "original shouldResponseNotification once; native YES/OFF unchanged; native module and delegate/model identity, active Now Playing ownership, no explicit pause, compatible getter ABI and native shouldEnterBackgroundPlayMode YES required",
+  "ai_chat_unlocked": false,
+  "ai_hybrid_ui_fully_translated": false
 }
