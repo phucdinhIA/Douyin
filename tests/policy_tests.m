@@ -50,6 +50,35 @@
 - (BOOL)shouldRequestWithChunk {self.decisions++;return self.nativeChunk;}
 @end
 
+// Contract fixtures for the body/loader decisions found in build 406019.
+// These are not a runtime test of the proprietary network managers.
+@interface AWEFeedDoubleColumnListDataController : AWEDCFeedDefaultDataControllerWrapper
+@property BOOL nativeChunk;
+@property BOOL selectedChunk;
+@property NSUInteger decisions;
+@property (strong) NSDictionary *body;
+- (BOOL)enableChunkRequest;
+- (void)addBodyParamsForChunkModel:(NSMutableDictionary *)body;
+@end
+@implementation AWEFeedDoubleColumnListDataController
+- (BOOL)enableChunkRequest {self.decisions++;return self.nativeChunk;}
+- (void)addBodyParamsForChunkModel:(NSMutableDictionary *)body {
+    if (self.enableChunkRequest) body[@"is_tidy"]=@"true";
+}
+- (void)fetchDataWithRequestParams:(id)params args:(id)args completion:(void (^)(id,NSError *))completion {
+    NSMutableDictionary *body=[params mutableCopy];
+    [self addBodyParamsForChunkModel:body];self.body=body;
+    self.selectedChunk=self.enableChunkRequest;
+    [super fetchDataWithRequestParams:params args:args completion:completion];
+}
+@end
+@interface AWESearchCachalotDCFeedDataController : AWEFeedDoubleColumnListDataController
+@end
+@implementation AWESearchCachalotDCFeedDataController
+// Independent implementation so each installed hook forwards its own original.
+- (BOOL)enableChunkRequest {self.decisions++;return self.nativeChunk;}
+@end
+
 @interface TestJSON : NSObject
 @property NSUInteger calls;
 @property (strong) NSError *error;
@@ -564,6 +593,49 @@ int main(void) {
         check(completions==3 && standard.calls==3 && [standard.result[@"has_more"] isEqual:@NO] &&
             [standard.result[@"cursor"] isEqual:@67] && [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,
             @"transport selection does not duplicate requests, fabricate pagination or clear server restriction");
+
+        for (Class cls in @[AWEFeedDoubleColumnListDataController.class,AWESearchCachalotDCFeedDataController.class]) {
+            Method decision=class_getInstanceMethod(cls,@selector(enableChunkRequest));
+            check(DGInstallHook(@{@"class":NSStringFromClass(cls),@"selector":@"enableChunkRequest",@"operation":@"standardFeedFormat",
+                @"types":[NSString stringWithUTF8String:method_getTypeEncoding(decision)]},^BOOL{return compatibility;},recordNew),
+                @"direct controller format decision installs with checked BOOL ABI");
+            AWEFeedDoubleColumnListDataController *direct=[cls new];direct.nativeChunk=YES;
+            manager.dataController=direct;manager.nativeChunk=YES;
+            check(!manager.shouldRequestWithChunk,@"manager recognizes verified direct controller normal path");
+            check(!direct.enableChunkRequest && direct.decisions==1,@"normal format decision calls original once");
+            direct.result=standard.result;direct.error=standard.error;
+            for (NSString *methodName in @[@"fetchDataWithRequestParams:args:completion:",@"refreshDataWithRequestParams:args:completion:",@"loadMoreDataWithRequestParams:args:completion:"]) {
+                SEL requestSelector=NSSelectorFromString(methodName);
+                void (^completion)(id,NSError *)=^(id result,NSError *error){
+                    check(result==direct.result && error==direct.error,@"native response and restriction error are forwarded unchanged");
+                };
+                ((void (*)(id,SEL,id,id,id))[direct methodForSelector:requestSelector])(direct,requestSelector,params,args,completion);
+                check(!direct.body[@"is_tidy"] && [direct.body isEqual:params] && !direct.selectedChunk,
+                    @"initial, refresh and pagination agree on normal format without changing cursor or auth params");
+            }
+            check(direct.calls==3 && direct.decisions==7 && direct.parameters==params && direct.arguments==args,
+                @"three requests forwarded once with original args and two native decision calls each");
+            compatibility=NO;
+            [direct fetchDataWithRequestParams:params args:args completion:nil];
+            check([direct.body[@"is_tidy"] isEqual:@"true"] && direct.selectedChunk && manager.shouldRequestWithChunk,
+                @"OFF restores native tidy negotiation and chunk loader together");
+            compatibility=YES;direct.nativeChunk=NO;
+            check(!direct.enableChunkRequest,@"native standard decision stays standard");
+            direct.nativeChunk=YES;
+            Method bodyMethod=class_getInstanceMethod(cls,@selector(addBodyParamsForChunkModel:));
+            IMP bodyIMP=method_getImplementation(bodyMethod);
+            class_replaceMethod(cls,@selector(addBodyParamsForChunkModel:),bodyIMP,"v24@0:8q16");
+            check(direct.enableChunkRequest && manager.shouldRequestWithChunk,
+                @"body ABI drift retains original controller format and manager transport");
+            class_replaceMethod(cls,@selector(addBodyParamsForChunkModel:),bodyIMP,"v24@0:8@16");
+        }
+        serializer.error=[NSError errorWithDomain:@"CSP-Domain" code:-4 userInfo:@{@"PRIVATE-buffer":@"PRIVATE"}];
+        [serializer response:tt json:nil error:nil resultError:&resultError];
+        check(resultError==serializer.error && [newEvents[@"JSON response error CSP -4"] unsignedIntegerValue]==1 &&
+            [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,
+            @"CSP EOF error keeps native failure and never exports buffer details");
+        check(!DGInstallHook(@{@"class":@"TestBackground",@"selector":@"localState",@"operation":@"standardFeedFormat",@"types":@"q16@0:8"},^BOOL{return YES;},recordNew),
+            @"format operation rejects non-BOOL ABI");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
     return 0;

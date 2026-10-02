@@ -51,7 +51,8 @@ static NSString *DGErrorCategory(NSError *error) {
         @"kTTNetworkErrorDomain":@"TTNetwork", @"kAWEDCFeedErrorDomain":@"DCFeed",
         @"AWEDataLayerNetworkErrorDomain":@"DataNetwork", @"AWEDataLayerBaseErrorDomain":@"DataLayer",
         @"com.aweme.network.error":@"AwemeNetwork", @"com.bytedance.AwemeError":@"AwemeAPI",
-        @"kAWEDCFeedAISearchSecurityErrorDomain":@"DCSearchSecurity", @"AWEDCFeedAISearchErrorDomain":@"DCSearch"}; });
+        @"kAWEDCFeedAISearchSecurityErrorDomain":@"DCSearchSecurity", @"AWEDCFeedAISearchErrorDomain":@"DCSearch",
+        @"CSP-Domain":@"CSP"}; });
     return known[domain] ?: @"App";
 }
 
@@ -145,10 +146,28 @@ static void DGRecordJSONData(NSData *data, DGRecord record) {
     record([@"JSON strict decode " stringByAppendingString:shape],1);
 }
 
+static BOOL DGIsDirectStandardFeedController(id controller) {
+    // Both classes negotiate is_tidy via enableChunkRequest in build 406019.
+    // The first also chooses its native chunk/normal parser with that decision.
+    BOOL known=NO;
+    for (NSString *name in @[@"AWEFeedDoubleColumnListDataController",@"AWESearchCachalotDCFeedDataController"]) {
+        Class native=NSClassFromString(name);
+        if (native && [controller isKindOfClass:native]) { known=YES; break; }
+    }
+    NSString *boolTypes=[NSString stringWithFormat:@"%s16@0:8",@encode(BOOL)];
+    if (!known || !DGGetter(controller,@"enableChunkRequest",boolTypes.UTF8String) ||
+        !DGGetter(controller,@"addBodyParamsForChunkModel:","v24@0:8@16")) return NO;
+    for (NSString *name in @[@"fetchDataWithRequestParams:args:completion:",
+        @"refreshDataWithRequestParams:args:completion:",@"loadMoreDataWithRequestParams:args:completion:"])
+        if (!DGGetter(controller,name,"v40@0:8@16@24@?32")) return NO;
+    return YES;
+}
+
 static BOOL DGHasStandardFeedController(id manager) {
     Method getter=DGGetter(manager,@"dataController","@16@0:8");
     if (!getter) return NO;
     id controller=((id (*)(id,SEL))method_getImplementation(getter))(manager,NSSelectorFromString(@"dataController"));
+    if (DGIsDirectStandardFeedController(controller)) return YES;
     Class native=NSClassFromString(@"AWEDCFeedDefaultDataControllerWrapper");
     if (!native || ![controller isKindOfClass:native]) return NO;
     for (NSString *name in @[@"fetchDataWithRequestParams:args:completion:",
@@ -171,7 +190,7 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
     NSString *boolean = [NSString stringWithUTF8String:@encode(BOOL)];
     if ([kind isEqualToString:@"false0"] || [kind isEqualToString:@"true0"] ||
         [kind isEqualToString:@"backgroundSwitch"] || [kind isEqualToString:@"observeBool0"] ||
-        [kind isEqualToString:@"preferStandardFeed"]) {
+        [kind isEqualToString:@"preferStandardFeed"] || [kind isEqualToString:@"standardFeedFormat"]) {
         returnType = boolean; arguments = @[@"@", @":"];
     } else if ([kind isEqualToString:@"backgroundState"]) {
         returnType = @"q"; arguments = @[@"@", @":"];
@@ -262,7 +281,20 @@ static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecor
     IMP original = method_getImplementation(method);
     id block = nil;
     NSString *event = [NSString stringWithFormat:@"%@ %@", name, selectorName];
-    if ([kind isEqualToString:@"preferStandardFeed"]) {
+    if ([kind isEqualToString:@"standardFeedFormat"]) {
+        block=^BOOL(id self) {
+            BOOL native=((BOOL (*)(id,SEL))original)(self,sel);
+            if (!enabled()) return native;
+            record([event stringByAppendingString:(native ? @" original YES" : @" original NO")],1);
+            if (!native) return NO;
+            if (!DGIsDirectStandardFeedController(self)) {
+                record([event stringByAppendingString:@" compatibility unavailable"],1); return native;
+            }
+            // Let the original body builder and loader agree on normal format.
+            // Never edit the body, response, errors or pagination ourselves.
+            record([event stringByAppendingString:@" standard format selected"],1); return NO;
+        };
+    } else if ([kind isEqualToString:@"preferStandardFeed"]) {
         block=^BOOL(id self) {
             BOOL native=((BOOL (*)(id,SEL))original)(self,sel);
             if (!enabled()) return native;

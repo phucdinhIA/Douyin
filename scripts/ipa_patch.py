@@ -31,6 +31,7 @@ OPERATIONS = {
     'observeBool0': 'B16@0:8', 'observeVoid0': 'v16@0:8',
     'observeJSONResponse4': '@48@0:8@16@24@32^@40',
     'preferStandardFeed': 'B16@0:8',
+    'standardFeedFormat': 'B16@0:8',
 }
 
 def sha256(path: pathlib.Path) -> str:
@@ -198,8 +199,11 @@ def validate_resources(resource_dir: pathlib.Path):
                 raise ValueError('Background preference hook outside verified local store')
         if spec['operation']=='observeJSONResponse4' and (spec['class'],spec['selector'],spec['class_method'],spec['feature'])!=('AWEJSONResponseSerializer','responseObjectForResponse:jsonObj:responseError:resultError:',False,'diagnostics'):
             raise ValueError('JSON observer outside verified serializer')
-        if spec['operation']=='preferStandardFeed' or spec['feature']=='feed_compat':
-            if (spec['class'],spec['selector'],spec['class_method'],spec['feature'],spec['operation'])!=('AWEDCFeedListDataManager','shouldRequestWithChunk',False,'feed_compat','preferStandardFeed'):
+        if spec['operation'] in ('preferStandardFeed','standardFeedFormat') or spec['feature']=='feed_compat':
+            verified={('AWEDCFeedListDataManager','shouldRequestWithChunk',False,'feed_compat','preferStandardFeed'),
+                      ('AWEFeedDoubleColumnListDataController','enableChunkRequest',False,'feed_compat','standardFeedFormat'),
+                      ('AWESearchCachalotDCFeedDataController','enableChunkRequest',False,'feed_compat','standardFeedFormat')}
+            if (spec['class'],spec['selector'],spec['class_method'],spec['feature'],spec['operation']) not in verified:
                 raise ValueError('Feed transport hook outside verified native selector')
     for key, value in translations.items():
         if not isinstance(key, str) or not isinstance(value, str) or not key or not value:
