@@ -138,6 +138,9 @@ void DGAudioInstall(void (^record)(NSString *,NSUInteger)) {
 void DGAudioOwner(UIViewController *owner) {if (DGAudio.owner!=owner) {[DGAudio stop];DGAudio.owner=owner;}}
 void DGAudioLeave(UIViewController *owner) {if (DGAudio.owner==owner) {[DGAudio stop];DGAudio.owner=nil;}}
 BOOL DGAudioVoice(UIViewController *owner,NSURL *file) {
+    if (!file.isFileURL || ![NSFileManager.defaultManager fileExistsAtPath:file.path]) return NO;
+    AVURLAsset *asset=[AVURLAsset URLAssetWithURL:file options:nil];double duration=CMTimeGetSeconds(asset.duration);
+    if (!isfinite(duration) || duration<=0 || ![asset tracksWithMediaType:AVMediaTypeAudio].count) return NO;
     if (DGAudio.owner!=owner || !DGAMethod(owner,@"setMuted:",@"v20@0:8B16") || !DGAMethod(owner,@"isMute",@"B16@0:8") || ![DGAudio session]) return NO;
     [DGAudio mute];DGAudio.voiceFile=file;DGAudio.voice=[AVPlayer playerWithURL:file];DGAudio.interrupted=NO;[DGAudio tick];return YES;
 }

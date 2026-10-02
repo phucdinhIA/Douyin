@@ -41,8 +41,8 @@ BOOL DGSourceURLAllowed(NSURL *url) {
     NSURL *audio=[NSURL fileURLWithPath:[file.path stringByAppendingString:@".m4a"]];exporter.outputURL=audio;exporter.outputFileType=AVFileTypeAppleM4A;
     __weak DGSourceDownload *weakSelf=self;
     [exporter exportAsynchronouslyWithCompletionHandler:^{
-        DGSourceDownload *owner=weakSelf;if (!owner) return;
-        if (owner.cancelled) {[NSFileManager.defaultManager removeItemAtURL:audio error:NULL];return;}
+        DGSourceDownload *owner=weakSelf;
+        if (!owner || owner.cancelled) {[NSFileManager.defaultManager removeItemAtURL:audio error:NULL];[NSFileManager.defaultManager removeItemAtURL:file error:NULL];return;}
         if (exporter.status==AVAssetExportSessionStatusCompleted) {[NSFileManager.defaultManager removeItemAtURL:file error:NULL];owner.file=audio;[owner finish:audio failure:nil];}
         else {[NSFileManager.defaultManager removeItemAtURL:audio error:NULL];[owner finish:file failure:nil];} // Verified MP4 binary upload is also accepted by Nova-3.
     }];

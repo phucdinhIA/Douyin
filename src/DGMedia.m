@@ -206,6 +206,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 - (void)save:(NSArray *)cues kind:(NSString *)kind {NSString *text=DGJSONText(cues);if (text) [self.store saveTranslation:text source:[self cacheKey:kind]];}
 - (void)emit:(NSString *)stage failure:(NSString *)failure {if (self.update) self.update(stage,self.translated ?: @[],failure);}
 - (void)fail:(NSString *)failure {
+    [self.download cancel];self.download=nil;
     [self emit:@"failed" failure:failure ?: @"Không tạo được phụ đề. Bấm thử lại thủ công."];[self.session finishTasksAndInvalidate];self.session=nil;self.task=nil;
 }
 - (void)startVideo:(NSString *)videoID {
