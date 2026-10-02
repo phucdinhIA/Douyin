@@ -609,18 +609,22 @@ static NSUInteger countText(UIView *view, NSString *text) {
         if (![sheet isKindOfClass:UIAlertController.class]) sheet=(UIAlertController *)self.navigation.presentedViewController;
         check([sheet isKindOfClass:UIAlertController.class] && [sheet.title isEqualToString:@"Douyin Guest"],@"diagnostics sheet can actually be presented on legacy window");
         check(sheet.actions.count==9,@"settings expose five switches, two public web actions, copy and close");
-        [sheet dismissViewControllerAnimated:NO completion:nil];
-        [[DGSettings shared] presentPublicFinder:self.navigation profileLink:NO];
-        UIAlertController *finder=(UIAlertController *)self.navigation.presentedViewController;
-        check([finder isKindOfClass:UIAlertController.class] && [finder.title isEqualToString:@"Find public profiles"] && finder.textFields.count==1 && finder.actions.count==2,
-            @"public finder presents a native name-entry prompt without making a network request");
-        check([finder.message containsString:@"Bing"] && [finder.message containsString:@"may vary"],@"public finder identifies the destination and guest availability limits");
-        [finder dismissViewControllerAnimated:NO completion:nil];
-        [[DGSettings shared] presentPublicFinder:self.navigation profileLink:YES];
-        UIAlertController *linkPrompt=(UIAlertController *)self.navigation.presentedViewController;
-        check([linkPrompt.title isEqualToString:@"Open public profile"] && linkPrompt.textFields.firstObject.keyboardType==UIKeyboardTypeURL,
-            @"profile-link prompt uses the URL keyboard and official-link wording");
-        [linkPrompt dismissViewControllerAnimated:NO completion:nil];
+        [sheet dismissViewControllerAnimated:NO completion:^{
+          [[DGSettings shared] presentPublicFinder:self.navigation profileLink:NO];
+          dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(),^{
+            UIAlertController *finder=(UIAlertController *)self.navigation.presentedViewController;
+            check([finder isKindOfClass:UIAlertController.class] && [finder.title isEqualToString:@"Find public profiles"] && finder.textFields.count==1 && finder.actions.count==2,
+                @"public finder presents a native name-entry prompt without making a network request");
+            check([finder.message containsString:@"Bing"] && [finder.message containsString:@"may vary"],@"public finder identifies the destination and guest availability limits");
+            [self saveWindowImage:@"ui-public-finder.png"];
+            [finder dismissViewControllerAnimated:NO completion:^{
+              [[DGSettings shared] presentPublicFinder:self.navigation profileLink:YES];
+              dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(),^{
+                UIAlertController *linkPrompt=(UIAlertController *)self.navigation.presentedViewController;
+                check([linkPrompt.title isEqualToString:@"Open public profile"] && linkPrompt.textFields.firstObject.keyboardType==UIKeyboardTypeURL,
+                    @"profile-link prompt uses the URL keyboard and official-link wording");
+                [self saveWindowImage:@"ui-public-profile.png"];
+                [linkPrompt dismissViewControllerAnimated:NO completion:^{
         [self showVisualSamples];
         BOOL success=YES; for (NSDictionary *item in checks) if (![item[@"passed"] boolValue]) success=NO;
         NSDictionary *report=@{@"scope":@"UIKit fixture only; original Douyin app and network were not executed",@"ios":UIDevice.currentDevice.systemVersion,@"device":UIDevice.currentDevice.model,@"checks":checks,@"passed":@(success),@"count":@(checks.count),@"fitting_observation":fittingObservation,@"overflow_labels":overflowLabels,@"translation_entries_tested":@(words.count)};
@@ -628,6 +632,11 @@ static NSUInteger countText(UIView *view, NSString *text) {
         NSURL *documents=[NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
         [result writeToURL:[documents URLByAppendingPathComponent:@"ui-results.json"] atomically:YES];
         NSLog(@"UI fixture finished: %@",success ? @"PASS" : @"FAIL");
+                }];
+              });
+            }];
+          });
+        }];
     });
 }
 @end
