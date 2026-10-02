@@ -130,6 +130,7 @@ NSArray *DGMediaReadVisibleComments(UIView *root) {
 @property(nonatomic) BOOL showing;
 @property(nonatomic) BOOL running;
 @property(nonatomic) BOOL waiting;
+@property(nonatomic) BOOL failed;
 - (void)open;
 - (void)stop;
 - (void)tick;
@@ -153,6 +154,7 @@ static BOOL DGMediaPause(UIViewController *owner) {
 }
 - (void)open {
     if (!self.owner.view.window || self.owner.view.hidden) return;
+    if (self.failed && self.waiting) {[self resumeWaiting];[self stop];return;}
     if (self.running) {[self resumeWaiting];[self stop];self.status.text=@"Đã hủy · Không tự thử lại";return;}
     if (self.showing) {self.showing=NO;self.caption.hidden=YES;[self.timer invalidate];self.timer=nil;[self.button setTitle:@"Hiện phụ đề Việt" forState:UIControlStateNormal];return;}
     NSString *identifier=DGVideoID(self.owner);
@@ -160,16 +162,16 @@ static BOOL DGMediaPause(UIViewController *owner) {
     if (!DGMediaGetterType(class_getInstanceMethod(object_getClass(self.owner),NSSelectorFromString(@"currentPlaybackTime")),'d')) {self.status.text=@"Chưa đọc được thời gian phát video.";DGMediaCount(@"Captions playback clock unavailable");return;}
     if (!DGMediaGetterType(class_getInstanceMethod(object_getClass(self.owner),NSSelectorFromString(@"resumePlayVideo")),'v') || !DGMediaPause(self.owner)) {self.status.text=@"Chưa điều khiển được tạm dừng video.";DGMediaCount(@"Captions pause unavailable");return;}
     if (DGActiveCaption!=self) [DGActiveCaption stop];DGActiveCaption=self;
-    self.videoID=identifier;self.waiting=YES;self.showing=YES;self.running=YES;self.cues=@[];self.client=DGNewMediaClient(NO);[self.button setTitle:@"Hủy phụ đề" forState:UIControlStateNormal];DGMediaCount(@"Captions playback paused");
+    self.videoID=identifier;self.waiting=YES;self.failed=NO;self.showing=YES;self.running=YES;self.cues=@[];self.client=DGNewMediaClient(NO);[self.button setTitle:@"Hủy phụ đề" forState:UIControlStateNormal];DGMediaCount(@"Captions playback paused");
     self.timer=[NSTimer timerWithTimeInterval:0.1 repeats:YES block:^(__unused NSTimer *timer) {[DGActiveCaption tick];}];[NSRunLoop.mainRunLoop addTimer:self.timer forMode:NSRunLoopCommonModes];
     __weak DGCaptionEntry *weakSelf=self;
     self.client.update=^(NSString *stage,NSArray *cues,NSString *failure) {
         DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || !entry.owner.view.window || ![entry.videoID isEqual:DGVideoID(entry.owner)]) {[entry stop];return;}
         entry.cues=cues;entry.running=!([stage isEqual:@"ready"] || [stage isEqual:@"cached"] || [stage isEqual:@"failed"]);
         entry.status.text=[stage isEqual:@"apify"] ? @"Đang lấy video · Apify" : [stage isEqual:@"deepgram"] ? @"Đang nhận dạng tiếng Trung · Nova-3" : [stage isEqual:@"gemini"] ? @"Đang dịch phụ đề · Gemini" : [stage isEqual:@"partial"] ? @"Đã có một phần phụ đề · đang dịch tiếp" : [stage isEqual:@"cached"] ? @"Phụ đề đã lưu · không gọi API lại" : [stage isEqual:@"ready"] ? @"Phụ đề Việt đã sẵn sàng" : failure;
-        [entry.button setTitle:entry.running ? @"Hủy phụ đề" : [stage isEqual:@"failed"] ? @"Thử lại phụ đề" : @"Tắt phụ đề Việt" forState:UIControlStateNormal];
-        if ([stage isEqual:@"failed"]) {entry.showing=NO;[entry.timer invalidate];entry.timer=nil;}
-        if (!entry.running) [entry resumeWaiting];
+        [entry.button setTitle:entry.running ? @"Hủy phụ đề" : [stage isEqual:@"failed"] ? @"Bỏ qua · phát video" : @"Tắt phụ đề Việt" forState:UIControlStateNormal];
+        if ([stage isEqual:@"failed"]) {entry.failed=YES;entry.showing=NO;entry.caption.hidden=YES;DGMediaCount(@"Captions failed waiting for user");}
+        if ([stage isEqual:@"ready"] || [stage isEqual:@"cached"]) [entry resumeWaiting];
         DGMediaCount([@"Captions stage " stringByAppendingString:stage]);[entry tick];
     };
     SEL timeSelector=NSSelectorFromString(@"currentPlaybackTime");Method timeMethod=class_getInstanceMethod(object_getClass(self.owner),timeSelector);
@@ -179,16 +181,16 @@ static BOOL DGMediaPause(UIViewController *owner) {
 - (void)tick {
     if (!self.owner.view.window || self.owner.view.hidden || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive || ![self.videoID isEqual:DGVideoID(self.owner)]) {[self stop];return;}
     SEL selector=NSSelectorFromString(@"currentPlaybackTime");Method method=class_getInstanceMethod(object_getClass(self.owner),selector);
-    if (!self.showing || !DGMediaGetterType(method,'d')) {self.caption.hidden=YES;return;}
     if (self.waiting) {
         Method playing=class_getInstanceMethod(object_getClass(self.owner),NSSelectorFromString(@"isPlaying"));
         if (DGMediaGetterType(playing,'B') && ((BOOL (*)(id,SEL))method_getImplementation(playing))(self.owner,NSSelectorFromString(@"isPlaying"))) DGMediaPause(self.owner);
     }
+    if (!self.showing || !DGMediaGetterType(method,'d')) {self.caption.hidden=YES;return;}
     NSTimeInterval time=((double (*)(id,SEL))method_getImplementation(method))(self.owner,selector);if (self.running) [self.client prioritizeTime:time];NSString *text=DGCaptionTextAt(self.cues,time);
     self.caption.hidden=!text.length;if (![self.caption.text isEqual:text]) self.caption.text=text;
 }
 - (void)stop {
-    [self.client cancel];self.client=nil;[self.timer invalidate];self.timer=nil;self.running=NO;self.showing=NO;self.waiting=NO;self.caption.hidden=YES;self.cues=@[];self.status.text=@"";[self.button setTitle:@"Phụ đề Việt" forState:UIControlStateNormal];
+    [self.client cancel];self.client=nil;[self.timer invalidate];self.timer=nil;self.running=NO;self.showing=NO;self.waiting=NO;self.failed=NO;self.caption.hidden=YES;self.cues=@[];self.status.text=@"";[self.button setTitle:@"Phụ đề Việt" forState:UIControlStateNormal];
 }
 - (void)dealloc {[_client cancel];[_timer invalidate];[_button removeFromSuperview];[_status removeFromSuperview];[_caption removeFromSuperview];[NSNotificationCenter.defaultCenter removeObserver:self];}
 @end
@@ -260,7 +262,7 @@ static BOOL DGMediaStartShortcut(UIWindow *window,CGPoint point) {
     if (!player) {DGMediaCount(@"Captions shortcut player unavailable");return NO;}
     DGAttachCaption(player);DGCaptionEntry *entry=objc_getAssociatedObject(player,&DGCaptionKey);
     DGMediaCount(@"Captions four taps recognized");
-    if (entry.running || entry.showing) {DGMediaCount(@"Captions shortcut already active");return YES;}
+    if (entry.running || entry.showing || entry.waiting) {DGMediaCount(@"Captions shortcut already active");return YES;}
     [entry open];return entry.showing;
 }
 @interface DGMediaShortcut : NSObject <UIGestureRecognizerDelegate>

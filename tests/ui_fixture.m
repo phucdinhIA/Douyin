@@ -421,7 +421,10 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];[button sendActionsForControlEvents:UIControlEventTouchUpInside];
     check(player.playing && player.resumeCalls==resumed+1 && ![DGMediaSnapshot()[@"caption_running"] boolValue],@"manual cancellation restores playback rather than leaving video paused");
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];mediaWait(^BOOL{return ![DGMediaSnapshot()[@"caption_running"] boolValue];});
-    check(player.playing && ![DGMediaSnapshot()[@"caption_waiting"] boolValue] && [button.currentTitle isEqual:@"Thử lại phụ đề"],@"provider failure restores playback and exposes manual retry");
+    check(!player.playing && [DGMediaSnapshot()[@"caption_waiting"] boolValue] && [button.currentTitle isEqual:@"Bỏ qua · phát video"],@"provider failure holds video until subtitles exist or user explicitly skips");
+    int failedRequests=atomic_load(&mediaRequests);DGMediaFixtureShortcut(self.window,CGPointMake(280,300));
+    check(!player.playing && atomic_load(&mediaRequests)==failedRequests,@"four taps after failure cannot automatically spend another paid request");
+    [button sendActionsForControlEvents:UIControlEventTouchUpInside];check(player.playing && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"explicit skip after failure restores playback");
     resumed=player.resumeCalls;[button sendActionsForControlEvents:UIControlEventTouchUpInside];[NSNotificationCenter.defaultCenter postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];check(caption.hidden && ![DGMediaSnapshot()[@"caption_running"] boolValue] && player.resumeCalls==resumed,@"background cancels pipeline without unexpectedly resuming video");
     // An embedded player that never called the hooked native appearance method.
     UIViewController *host=[UIViewController new];MissedAppearancePlayer *late=[MissedAppearancePlayer new];late.model=model;late.playback=0.5;late.playing=YES;
