@@ -1,9 +1,12 @@
 #import "DGMediaUI.h"
 #import "DGMedia.h"
+#import "DGComments.h"
+#import "DGVbee.h"
+#import "DGAudioUI.h"
 #import <objc/runtime.h>
 #include <math.h>
 
-static NSDictionary *DGMediaConfig,*DGMediaGemini;
+static NSDictionary *DGMediaConfig,*DGMediaGemini,*DGMediaVbee;
 static DGTranslationStore *DGMediaCache;
 static DGTranslationStore *DGGTXCache;
 static NSURLSessionConfiguration *DGMediaConfiguration;
@@ -67,8 +70,7 @@ NSArray *DGMediaReadVisibleComments(UIView *root) {
             }
         }
         if (visible && label && [node isKindOfClass:label]) {
-            id attributed=DGMediaGetter(node,@"attributedText"),text=DGMediaGetter(node,@"text");
-            source=[attributed isKindOfClass:NSAttributedString.class] && [attributed length] ? [attributed string] : [text isKindOfClass:NSString.class] ? text : nil;
+            source=DGCommentVisibleText(node);
         }
         if (source.length && source.length<=2000 && ![seen containsObject:source]) {[comments addObject:source];[seen addObject:source];}
         for (UIView *child in node.subviews.reverseObjectEnumerator) [pending addObject:child];
@@ -125,6 +127,8 @@ NSArray *DGMediaReadVisibleComments(UIView *root) {
 @property(nonatomic,strong) UILabel *caption;
 @property(nonatomic,strong) DGMediaClient *client;
 @property(nonatomic,strong) NSTimer *timer;
+@property(nonatomic,strong) DGVbee *vbee;
+@property(nonatomic) BOOL preparingVoice;
 @property(nonatomic,copy) NSString *videoID;
 @property(nonatomic,strong) NSArray *cues;
 @property(nonatomic) BOOL showing;
@@ -135,6 +139,8 @@ NSArray *DGMediaReadVisibleComments(UIView *root) {
 - (void)stop;
 - (void)tick;
 - (void)resumeWaiting;
+- (void)prepareVoice;
+- (void)background;
 @end
 static __weak DGCaptionEntry *DGActiveCaption;
 static __weak DGCaptionEntry *DGVisibleCaption;
@@ -145,8 +151,9 @@ static BOOL DGMediaPause(UIViewController *owner) {
 }
 @implementation DGCaptionEntry
 - (void)resumeWaiting {
-    if (!self.waiting) return;self.waiting=NO;
+    if (!self.waiting) return;
     if (!self.owner.view.window || self.owner.view.hidden || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive || ![self.videoID isEqual:DGVideoID(self.owner)]) return;
+    self.waiting=NO;
     Method method=class_getInstanceMethod(object_getClass(self.owner),NSSelectorFromString(@"resumePlayVideo"));
     if (DGMediaGetterType(method,'v')) {
         @try {((void (*)(id,SEL))method_getImplementation(method))(self.owner,NSSelectorFromString(@"resumePlayVideo"));DGMediaCount(@"Captions playback resumed");}@catch (__unused NSException *error) {DGMediaCount(@"Captions resume failed");}
@@ -156,7 +163,7 @@ static BOOL DGMediaPause(UIViewController *owner) {
     if (!self.owner.view.window || self.owner.view.hidden) return;
     if (self.failed && self.waiting) {[self resumeWaiting];[self stop];return;}
     if (self.running) {[self resumeWaiting];[self stop];self.status.text=@"Đã hủy · Không tự thử lại";return;}
-    if (self.showing) {self.showing=NO;self.caption.hidden=YES;[self.timer invalidate];self.timer=nil;[self.button setTitle:@"Hiện phụ đề Việt" forState:UIControlStateNormal];return;}
+    if (self.showing) {[self stop];return;}
     NSString *identifier=DGVideoID(self.owner);
     if (!identifier) {self.status.text=@"Chưa đọc được ID video đang xem.";DGMediaCount(@"Captions video ID unavailable");return;}
     if (!DGMediaGetterType(class_getInstanceMethod(object_getClass(self.owner),NSSelectorFromString(@"currentPlaybackTime")),'d')) {self.status.text=@"Chưa đọc được thời gian phát video.";DGMediaCount(@"Captions playback clock unavailable");return;}
@@ -171,16 +178,35 @@ static BOOL DGMediaPause(UIViewController *owner) {
         entry.status.text=[stage isEqual:@"apify"] ? @"Đang lấy video · Apify" : [stage isEqual:@"deepgram"] ? @"Đang nhận dạng tiếng Trung · Nova-3" : [stage isEqual:@"gemini"] ? @"Đang dịch phụ đề · Gemini" : [stage isEqual:@"partial"] ? @"Đã có một phần phụ đề · đang dịch tiếp" : [stage isEqual:@"cached"] ? @"Phụ đề đã lưu · không gọi API lại" : [stage isEqual:@"ready"] ? @"Phụ đề Việt đã sẵn sàng" : failure;
         [entry.button setTitle:entry.running ? @"Hủy phụ đề" : [stage isEqual:@"failed"] ? @"Bỏ qua · phát video" : @"Tắt phụ đề Việt" forState:UIControlStateNormal];
         if ([stage isEqual:@"failed"]) {entry.failed=YES;entry.showing=NO;entry.caption.hidden=YES;DGMediaCount(@"Captions failed waiting for user");}
-        if ([stage isEqual:@"ready"] || [stage isEqual:@"cached"]) [entry resumeWaiting];
+        if ([stage isEqual:@"download"]) entry.status.text=@"CDN chặn Deepgram · đang tải âm thanh trực tiếp";
+        if ([stage isEqual:@"ready"] || [stage isEqual:@"cached"]) {
+            if ([DGMediaVbee[@"token"] length]) [entry prepareVoice];else [entry resumeWaiting];
+        }
         DGMediaCount([@"Captions stage " stringByAppendingString:stage]);[entry tick];
     };
     SEL timeSelector=NSSelectorFromString(@"currentPlaybackTime");Method timeMethod=class_getInstanceMethod(object_getClass(self.owner),timeSelector);
     double time=DGMediaGetterType(timeMethod,'d') ? ((double (*)(id,SEL))method_getImplementation(timeMethod))(self.owner,timeSelector) : 0;
     DGMediaCount(@"Captions opt-in");[self.client startVideo:identifier at:time];
 }
+- (void)prepareVoice {
+    if (self.preparingVoice) return;self.preparingVoice=YES;self.running=YES;self.status.text=@"Đang tạo lồng tiếng Việt · Vbee";
+    [self.button setTitle:@"Hủy lồng tiếng" forState:UIControlStateNormal];
+    self.vbee=[[DGVbee alloc] initWithConfig:DGMediaVbee configuration:DGMediaConfiguration];self.vbee.event=^(NSString *name) {DGMediaCount(name);};
+    NSString *identifier=self.videoID;__weak DGCaptionEntry *weakSelf=self;
+    self.vbee.completion=^(NSURL *file,NSString *failure) {
+        DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || ![identifier isEqual:entry.videoID] || ![identifier isEqual:DGVideoID(entry.owner)]) {if (file) [NSFileManager.defaultManager removeItemAtURL:file error:NULL];return;}
+        entry.running=NO;entry.preparingVoice=NO;
+        BOOL voice=file && DGAudioVoice(entry.owner,file);
+        if (file && !voice) [NSFileManager.defaultManager removeItemAtURL:file error:NULL];
+        entry.status.text=voice ? @"Phụ đề và lồng tiếng Việt đã sẵn sàng" : failure ?: @"Chưa gắn được giọng đọc vào player · dùng phụ đề";
+        [entry.button setTitle:@"Tắt phụ đề / lồng tiếng" forState:UIControlStateNormal];[entry resumeWaiting];
+    };[self.vbee start:self.cues];
+}
 - (void)tick {
-    if (!self.owner.view.window || self.owner.view.hidden || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive || ![self.videoID isEqual:DGVideoID(self.owner)]) {[self stop];return;}
+    if (UIApplication.sharedApplication.applicationState!=UIApplicationStateActive) return;
+    if (!self.owner.view.window || self.owner.view.hidden || ![self.videoID isEqual:DGVideoID(self.owner)]) {[self stop];return;}
     SEL selector=NSSelectorFromString(@"currentPlaybackTime");Method method=class_getInstanceMethod(object_getClass(self.owner),selector);
+    if (self.waiting && !self.running && !self.failed) [self resumeWaiting];
     if (self.waiting) {
         Method playing=class_getInstanceMethod(object_getClass(self.owner),NSSelectorFromString(@"isPlaying"));
         if (DGMediaGetterType(playing,'B') && ((BOOL (*)(id,SEL))method_getImplementation(playing))(self.owner,NSSelectorFromString(@"isPlaying"))) DGMediaPause(self.owner);
@@ -190,12 +216,15 @@ static BOOL DGMediaPause(UIViewController *owner) {
     self.caption.hidden=!text.length;if (![self.caption.text isEqual:text]) self.caption.text=text;
 }
 - (void)stop {
+    [self.vbee cancel];self.vbee=nil;self.preparingVoice=NO;DGAudioStopVoice(self.owner);
     [self.client cancel];self.client=nil;[self.timer invalidate];self.timer=nil;self.running=NO;self.showing=NO;self.waiting=NO;self.failed=NO;self.caption.hidden=YES;self.cues=@[];self.status.text=@"";[self.button setTitle:@"Phụ đề Việt" forState:UIControlStateNormal];
 }
+- (void)background {if (self.running) [self stop];self.caption.hidden=YES;}
 - (void)dealloc {[_client cancel];[_timer invalidate];[_button removeFromSuperview];[_status removeFromSuperview];[_caption removeFromSuperview];[NSNotificationCenter.defaultCenter removeObserver:self];}
 @end
 static void DGAttachCaption(UIViewController *owner) {
     UIWindow *surface=owner.view.window;if (!surface) return;
+    DGAudioOwner(owner);
     DGCaptionEntry *entry=objc_getAssociatedObject(owner,&DGCaptionKey);
     if (DGVisibleCaption && DGVisibleCaption!=entry) {DGVisibleCaption.button.hidden=YES;DGVisibleCaption.status.hidden=YES;DGVisibleCaption.caption.hidden=YES;}
     if (!entry) {
@@ -209,11 +238,12 @@ static void DGAttachCaption(UIViewController *owner) {
             [entry.status.topAnchor constraintEqualToAnchor:entry.button.bottomAnchor constant:4],[entry.status.leadingAnchor constraintEqualToAnchor:entry.button.leadingAnchor],[entry.status.widthAnchor constraintEqualToConstant:230],
             [entry.caption.leadingAnchor constraintEqualToAnchor:surface.safeAreaLayoutGuide.leadingAnchor constant:18],[entry.caption.trailingAnchor constraintEqualToAnchor:surface.safeAreaLayoutGuide.trailingAnchor constant:-66],[entry.caption.centerYAnchor constraintEqualToAnchor:surface.centerYAnchor constant:90]]];
         objc_setAssociatedObject(owner,&DGCaptionKey,entry,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        [NSNotificationCenter.defaultCenter addObserver:entry selector:@selector(stop) name:UIApplicationDidEnterBackgroundNotification object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:entry selector:@selector(background) name:UIApplicationDidEnterBackgroundNotification object:nil];
     }
     DGVisibleCaption=entry;entry.button.hidden=NO;entry.status.hidden=NO;[surface bringSubviewToFront:entry.button];[surface bringSubviewToFront:entry.status];[surface bringSubviewToFront:entry.caption];DGMediaCount(@"Captions UI attached");
 }
 static void DGAttachComments(UIViewController *owner) {
+    DGCommentsStart(owner,DGNewMediaClient(YES),DGMediaRecord);
     DGVisibleCaption.button.hidden=YES;DGVisibleCaption.status.hidden=YES;DGVisibleCaption.caption.hidden=YES;
     DGCommentEntry *entry=objc_getAssociatedObject(owner,&DGCommentKey);
     if (!entry) {
@@ -222,7 +252,7 @@ static void DGAttachComments(UIViewController *owner) {
     }entry.button.hidden=NO;[owner.view bringSubviewToFront:entry.button];
 }
 static BOOL DGMediaNativeController(UIViewController *owner,BOOL comments) {
-    for (NSString *name in comments ? @[@"AWECommentContainerViewController",@"AWECommentFullScreenContainerViewController"] : @[@"AWEPlayVideoViewController"]) {
+    for (NSString *name in comments ? @[@"AWECommentContainerViewController",@"AWECommentFullScreenContainerViewController",@"AWECommentTreeContainerViewController",@"_TtC33AWECommentPanelContainerSwiftImpl35CommentContainerInnerViewController"] : @[@"AWEPlayVideoViewController"]) {
         Class cls=NSClassFromString(name);if (cls && [owner isKindOfClass:cls]) return YES;
     }return NO;
 }
@@ -304,19 +334,23 @@ static BOOL DGMediaHook(Class cls,NSString *name,NSString *types,id (^factory)(I
 }
 void DGMediaInstall(void (^record)(NSString *,NSUInteger)) {
     DGMediaRecord=[record copy];if (!DGMediaConfig) DGMediaConfig=DGMediaResource(@"media-private");if (!DGMediaGemini) DGMediaGemini=DGMediaResource(@"gemini-private");if (!DGMediaHooks) DGMediaHooks=[NSMutableSet new];
-    Class player=NSClassFromString(@"AWEPlayVideoViewController");
+    if (!DGMediaVbee) DGMediaVbee=DGMediaResource(@"vbee-private");DGAudioInstall(record);
+    DGCommentsInstall();Class player=NSClassFromString(@"AWEPlayVideoViewController");
     if (player && [player isSubclassOfClass:UIViewController.class]) {
         DGMediaHook(player,@"viewDidAppear:",@"v20@0:8B16",^id(IMP original) {return ^(UIViewController *owner,BOOL animated) {((void (*)(id,SEL,BOOL))original)(owner,@selector(viewDidAppear:),animated);if (NSThread.isMainThread) DGAttachCaption(owner);};});
-        DGMediaHook(player,@"viewWillDisappear:",@"v20@0:8B16",^id(IMP original) {return ^(UIViewController *owner,BOOL animated) {DGCaptionEntry *entry=objc_getAssociatedObject(owner,&DGCaptionKey);[entry stop];entry.button.hidden=YES;entry.status.hidden=YES;((void (*)(id,SEL,BOOL))original)(owner,@selector(viewWillDisappear:),animated);};});
+        DGMediaHook(player,@"viewWillDisappear:",@"v20@0:8B16",^id(IMP original) {return ^(UIViewController *owner,BOOL animated) {DGCaptionEntry *entry=objc_getAssociatedObject(owner,&DGCaptionKey);[entry stop];DGAudioLeave(owner);entry.button.hidden=YES;entry.status.hidden=YES;((void (*)(id,SEL,BOOL))original)(owner,@selector(viewWillDisappear:),animated);};});
         DGMediaHook(player,@"setModel:",@"v24@0:8@16",^id(IMP original) {return ^(UIViewController *owner,id model) {[objc_getAssociatedObject(owner,&DGCaptionKey) stop];((void (*)(id,SEL,id))original)(owner,NSSelectorFromString(@"setModel:"),model);};});
     }
-    for (NSString *name in @[@"AWECommentContainerViewController",@"AWECommentFullScreenContainerViewController"]) {
+    for (NSString *name in @[@"AWECommentContainerViewController",@"AWECommentFullScreenContainerViewController",@"AWECommentTreeContainerViewController",@"_TtC33AWECommentPanelContainerSwiftImpl35CommentContainerInnerViewController"]) {
         Class cls=NSClassFromString(name);if (!cls || ![cls isSubclassOfClass:UIViewController.class]) continue;
         DGMediaHook(cls,@"viewDidAppear:",@"v20@0:8B16",^id(IMP original) {return ^(UIViewController *owner,BOOL animated) {((void (*)(id,SEL,BOOL))original)(owner,@selector(viewDidAppear:),animated);if (NSThread.isMainThread) DGAttachComments(owner);};});
-        DGMediaHook(cls,@"viewWillDisappear:",@"v20@0:8B16",^id(IMP original) {return ^(UIViewController *owner,BOOL animated) {DGCommentEntry *entry=objc_getAssociatedObject(owner,&DGCommentKey);entry.button.hidden=YES;((void (*)(id,SEL,BOOL))original)(owner,@selector(viewWillDisappear:),animated);};});
+        DGMediaHook(cls,@"viewWillDisappear:",@"v20@0:8B16",^id(IMP original) {return ^(UIViewController *owner,BOOL animated) {DGCommentsStop(owner);DGCommentEntry *entry=objc_getAssociatedObject(owner,&DGCommentKey);entry.button.hidden=YES;((void (*)(id,SEL,BOOL))original)(owner,@selector(viewWillDisappear:),animated);};});
     }
 }
-NSDictionary *DGMediaSnapshot(void) {return @{@"caption_configured":@([DGMediaConfig[@"apify_api_key"] length]>0 && [DGMediaConfig[@"deepgram_api_key"] length]>0 && [DGMediaGemini[@"api_key"] length]>0),@"actor":@"apple_yang/douyin-video-audio-downloader",@"asr_model":@"nova-3",@"source_language":@"zh-CN",@"target_language":@"vi",@"translation_model":@"gemini-3.5-flash-lite",@"hooks_installed":@(DGMediaHooks.count),@"four_tap_windows":@(DGMediaWindowCount),@"caption_waiting":@(DGActiveCaption.waiting),@"caption_shortcut_taps":@4,@"caption_running":@(DGActiveCaption.running),@"caption_showing":@(DGActiveCaption.showing),@"automatic_retries":@0,@"maximum_video_seconds":@3600,@"gtx_opt_in":@YES};}
+NSDictionary *DGMediaSnapshot(void) {
+    NSMutableDictionary *snapshot=[@{@"caption_configured":@([DGMediaConfig[@"apify_api_key"] length]>0 && [DGMediaConfig[@"deepgram_api_key"] length]>0 && [DGMediaGemini[@"api_key"] length]>0),@"actor":@"apple_yang/douyin-video-audio-downloader",@"asr_model":@"nova-3",@"source_language":@"zh-CN",@"target_language":@"vi",@"translation_model":@"gemini-3.5-flash-lite",@"hooks_installed":@(DGMediaHooks.count),@"four_tap_windows":@(DGMediaWindowCount),@"caption_waiting":@(DGActiveCaption.waiting),@"caption_shortcut_taps":@4,@"caption_running":@(DGActiveCaption.running),@"caption_showing":@(DGActiveCaption.showing),@"automatic_retries":@0,@"maximum_video_seconds":@3600,@"gtx_automatic_visible":@YES,@"deepgram_upload_fallback":@YES,@"vbee_configured":@([DGMediaVbee[@"token"] length]>0),@"vbee_voice":@"hn_male_manhdung_news_48k-fhg",@"vbee_concurrency":@3} mutableCopy];
+    [snapshot addEntriesFromDictionary:DGAudioSnapshot()];return snapshot;
+}
 #ifdef DG_GEMINI_FIXTURE
 void DGMediaFixtureConfiguration(NSURLSessionConfiguration *configuration,NSURL *cacheURL) {DGMediaConfiguration=configuration;DGMediaCache=[[DGCaptionStore alloc] initWithURL:cacheURL];DGGTXCache=[[DGTranslationStore alloc] initWithURL:nil];}
 void DGMediaFixtureTick(UIViewController *owner) {[objc_getAssociatedObject(owner,&DGCaptionKey) tick];}

@@ -7,6 +7,8 @@
 #import "DGHook.h"
 #import "DGGeminiUI.h"
 #import "DGMediaUI.h"
+#import "DGComments.h"
+#import "DGAudioUI.h"
 static atomic_int translationRequests;
 @interface TranslationFixtureProtocol : NSURLProtocol
 @end
@@ -443,39 +445,32 @@ static NSUInteger countText(UIView *view, NSString *text) {
     AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.text=@"视频很好，谢谢！";[comments.view addSubview:native];
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"隐藏的评论";hidden.hidden=YES;[comments.view addSubview:hidden];
-    label(comments.view,@"Username must not be captured",140);ServalMarkdownView *analysis=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(10,380,320,50)];analysis.content=@"AI summary must not be captured";[comments.view addSubview:analysis];[comments viewDidAppear:NO];[comments.view layoutIfNeeded];
+    UILabel *name=label(comments.view,@"Username must not be captured",140);ServalMarkdownView *analysis=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(10,380,320,50)];analysis.content=@"AI summary must not be captured";[comments.view addSubview:analysis];[comments viewDidAppear:NO];[comments.view layoutIfNeeded];
     check([DGMediaReadVisibleComments(comments.view) isEqual:@[@"视频很好，谢谢！"]],@"GTX captures only visible native comment text excluding names hidden comments and AI");
     UIView *wrapper=[[UIView alloc] initWithFrame:CGRectZero];[comments.view addSubview:wrapper];
     AWECommentNewFeedCell *drawn=[[AWECommentNewFeedCell alloc] initWithFrame:CGRectMake(18,300,310,45)];AWECommentModel *commentModel=[AWECommentModel new];commentModel.content=@"模型评论";drawn.commentModel=commentModel;[wrapper addSubview:drawn];
     check([DGMediaReadVisibleComments(comments.view) containsObject:commentModel.content],@"GTX reads audited model from custom-drawn cell inside zero-size non-clipping wrapper");
     wrapper.clipsToBounds=YES;check(![DGMediaReadVisibleComments(comments.view) containsObject:commentModel.content],@"GTX respects clipping wrappers and does not send invisible comment model");wrapper.clipsToBounds=NO;
     drawn.frame=CGRectMake(18,-100,310,45);check(![DGMediaReadVisibleComments(comments.view) containsObject:commentModel.content],@"GTX excludes offscreen model cells");[wrapper removeFromSuperview];
-    UIButton *entry=(UIButton *)findID(comments.view,@"gtx-comments-button");check(entry && atomic_load(&commentRequests)==0,@"opening comments does not automatically translate or call GTX");
-    // Native comments may be rendered as a sibling outside the hooked container.
-    [native removeFromSuperview];[self.window addSubview:native];
-    [entry sendActionsForControlEvents:UIControlEventTouchUpInside];mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
-    UINavigationController *sheet=(UINavigationController *)comments.presentedViewController;UITableViewController *table=(UITableViewController *)sheet.topViewController;[table.view layoutIfNeeded];NSIndexPath *row=[NSIndexPath indexPathForRow:0 inSection:0];
-    check([table.tableView numberOfRowsInSection:0]==1,@"GTX sheet lists selected visible comment without changing original");
-    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];mediaWait(^BOOL{return [[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"];});
-    check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"] && [native.text isEqual:@"视频很好，谢谢！"] && atomic_load(&commentRequests)==1,@"GTX shows Vietnamese alongside untouched Chinese original");
-    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];check(atomic_load(&commentRequests)==1,@"reselecting translated comment uses cache without network");
+    mediaWait(^BOOL{return [native.text containsString:@"Video r\u1ea5t hay"];});
+    check([native.text containsString:@"Video r\u1ea5t hay"] && atomic_load(&commentRequests)==1,@"opening ordinary comments automatically translates visible native text in place");
+    check([name.text isEqual:@"Username must not be captured"] && [hidden.text isEqual:@"\u9690\u85cf\u7684\u8bc4\u8bba"],@"automatic GTX preserves author name and hidden text");
+    int translatedRequests=atomic_load(&commentRequests);
+    [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
+    check(atomic_load(&commentRequests)==translatedRequests,@"translated visible cells are not sent again on subsequent scans");
+    native.text=@"\u65b0\u7684\u8bc4\u8bba";
+    mediaWait(^BOOL{return atomic_load(&commentRequests)>translatedRequests && [native.text containsString:@"Video r\u1ea5t hay"];});
+    check(atomic_load(&commentRequests)==translatedRequests+1 && [native.text containsString:@"Video r\u1ea5t hay"],@"reused native cell is translated for its new source");
+    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *offscreen=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,1500,320,40)];offscreen.text=@"\u8fd8\u6709\u4e00\u6761";[comments.view addSubview:offscreen];
+    translatedRequests=atomic_load(&commentRequests);[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
+    check(atomic_load(&commentRequests)==translatedRequests,@"offscreen comment is not translated or charged a request");
+    offscreen.frame=CGRectMake(18,300,320,40);mediaWait(^BOOL{return [offscreen.text containsString:@"Video r\u1ea5t hay"];});
+    check(atomic_load(&commentRequests)==translatedRequests+1,@"scrolling another comment into view starts automatic GTX");
+    DGCommentsStop(comments);translatedRequests=atomic_load(&commentRequests);native.text=@"\u505c\u6b62\u540e\u4e0d\u53d1\u9001";
+    [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
+    check(atomic_load(&commentRequests)==translatedRequests,@"closing comment session cancels automatic work");
     [self saveWindowImage:@"ui-gtx-comments.png"];
-    [native removeFromSuperview];[comments.view addSubview:native];__block BOOL dismissed=NO;[comments dismissViewControllerAnimated:NO completion:^{dismissed=YES;}];mediaWait(^BOOL{return dismissed;});
-    DGMediaOpenComments(self.window);mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
-    check([((UITableViewController *)((UINavigationController *)comments.presentedViewController).topViewController).tableView numberOfRowsInSection:0]==1,@"settings fallback opens GTX using visible semantic comment text without a native button");
-    dismissed=NO;[comments dismissViewControllerAnimated:NO completion:^{dismissed=YES;}];mediaWait(^BOOL{return dismissed;});
-    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *second=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,290,320,40)];second.text=@"新的评论";[comments.view addSubview:second];
-    atomic_store(&gtxThrottle,YES);DGMediaOpenComments(self.window);mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
-    table=(UITableViewController *)((UINavigationController *)comments.presentedViewController).topViewController;[table.view layoutIfNeeded];row=[NSIndexPath indexPathForRow:1 inSection:0];
-    check([table.tableView numberOfRowsInSection:0]==2,@"GTX rate-limit fixture opens fresh sheet after previous modal fully dismisses");
-    NSLog(@"GTX rate-limit fixture rows=%ld requests=%d",(long)[table.tableView numberOfRowsInSection:0],atomic_load(&commentRequests));
-    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];
-    mediaWait(^BOOL{return [[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"giới hạn"];});
-    check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"giới hạn"],@"GTX HTTP 429 displays a useful rate-limit error instead of hanging");
-    int throttledRequests=atomic_load(&commentRequests);[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-    check(atomic_load(&commentRequests)==throttledRequests,@"GTX rate limit does not trigger automatic retry requests");atomic_store(&gtxThrottle,NO);
-    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];mediaWait(^BOOL{return [[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"];});
-    check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"] && atomic_load(&commentRequests)==throttledRequests+1,@"manual GTX retry succeeds after rate limit clears");
+
 }
 
 - (void)showVisualSamples {

@@ -299,7 +299,13 @@ static __weak DGGeminiEntry *DGActiveTranslation;
         entry.hasTranslation=ready;
         if (ready && !entry.userChoseLanguage) entry.language.selectedSegmentIndex=0;
         entry.status.text=ready ? ([state isEqual:@"cached"] ? @"Bản dịch đã lưu · Không gọi API lại" : @"Đã dịch · Gemini 3.5 Flash-Lite") : text;
-        entry.translation.text=ready ? text : @"Chỉ dịch phần phân tích AI đang mở. Nội dung được gửi tới Google Gemini bằng API của bạn.\n\nChọn Bản gốc để xem nội dung của Douyin trong lúc chờ.";
+        // The renderer supplies HTML highlight markers; UITextView displays plain text.
+        NSString *plain=text;
+        if (ready) {
+            NSRegularExpression *marks=[NSRegularExpression regularExpressionWithPattern:@"</?mark\\b[^>]*>" options:NSRegularExpressionCaseInsensitive error:NULL];
+            plain=[marks stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0,text.length) withTemplate:@""];
+        }
+        entry.translation.text=ready ? plain : @"Chỉ dịch phần phân tích AI đang mở. Nội dung được gửi tới Google Gemini bằng API của bạn.\n\nChọn Bản gốc để xem nội dung của Douyin trong lúc chờ.";
         entry.retry.accessibilityValue=[state isEqual:@"failed"] ? @"available" : @"unavailable";
         [entry.retry setTitle:[state isEqual:@"failed"] && [text containsString:@"chưa đọc được"] ? @"Đọc lại" : @"Dịch lại" forState:UIControlStateNormal];
         [entry renderLanguage];

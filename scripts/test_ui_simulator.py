@@ -10,11 +10,11 @@ def run(*args,timeout=180):
     return subprocess.check_output(list(args),text=True,timeout=timeout).strip()
 
 sdk=run('xcrun','--sdk','iphonesimulator','--show-sdk-path')
-sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DGGemini.m','DGTranslation.m','DGGeminiUI.m','DGMedia.m','DGMediaUI.m','DouyinGuest.m']]
+sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DGGemini.m','DGTranslation.m','DGGeminiUI.m','DGSource.m','DGVbee.m','DGComments.m','DGAudioUI.m','DGMedia.m','DGMediaUI.m','DouyinGuest.m']]
 sources.append(str(ROOT/'tests/ui_fixture.m'))
 run('xcrun','--sdk','iphonesimulator','clang','-target','arm64-apple-ios15.0-simulator',
     '-isysroot',sdk,'-fobjc-arc','-fblocks','-O1','-Wall','-Wextra','-Werror','-DDG_GEMINI_FIXTURE=1','-I'+str(ROOT/'src'),
-    *sources,'-framework','Foundation','-framework','UIKit','-framework','CoreGraphics','-o',str(APP/'FixtureApp'))
+    *sources,'-framework','Foundation','-framework','UIKit','-framework','CoreGraphics','-framework','AVFoundation','-framework','MediaPlayer','-o',str(APP/'FixtureApp'))
 info={'CFBundleIdentifier':IDENTIFIER,'CFBundleExecutable':'FixtureApp','CFBundlePackageType':'APPL',
       'CFBundleName':'DGFixture','CFBundleDisplayName':'UIKit Fixture',
       'CFBundleShortVersionString':'40.6.0','CFBundleVersion':'406019','MinimumOSVersion':'15.0',

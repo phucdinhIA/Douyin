@@ -37,7 +37,7 @@ jobs:
       - name: Subtitle and GTX request/cache regressions
         run: |
           clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
-            src/DGGemini.m src/DGTranslation.m src/DGMedia.m tests/media_tests.m -framework Foundation -o build/media_tests
+            src/DGGemini.m src/DGTranslation.m src/DGSource.m src/DGVbee.m src/DGMedia.m tests/media_tests.m -framework Foundation -framework AVFoundation -o build/media_tests
           build/media_tests
       - name: Record source and toolchain
         run: |

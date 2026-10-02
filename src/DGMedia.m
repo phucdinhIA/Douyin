@@ -1,4 +1,5 @@
 #import "DGMedia.h"
+#import "DGSource.h"
 #import "DGGemini.h"
 #include <math.h>
 #import <CommonCrypto/CommonDigest.h>
@@ -163,6 +164,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 @property(nonatomic) NSTimeInterval started;
 @property(nonatomic) NSTimeInterval preferredTime;
 @property(nonatomic,copy) NSString *videoTitle;
+@property(nonatomic,strong) DGSourceDownload *download;
 - (void)translateNext;
 - (void)repairBatch:(NSMutableArray *)result source:(NSArray *)source at:(NSUInteger)index completion:(void (^)(NSArray *,NSString *))completion;
 @end
@@ -258,7 +260,39 @@ static NSString *DGCaptionDigest(NSString *source) {
     [self emit:@"deepgram" failure:nil];
     NSMutableURLRequest *request=[DGRequest(@"https://api.deepgram.com/v1/listen?model=nova-3&language=zh-CN&smart_format=true&punctuate=true&utterances=true&utt_split=0.5",@"POST",@{@"url":url.absoluteString},[@"Token " stringByAppendingString:self.config[@"deepgram_api_key"]],@"Authorization") mutableCopy];request.timeoutInterval=540;
     [self request:request completion:^(NSData *data,NSInteger status,NSString *failure) {
+        id errorRoot=DGJSON(data);NSString *code=[errorRoot isKindOfClass:NSDictionary.class] ? errorRoot[@"err_code"] : nil;
+        if (!failure && status==400 && [code isEqual:@"REMOTE_CONTENT_ERROR"]) {
+            if (self.event) self.event(@"Captions Deepgram remote fetch rejected");
+            [self uploadSource:url duration:duration];return;
+        }
         if (failure || status!=200) {[self fail:failure ?: @"Deepgram từ chối hoặc chưa đọc được video. Kiểm tra key/quota và thử lại."];return;}
+        [self consumeASR:data duration:duration];
+    }];
+}
+- (void)uploadSource:(NSURL *)url duration:(double)duration {
+    [self emit:@"download" failure:nil];self.download=[DGSourceDownload new];
+    NSUInteger generation=self.generation;__weak DGMediaClient *weakSelf=self;
+    self.download.completion=^(NSURL *file,NSString *failure) {
+        DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;
+        if (!file) {[owner fail:failure];return;}
+        NSMutableURLRequest *request=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://api.deepgram.com/v1/listen?model=nova-3&language=zh-CN&smart_format=true&punctuate=true&utterances=true&utt_split=0.5"]];
+        request.HTTPMethod=@"POST";request.timeoutInterval=540;
+        [request setValue:[@"Token " stringByAppendingString:owner.config[@"deepgram_api_key"]] forHTTPHeaderField:@"Authorization"];
+        [request setValue:[file.pathExtension isEqual:@"m4a"] ? @"audio/mp4" : @"video/mp4" forHTTPHeaderField:@"Content-Type"];
+        if (owner.event) owner.event(@"Captions Deepgram binary upload");[owner emit:@"deepgram" failure:nil];
+        owner.task=(NSURLSessionDataTask *)[owner.session uploadTaskWithRequest:request fromFile:file completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
+            dispatch_async(dispatch_get_main_queue(),^{
+                DGMediaClient *current=weakSelf;if (!current || current.generation!=generation) return;
+                NSInteger status=[response isKindOfClass:NSHTTPURLResponse.class] ? [(NSHTTPURLResponse *)response statusCode] : 0;
+                if (current.event) current.event([NSString stringWithFormat:@"Captions Deepgram upload HTTP %ld",(long)status]);
+                [current.download cancel];current.download=nil;current.task=nil;
+                if (error || status!=200) {[current fail:@"Deepgram chưa nhận dạng được tệp âm thanh. Thử lại thủ công."];return;}
+                [current consumeASR:data duration:duration];
+            });
+        }];[owner.task resume];
+    };[self.download start:url configuration:self.configuration];
+}
+- (void)consumeASR:(NSData *)data duration:(double)duration {
         NSUInteger generation=self.generation;__weak DGMediaClient *weakSelf=self;
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^{
             id root=DGJSON(data);id metadata=[root isKindOfClass:NSDictionary.class] ? root[@"metadata"] : nil;
@@ -271,7 +305,6 @@ static NSString *DGCaptionDigest(NSString *source) {
                 if (!cues) {[owner fail:parseFailure];return;}owner.source=cues;for (NSDictionary *cue in cues) if ([cue[@"timing_clamped"] boolValue] && owner.event) owner.event(@"Captions timing clamped");[owner save:cues kind:@"asr"];[owner translateNext];
             });
         });
-    }];
 }
 - (void)translateNext {
     if (self.translated.count==self.source.count) {[self emit:@"ready" failure:nil];[self.session finishTasksAndInvalidate];self.session=nil;return;}
@@ -316,6 +349,7 @@ static NSString *DGCaptionDigest(NSString *source) {
     (void)session;(void)task;(void)response;(void)request;completionHandler(nil);
 }
 - (void)cancel {
+    [self.download cancel];self.download=nil;
     ++self.generation;[self.task cancel];[self.session invalidateAndCancel];self.task=nil;self.session=nil;
     if (self.runID) {
         NSURLSessionConfiguration *cfg=[self.configuration copy];cfg.HTTPCookieStorage=nil;cfg.URLCredentialStorage=nil;cfg.URLCache=nil;

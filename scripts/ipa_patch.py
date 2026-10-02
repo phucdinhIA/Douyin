@@ -245,8 +245,22 @@ def private_media_payload(path: pathlib.Path):
     return json.dumps(config,ensure_ascii=True).encode('utf-8')
 
 
+def private_vbee_payload(path: pathlib.Path):
+    import uuid
+    config=json.loads(path.read_text(encoding='utf-8'))
+    if not isinstance(config,dict) or set(config)!={'app_id','token','voice_code'}:
+        raise ValueError('Invalid personal Vbee config')
+    if config['voice_code']!='hn_male_manhdung_news_48k-fhg':
+        raise ValueError('Unsupported Vbee voice')
+    uuid.UUID(config['app_id'])
+    token=config['token']
+    if not isinstance(token,str) or not 1<=len(token)<=1024 or any(c.isspace() for c in token):
+        raise ValueError('Invalid personal Vbee token')
+    return json.dumps(config,ensure_ascii=True).encode('utf-8')
+
+
 def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
-          library_sha256: str, resource_dir: pathlib.Path = ROOT/'resources', gemini_config: pathlib.Path = None, media_config: pathlib.Path = None):
+          library_sha256: str, resource_dir: pathlib.Path = ROOT/'resources', gemini_config: pathlib.Path = None, media_config: pathlib.Path = None, vbee_config: pathlib.Path = None):
     source, library, output = source.resolve(), library.resolve(), output.resolve()
     if output == source or output == library or output.exists() or output.with_suffix('.validation.json').exists():
         raise ValueError('Output must be a new file distinct from inputs')
@@ -261,6 +275,7 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
     if gemini_config is not None:
         private_payload = private_gemini_payload(gemini_config)
     media_payload = private_media_payload(media_config) if media_config is not None else None
+    vbee_payload = private_vbee_payload(vbee_config) if vbee_config is not None else None
     changes, removals, corrections, hashes = [], [], [], {}
     thinning_allowlists = []
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -326,6 +341,8 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
                 additions[APP+'DouyinGuest.bundle/gemini-private.json'] = private_payload
             if media_payload is not None:
                 additions[APP+'DouyinGuest.bundle/media-private.json'] = media_payload
+            if vbee_payload is not None:
+                additions[APP+'DouyinGuest.bundle/vbee-private.json'] = vbee_payload
             for name, payload in additions.items():
                 entry = zipfile.ZipInfo(name, date_time=(2026,10,1,0,0,0))
                 entry.external_attr = (0o100755 if name.endswith('.dylib') else 0o100644)<<16
@@ -366,5 +383,6 @@ if __name__ == '__main__':
     parser.add_argument('--library-sha256',required=True)
     parser.add_argument('--gemini-config',type=pathlib.Path,help='Local personal config, excluded from source and CI')
     parser.add_argument('--media-config',type=pathlib.Path,help='Local Apify/Deepgram credentials, excluded from source and CI')
+    parser.add_argument('--vbee-config',type=pathlib.Path,help='Local personal Vbee credentials, excluded from source and CI')
     args = parser.parse_args()
-    build(args.source,args.library,args.output,args.library_sha256,gemini_config=args.gemini_config,media_config=args.media_config)
+    build(args.source,args.library,args.output,args.library_sha256,gemini_config=args.gemini_config,media_config=args.media_config,vbee_config=args.vbee_config)
