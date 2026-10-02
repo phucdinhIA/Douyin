@@ -192,7 +192,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-network-error.png"];
 
     AWELeftSideBarFixtureView *sidebar=[[AWELeftSideBarFixtureView alloc] initWithFrame:self.window.bounds];sidebar.backgroundColor=UIColor.systemGroupedBackgroundColor;
-    title=label(sidebar,@"Sidebar fixture • 0.4.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
+    title=label(sidebar,@"Sidebar fixture • 0.5.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
     UILabel *settings=label(sidebar,@"设置",105);settings.frame=CGRectMake(285,105,32,22);settings.font=[UIFont systemFontOfSize:16];
     NSArray *sections=@[
         @[@"常用功能",@[@"观看历史",@"离线缓存",@"稍后再看",@"抖音创作者中心",@"直播广场",@"使用管理助手",@"我的二维码",@"未成年人保护"],@[@"clock",@"arrow.down.circle",@"play.rectangle",@"person.crop.circle",@"video",@"timer",@"qrcode",@"shield"]],
@@ -218,7 +218,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     AWESearchResultFixtureView *searchCanvas=[[AWESearchResultFixtureView alloc] initWithFrame:self.window.bounds];
     searchCanvas.backgroundColor=UIColor.systemBackgroundColor;
     AWESearchFilterCollectionViewCell *filters=[[AWESearchFilterCollectionViewCell alloc] initWithFrame:self.window.bounds];[searchCanvas addSubview:filters];
-    title=label(filters,@"Search controls fixture • 0.4.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(filters,@"Search controls fixture • 0.5.0",80);title.frame=CGRectMake(20,80,width-40,30);
     NSArray *searchWords=@[@"综合排序",@"视频",@"用户",@"直播",@"一周内",@"最多点赞",@"切换为单列模式",@"切换为双列模式",@"相关搜索",@"大家都在搜",@"没有搜索到相关内容",@"试试换个搜索词"];
     CGFloat rowY=140;
     for (NSUInteger i=0;i<searchWords.count;i++) {
@@ -234,7 +234,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
 
     AWESettingsFixtureViewController *settingsScreen=[AWESettingsFixtureViewController new];settingsScreen.view.backgroundColor=UIColor.systemBackgroundColor;
     NSArray *settingsWords=@[@"设置",@"账号管理",@"个性化内容推荐",@"通知消息管理",@"私信和通话通知",@"字体大小",@"缓存设置",@"后台播放设置",@"小窗播放设置",@"字幕设置",@"黑名单管理",@"隐私政策及简明版"];
-    title=label(settingsScreen.view,@"Settings fixture • 0.4.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(settingsScreen.view,@"Settings fixture • 0.5.0",80);title.frame=CGRectMake(20,80,width-40,30);
     for (NSUInteger i=0;i<settingsWords.count;i++) { UILabel *item=label(settingsScreen.view,settingsWords[i],135+i*43);item.frame=CGRectMake(20,135+i*43,180,36); }
     screen=settingsScreen;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-settings.png"];
@@ -502,8 +502,19 @@ static NSUInteger countText(UIView *view, NSString *text) {
         [surveyModel.surveyDetail[@"options"][2] isEqualToString:@"Neutral"] && [surveyModel.surveyDetail[@"id"] isEqual:@42],@"survey-specific getter translates exact question/options before Lynx consumption and preserves IDs");
     AWECommentEvaluationConfig *evaluation=[AWECommentEvaluationConfig new];
     [evaluation configWithDict:@{@"ratingPointDes":@"非常不满意,不满意,一般,满意,非常满意",@"bizParams":@{@"text":@"一般"}}];
-    check([evaluation.receivedConfig[@"ratingPointDes"] isEqualToString:@"Very dissatisfied,Dissatisfied,Neutral,Satisfied,Very satisfied"] &&
+    check([evaluation.receivedConfig[@"ratingPointDes"] isEqualToString:@"Very unhappy,Unhappy,Neutral,Happy,Very happy"] &&
         [evaluation.receivedConfig[@"bizParams"][@"text"] isEqualToString:@"一般"],@"Lynx evaluation config translates proven rating fields while arbitrary nested payload stays original");
+    AWECommentSurveyCell *ratingGroup=[[AWECommentSurveyCell alloc] initWithFrame:CGRectMake(0,0,341,70)];[commentContainer addSubview:ratingGroup];
+    BOOL ratingFit=YES;
+    for (NSString *source in @[@"非常不满意",@"不满意",@"一般",@"满意",@"非常满意"]) {
+        UILabel *option=label(ratingGroup,source,0);option.frame=CGRectMake(0,0,64.2,54);option.font=[UIFont systemFontOfSize:12];option.numberOfLines=2;
+        CGSize size=[option.text boundingRectWithSize:CGSizeMake(64.2,CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin
+            attributes:@{NSFontAttributeName:option.font} context:nil].size;
+        if (size.height>54 || [option.text containsString:@"…"]) ratingFit=NO;
+        for (NSString *word in [option.text componentsSeparatedByString:@" "])
+            if ([word sizeWithAttributes:@{NSFontAttributeName:option.font}].width>64.2) ratingFit=NO;
+    }
+    check(ratingFit,@"five survey ratings fit actual 64.2pt columns at 12pt without splitting a word or ellipsis");
     [narrowError removeFromSuperview];
     NSBundle *sdkCatalog=[NSBundle bundleWithPath:[NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:@"AWEFixtureSDK.bundle/zh.lproj"]];
     check([[sdkCatalog localizedStringForKey:@"known" value:nil table:@"Fixture"] isEqualToString:@"SDK fixture label"],@"SDK lookup selects the bundled English value for the original key");

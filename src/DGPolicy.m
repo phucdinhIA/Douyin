@@ -89,8 +89,8 @@ static id DGSurveyNode(id node, NSUInteger depth, NSUInteger *budget, BOOL *vali
     --*budget;
     if ([node isKindOfClass:NSString.class]) {
         // Only known survey chrome, inside surveyDetail. Not a general translator.
-        NSDictionary *words = @{@"非常不满意":@"Very dissatisfied",@"不满意":@"Dissatisfied",
-            @"一般":@"Neutral",@"满意":@"Satisfied",@"非常满意":@"Very satisfied",
+        NSDictionary *words = @{@"非常不满意":@"Very unhappy",@"不满意":@"Unhappy",
+            @"一般":@"Neutral",@"满意":@"Happy",@"非常满意":@"Very happy",
             @"你对该视频下的评论氛围是否满意?":@"How do you feel about these comments?",
             @"你对该视频下的评论氛围是否满意？":@"How do you feel about these comments?"};
         return words[node] ?: node;
