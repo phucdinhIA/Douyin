@@ -636,9 +636,13 @@ int main(void) {
             check(incompatible.enableChunkRequest && manager.shouldRequestWithChunk,
                 @"body ABI drift retains original controller format and manager transport");
         }
-        serializer.error=[NSError errorWithDomain:@"CSP-Domain" code:-4 userInfo:@{@"PRIVATE-buffer":@"PRIVATE"}];
-        [serializer response:tt json:nil error:nil resultError:&resultError];
-        check(resultError==serializer.error && [newEvents[@"JSON response error CSP -4"] unsignedIntegerValue]==1 &&
+        NSError *cspError=[NSError errorWithDomain:@"CSP-Domain" code:-4 userInfo:@{@"PRIVATE-buffer":@"PRIVATE"}];
+        NSUInteger feedCalls=imageFeed.calls;localize=YES;
+        // CSP failures arrive at the feed observer; the JSON probe intentionally
+        // observes only its own conversion domain, not arbitrary transport errors.
+        [imageFeed feed:2 response:standard.result error:cspError];
+        check(imageFeed.calls==feedCalls+1 && imageFeed.arguments[1]==cspError &&
+            [newEvents[@"TestImageFeed feed:response:error: error CSP -4"] unsignedIntegerValue]==1 &&
             [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,
             @"CSP EOF error keeps native failure and never exports buffer details");
         check(!DGInstallHook(@{@"class":@"TestBackground",@"selector":@"localState",@"operation":@"standardFeedFormat",@"types":@"q16@0:8"},^BOOL{return YES;},recordNew),
