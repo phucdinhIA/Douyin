@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-02",
+  "model": "gemini-3.5-flash-lite",
+  "source": "## 分析\n内容由AI生成，仅供参考。视频提到3个摄影技巧，可能不适合所有情况。不要改变数字。",
+  "synthetic_only": true,
+  "request_count": 1,
+  "automatic_retries": 0,
+  "max_output_tokens": 16384,
+  "http_status": 200,
+  "finish_reason": "STOP",
+  "answer": "## Phân tích\nNội dung do AI tạo ra, chỉ mang tính tham khảo. Video đề cập đến 3 kỹ thuật chụp ảnh, có thể không phù hợp cho mọi trường hợp. Không thay đổi các con số.",
+  "usage": {
+    "promptTokenCount": 116,
+    "candidatesTokenCount": 47,
+    "totalTokenCount": 163,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 116
+      }
+    ],
+    "serviceTier": "standard"
+  },
+  "elapsed_seconds": 1.28
+}

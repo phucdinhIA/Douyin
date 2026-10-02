@@ -1,7 +1,7 @@
-# Search và Gemini — 0.11
+# Search và Gemini — 0.12
 
-Search/quota/auth của Douyin không thay đổi. Web finder và official profile link vẫn có; chưa bảo đảm tìm kiếm hay bình luận guest không giới hạn.
+Search/quota/auth Douyin không thay đổi; web finder và profile link vẫn có. Không bảo đảm guest tìm kiếm/bình luận không giới hạn.
 
-Gemini Q&A là dịch vụ riêng dùng key cá nhân, không phải quyền truy cập server AI của Douyin. Nó đọc phần phân tích markdown đã hiển thị khi mở sheet; hỏi/đáp chỉ gửi tới Google sau Send. Phân tích gốc không bị ghi đè. Context có thể xem/sửa/dán khi thiếu. Không đọc video, phần bình luận chưa tải hoặc dữ liệu tài khoản.
+Gemini hỏi đáp dùng key riêng như 0.11. Tự dịch phân tích sang tiếng Việt chạy khi người dùng vào tab AI, gửi nguồn markdown sang Google, không gửi lịch sử chat. Nguồn gốc giữ nguyên; bản dịch lưu theo digest để giảm gọi lại API. Không dùng phiên xác thực giả cho Douyin.
 
-[Nghiên cứu](RESEARCH-0.11.md) · [Test](DEVICE_TESTS.md) · [Lịch sử](evidence/guest_search-0.10.0.md).
+[Kế hoạch](PLAN-0.12.md) · [Test](DEVICE_TESTS.md) · [Lịch sử](evidence/guest_search-0.11.0.md).
