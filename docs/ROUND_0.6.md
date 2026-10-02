@@ -29,3 +29,7 @@ IPA gốc đã có `UIBackgroundModes = audio, fetch, voip, remote-notification`
 ## Giới hạn còn nguyên
 
 Không giả mạo cookie/token/account state hoặc lấy nguồn phát không được cấp quyền. Server vẫn có thể hạn chế Search, comment pagination, Featured/Tips; chưa biết ý nghĩa domain của DC -4/-11001 trên thiết bị. Không xóa hai tab vì người dùng chưa xác nhận. Không gọi bản này là hết lỗi hoặc đã xác nhận phát khóa màn hình nếu chưa có kết quả iPhone.
+
+## Vòng kiểm tra và sửa lại
+
+Vòng 36953743503 phát hiện trùng biến trong Foundation test; 36953877340 phát hiện trùng biến trong UIKit visual fixture. Đã sửa. Vòng 36953968534 đạt 93/94 UIKit checks nhưng đo thực tế hai nhãn background dài 198.34/200.15pt, chưa vừa control 120pt tại scale tối thiểu 65%. Thêm compact `Audio after lock` / `Background playback` khi cần; giữ full label khi đủ rộng rồi chạy lại toàn bộ. Năm LIVE label đạt cả 63pt/32pt, khôi phục full khi rộng và bảo vệ room/chat. Review ảnh LIVE cũng không thấy cắt chữ. Không đóng gói từ các vòng thất bại.

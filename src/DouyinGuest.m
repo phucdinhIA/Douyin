@@ -584,7 +584,9 @@ __attribute__((constructor)) static void DGStart(void) {
                           @"Important alerts only":@"Important only", @"Original audio language":@"Audio language",
                           @"Selected videos deleted":@"Videos deleted", @"Settings failed to load":@"Settings unavailable",
                           @"Log in for more results":@"Log in for more", @"Offline; check connection":@"Check connection",
-                          @"Singing":@"Sing", @"Groups":@"Team", @"Beauty":@"Looks"};
+                          @"Singing":@"Sing", @"Groups":@"Team", @"Beauty":@"Looks",
+                          @"Keep audio on when locked":@"Audio after lock",
+                          @"Keep playing in background":@"Background playback"};
         counters = [NSMutableDictionary new]; installed = [NSMutableDictionary new]; overwritten = [NSMutableSet new];
         [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES, @"DGSearchEnabled":@YES, @"DGBackgroundEnabled":@YES}];
         atomic_init(&guestEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGGuestEnabled"]);
