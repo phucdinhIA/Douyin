@@ -1,7 +1,7 @@
-# Search và AI — 0.10
+# Search và Gemini — 0.11
 
-Vòng này không đổi auth/quota/Search hoặc giả cookie. Web finder và mở official profile vẫn có; không bảo đảm kết quả guest không giới hạn. Chat AI trong bình luận của Douyin vẫn yêu cầu đăng nhập. Không thêm dịch vụ AI bên ngoài hoặc gửi câu hỏi/nội dung người dùng sang nhà cung cấp khác.
+Search/quota/auth của Douyin không thay đổi. Web finder và official profile link vẫn có; chưa bảo đảm tìm kiếm hay bình luận guest không giới hạn.
 
-Ảnh có AI解析 dù dictionary 0.9 đã chứa nó: native label hooks chưa bao phủ renderer này. Năm mục AI chrome/placeholder được bổ sung và kiểm tra trên fixture native; không tuyên bố toàn bộ giao diện hybrid đã được dịch hoặc nội dung AI được dịch.
+Gemini Q&A là dịch vụ riêng dùng key cá nhân, không phải quyền truy cập server AI của Douyin. Nó đọc phần phân tích markdown đã hiển thị khi mở sheet; hỏi/đáp chỉ gửi tới Google sau Send. Phân tích gốc không bị ghi đè. Context có thể xem/sửa/dán khi thiếu. Không đọc video, phần bình luận chưa tải hoặc dữ liệu tài khoản.
 
-[Nghiên cứu](RESEARCH-0.10.md) · [Kiểm tra thiết bị](DEVICE_TESTS.md) · [Cách dùng web finder](evidence/guest_search-0.7.0.md).
+[Nghiên cứu](RESEARCH-0.11.md) · [Test](DEVICE_TESTS.md) · [Lịch sử](evidence/guest_search-0.10.0.md).

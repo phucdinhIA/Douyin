@@ -1,22 +1,21 @@
-# Douyin Guest — bản thử 0.10.0
+# Douyin Guest — bản thử cá nhân 0.11.0
 
-Dành riêng cho Douyin **40.6.0/build406019/arm64**, iPhone 15/iOS18.5. Cần ký bằng Sideloadly. IPA gốc và các bản cũ giữ cục bộ; không đăng binary độc quyền lên repo.
+Douyin **40.6.0/build406019/arm64**, iPhone 15/iOS18.5. Cần ký bằng Sideloadly.
 
-**Đã triển khai bản thử sửa feed và thông báo phát nền. Chưa xác nhận hiệu quả trên iPhone thật.**
+Gemini hỏi đáp độc lập trong phần AI phân tích bình luận. Giữ nguyên phân tích AI của Douyin. Mặc định **Gemini 3.8 Flash (Quality)**; nút Mode chuyển **3.5 Flash-Lite (Fast)**. Send gửi câu hỏi, ngữ cảnh và tối đa ba lượt đã trả lời sang Google. Không gửi khi gõ; không tự dịch lại phân tích gốc.
 
-- Feed: bộ dựng body của đường tải JSON bỏ đúng cờ `is_tidy = "true"` trong dictionary tạm khi Feed compatibility ON. Giữ lỗi thật, nội dung và phân trang. Log phân loại bộ tải đang được gọi để phân biệt đường chưa được hỗ trợ.
-- Background audio: phục hồi thông báo bị bỏ lỡ chỉ khi đúng model/delegate native, đúng chủ phiên Now Playing, không bị người dùng tạm dừng và quyết định native cho phép phát nền. Không tự gọi play hoặc chiếm phiên âm thanh khác.
-- Thêm 5 nhãn/placeholder AI tiếng Anh; có 898 mục dịch. UI hybrid trong ảnh chưa được xác nhận dịch hết. Không mở chat AI bằng phiên đăng nhập giả; không bảo đảm search/bình luận guest không giới hạn.
-- Featured/Tips vẫn được giữ. OFF rồi restart khôi phục hành vi gốc; không xóa data/cache.
+Mở AI phân tích bình luận → **Ask Gemini · Your AI** → xem **Context** → nhập câu hỏi → **Send**. Đường gửi native cũng chuyển câu hỏi thành bản nháp Gemini, rồi bấm Send trong sheet. Nếu không thấy nút, menu hai ngón tay chạm ba lần → Gemini Q&A. Khi thiếu ngữ cảnh, Context cho dán/sửa phần phân tích; Gemini không xem video hay bình luận chưa được cung cấp.
 
-File cục bộ: `dist/Douyin-40.6.0-Guest-0.10.0-iPhone15-TEST.ipa`. SHA-256 `c6d934945066f8830642e3ff5a3b64cc832b4730651b932f7fb4221753b31f9b`.
+**IPA cá nhân có nhúng API key theo yêu cầu: không chia sẻ IPA.** Key chỉ được đưa vào lúc đóng gói cục bộ; GitHub/CI dùng key giả trong test. Bản gốc/candidate cũ vẫn giữ nguyên.
 
-[Trạng thái](docs/STATUS.md) · [Kế hoạch](docs/PLAN-0.10.md) · [Nghiên cứu](docs/RESEARCH-0.10.md) · [Validation](docs/VALIDATION.json) · [Test iPhone](docs/DEVICE_TESTS.md).
+File `dist/Douyin-40.6.0-Guest-0.11.0-iPhone15-GEMINI-PRIVATE-TEST.ipa`; SHA-256 `321c5493233df47c0aa099bb0a58a2e2986736f704312ebfdeeb2a1ca2fb185d`.
 
-[CI thành công](https://github.com/phucdinhIA/Douyin/actions/runs/36979226991): 18 Python, Foundation contracts, arm64 warnings-as-errors/signature, 105/105 UIKit fixture. Fixture không chạy Douyin/máy chủ.
+Kiểm tra: 20 Python, Foundation hooks, 29 Gemini contracts/mock transport, arm64/signature và 122/122 UIKit fixture. Hai probe dịch độc lập với Google trả HTTP200. Chưa xác nhận routing/đọc ngữ cảnh trong Douyin thật; chưa chứng minh Featured/Tips/phát nền/xoay/search guest đã hết lỗi.
+
+[CI](https://github.com/phucdinhIA/Douyin/actions/runs/36983694958) · [Trạng thái](docs/STATUS.md) · [Kế hoạch](docs/PLAN-0.11.md) · [Nghiên cứu](docs/RESEARCH-0.11.md) · [Test iPhone](docs/DEVICE_TESTS.md) · [Validation](docs/VALIDATION.json).
 
 ```text
-python scripts/ipa_patch.py "path\original.ipa" "build\DouyinGuest.dylib" "dist\Douyin-40.6.0-Guest-0.10.0-iPhone15-TEST.ipa" --library-sha256 HASH_FROM_SUCCESSFUL_ARTIFACT
+python scripts/ipa_patch.py ORIGINAL.ipa VERIFIED_DYLIB.dylib NEW_PERSONAL.ipa --library-sha256 VERIFIED_HASH --gemini-config PATH_TO_LOCAL_PRIVATE_CONFIG.json
 ```
 
-Không thay schema dữ liệu; giữ cùng định danh ký và các bản trước để rollback.
+Không cấp quyền endpoint AI của Douyin bằng phiên giả. Gemini dùng key riêng; lỗi quota/API được hiển thị và giữ câu hỏi để thử lại thủ công. Đóng sheet sẽ hủy yêu cầu; lịch sử chỉ giữ trong bộ nhớ của sheet.

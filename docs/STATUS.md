@@ -1,20 +1,20 @@
-# Trạng thái 0.10.0-test
+# Trạng thái 0.11.0-test
 
-**Đã tạo IPA thử và kiểm tra contracts/UI/archive. Còn nghiệm thu Featured/Tips và âm thanh khóa màn hình trên iPhone.**
+**Đã tạo IPA cá nhân có Gemini. Chưa nghiệm thu trên iPhone.**
 
-File `dist/Douyin-40.6.0-Guest-0.10.0-iPhone15-TEST.ipa`, 704,852,866 byte. SHA-256 `c6d934945066f8830642e3ff5a3b64cc832b4730651b932f7fb4221753b31f9b`. Dylib `afd1915a66fcbec2127deaf99cc82c45f5f482ba970c3abd6cb74e26b0a3b4d4`. Source `94a4e21cd75846b8abab5eb9dd7bd38012d24ccb`.
+`dist/Douyin-40.6.0-Guest-0.11.0-iPhone15-GEMINI-PRIVATE-TEST.ipa`, 704,880,275 byte. SHA-256 `321c5493233df47c0aa099bb0a58a2e2986736f704312ebfdeeb2a1ca2fb185d`. Source `8c175153fd6dbc3a3bea74e202a5b04130eff016`.
 
 | Hạng mục | Kết quả |
 |---|---|
-| Feed | Sửa cờ định dạng trong body của đường JSON chuẩn; chỉ field/value đã kiểm chứng, config khác giữ nguyên. Chưa biết field này có xuất hiện trên thiết bị |
-| Phát nền | Phục hồi thông báo với các điều kiện ownership/model/pause/ABI/native eligibility; chưa xác nhận nghe được khi khóa máy |
-| AI | 5 mục dịch native bổ sung; UI hybrid chưa nghiệm thu. Chat AI của Douyin vẫn cần đăng nhập |
-| CI | [Run 36979226991](https://github.com/phucdinhIA/Douyin/actions/runs/36979226991): 18 Python, Foundation, arm64/signature và 105/105 UIKit đạt |
-| Archive | 5,629 entry readback/hash; 5,620 CRC/size/mode và 4,977 SHA so audit; 0 mismatch |
-| Binary | AwemeCore giữ nguyên; executable đổi 51 byte header, giữ code/size |
-| Rollback | Feed compatibility/Background audio OFF rồi restart; giữ data và candidate cũ |
-| Chưa hoàn tất | Nguyên nhân deployed payload, actual loader/flag, âm thanh khóa máy, xoay, search/bình luận không giới hạn, hybrid AI UI |
+| Gemini | Quality 3.8 Flash / Fast 3.5 Flash-Lite; key cá nhân chỉ nhúng trong IPA cục bộ |
+| Phân tích gốc | Chỉ đọc markdown làm ngữ cảnh, không thay dữ liệu/phân tích của Douyin |
+| Luồng hỏi đáp | Nút riêng và override submit chỉ trên comment-AI; bản nháp rồi Send; chưa nghiệm thu máy thật |
+| Context | Đọc renderer đã kiểm ABI, giới hạn 24.000 đơn vị UTF-16; có thể xem/sửa/dán khi thiếu |
+| Network | HTTPS Google, API header, không cookie/cache tài khoản, timeout/cancel, không retry tự động |
+| CI | [Run 36983694958](https://github.com/phucdinhIA/Douyin/actions/runs/36983694958): 20 Python, Foundation, 29 Gemini và 122/122 UIKit đạt |
+| Archive | 5,630 mục readback/hash; 0 mismatch; AwemeCore/code executable giữ nguyên |
+| Còn mở | Featured/Tips/phát nền/xoay/search/bình luận guest, renderer hybrid và routing/capture thật |
 
-[Menu](evidence/ui-feed-compat-0.10.0.png) · [Fixture](evidence/ui-results-0.10.0.json) · [Kế hoạch](PLAN-0.10.md) · [Nghiên cứu](RESEARCH-0.10.md) · [Validation](VALIDATION.json) · [Thiết bị](DEVICE_TESTS.md) · [Lịch sử](evidence/status-0.9.0.md).
+[Hướng dẫn](DEVICE_TESTS.md) · [Nghiên cứu](RESEARCH-0.11.md) · [Validation](VALIDATION.json) · [UI Gemini](evidence/ui-gemini-0.11.0.png) · [Context](evidence/ui-gemini-context-0.11.0.png) · [Lịch sử](evidence/status-0.10.0.md).
 
-Installed/active chỉ xác nhận hook gắn vào method, không chứng minh request hay tiếng phát nền thành công.
+IPA có key thật, cần giữ riêng. Diagnostics chỉ có model/trạng thái/counters, không chứa key hay nội dung chat. Installed không chứng minh đã chạy trên máy thật.
