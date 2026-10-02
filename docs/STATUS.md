@@ -1,20 +1,21 @@
-# Trạng thái 0.12.0-test
+# Trạng thái 0.13.0-test
 
-**Đã tạo IPA cá nhân với tự dịch phân tích AI sang tiếng Việt khi vào tab. Chưa nghiệm thu tự dịch trên iPhone.**
+**Đã đóng gói bản sửa đọc nội dung AI rỗng và bỏ thời gian chờ cố định. Cần nghiệm thu tự dịch trên iPhone.**
 
-`dist/Douyin-40.6.0-Guest-0.12.0-iPhone15-GEMINI-PRIVATE-TEST.ipa`, 704,896,889 byte. SHA-256 `94f9de96087063cfba96cbe0fde61dbf0269edc30db1dd051f668d572122e192`. Source `a7e32ad127cf017f6bb10f72d1094bc0a270f7cf`.
+`dist/Douyin-40.6.0-Guest-0.13.0-iPhone15-GEMINI-PRIVATE-TEST.ipa`, 704,898,703 byte. SHA-256 `af8fdfdbe0f72d3ae9f8f029416ad5fbe49cd77008c184e7d8ee205c21ffca74`. Source `a9577829b3b46883360b37d011c097d02336d0a6`.
 
 | Hạng mục | Kết quả |
 |---|---|
-| Kích hoạt | Chỉ sau AI-tab entry; bình luận thường không gọi API dịch |
-| Chi phí | Một request tự động/entry; cache digest nguồn tối đa 32 mục/2 MiB; không tự retry |
-| Chất lượng | Dịch đầy đủ bằng Flash-Lite; giữ tên/số/cấu trúc; chỉ lưu STOP trong giới hạn |
-| UI | Panel cuộn Tiếng Việt, toggle Bản gốc, giữ hỏi đáp/ngữ cảnh gốc |
-| Hủy | Rời tab, đóng controller, chuyển nền; callback cũ và nguồn đổi bị từ chối |
-| CI | [Run 36991564379](https://github.com/phucdinhIA/Douyin/actions/runs/36991564379): 20 Python, Foundation hooks, 29 Gemini, 33 translation, 136 UIKit đạt |
-| Archive | 5,630 mục readback/hash; 0 mismatch; core/code gốc giữ nguyên |
-| Máy thật | Hỏi đáp 0.11 có vẻ hoạt động theo người dùng; tự dịch 0.12 chưa xác nhận |
+| Lỗi 0.12 | 198 lần capture rỗng, chưa ghi nhận request dịch; renderer thực tế chưa xác định |
+| Capture | Typed Objective-C ivars legacy/V2 đã kiểm ABI; fallback đúng owner khi contentVC trống |
+| Thời điểm dịch | Cache ngay; legacy complete ngay; còn lại 750ms không đổi, không fixed entry delay |
+| Lấy mẫu | 250ms/common run-loop modes; timeout 20s báo capture rỗng cụ thể |
+| UI | Giữ nguồn gốc hiện/cuộn trong lúc chờ, tự chuyển bản dịch khi ready nếu chưa chọn ngôn ngữ |
+| Chi phí/hủy | Một request tự động/entry, không tự retry; cache/cancel/stale checks giữ nguyên |
+| CI | [Run 36995139017](https://github.com/phucdinhIA/Douyin/actions/runs/36995139017): 20 Python, Foundation hooks, 29 Gemini, 36 translation, 142 UIKit đạt |
+| Archive | 5,630 mục readback/hash; 0 mismatch; binary core gốc giữ nguyên |
+| Máy thật | Chưa xác nhận tự dịch 0.13 trên iPhone; cần theo dõi counters capture mới |
 
-[Kế hoạch](PLAN-0.12.md) · [Test](DEVICE_TESTS.md) · [Validation](VALIDATION.json) · [UI](evidence/ui-gemini-translation-0.12.0.png) · [Lịch sử](evidence/status-0.11.0.md).
+[Kế hoạch](PLAN-0.13.md) · [Test](DEVICE_TESTS.md) · [Validation](VALIDATION.json) · [UI](evidence/ui-gemini-translation-0.13.0.png) · [Lịch sử](evidence/status-0.12.0.md).
 
-Stability debounce chưa chứng minh đã hết streaming; capture giới hạn renderer markdown đã kiểm ABI, tối đa 24.000 đơn vị UTF-16. Không đọc video/bình luận chưa tải hay giả phiên Douyin. Các lỗi feed/phát nền/xoay/guest trước đó vẫn cần nghiệm thu riêng. Diagnostics chỉ có trạng thái/model/counters, không nội dung hay key.
+V2/Serval vẫn dùng heuristic ổn định, chưa có tín hiệu hoàn tất đã xác minh. Giới hạn nguồn 24.000 đơn vị UTF-16; chỉ renderer trong cây view comment-AI, không đọc app-wide payload hoặc giả phiên Douyin. Các lỗi feed/phát nền/xoay/guest trước đó vẫn cần nghiệm thu riêng. Diagnostics không ghi nguồn hay key.
