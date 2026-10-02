@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-02",
+  "actor": "apple_yang/douyin-video-audio-downloader",
+  "build": "0.1.43",
+  "samples": [
+    {
+      "video_id": "7534679152504376595",
+      "apify_seconds": 8.82,
+      "deepgram": {
+        "http": 200,
+        "seconds": 31.53,
+        "source_duration": 67.756,
+        "duration": 67.755,
+        "utterances": 7,
+        "words": 196,
+        "model_info": {
+          "590fbdab-27f4-41f8-838e-a097a07b9ddf": {
+            "name": "general-nova-3",
+            "version": "2026-03-31.10458",
+            "arch": "nova-3"
+          }
+        }
+      },
+      "gemini": {
+        "source_url": "https://www.douyin.com/video/7534679152504376595",
+        "cue_count": 15,
+        "translated_count": 15,
+        "total_translation_seconds": 4.23,
+        "timestamps_preserved": true,
+        "first_batch_seconds": 2.34,
+        "last_cue_end": 67.755,
+        "model": "gemini-3.5-flash-lite",
+        "automatic_retries": 0
+      }
+    },
+    {
+      "video_id": "7683814443658054955",
+      "apify_seconds": 8.57,
+      "deepgram": {
+        "http": 200,
+        "seconds": 140.69,
+        "source_duration": 2707.94,
+        "duration": 2707.9336,
+        "utterances": 149,
+        "words": 7626,
+        "model_info": {
+          "590fbdab-27f4-41f8-838e-a097a07b9ddf": {
+            "name": "general-nova-3",
+            "version": "2026-03-31.10458",
+            "arch": "nova-3"
+          }
+        }
+      },
+      "gemini": {
+        "source_url": "https://www.douyin.com/video/7683814443658054955",
+        "cue_count": 594,
+        "translated_count": 594,
+        "total_translation_seconds": 45.25,
+        "timestamps_preserved": true,
+        "first_batch_seconds": 3.27,
+        "last_cue_end": 2707.9336,
+        "model": "gemini-3.5-flash-lite",
+        "automatic_retries": 0,
+        "timing_scope": "45.25 seconds covers manually resumed final 234 cues only; not full translation or end-to-end time",
+        "initial_translation_seconds": null,
+        "manual_resume": true,
+        "prior_attempts": "Incomplete batch at 32-cue size; later 16-cue batch had empty text. Rejected, no automatic retries. Final schema adds minLength=1; manually resumed using saved successful batches."
+      }
+    }
+  ],
+  "comparison": {
+    "zen_studio_seconds": 15.86,
+    "zen_studio_result_count": 1,
+    "easyapi_status": "ABORTED at imposed $0.05 cap; no comparable successful result",
+    "claim": "apple_yang faster in this limited successful comparison; not a universal fastest claim"
+  },
+  "actor_public_stats": {
+    "totalBuilds": 43,
+    "totalRuns": 21369,
+    "totalUsers": 162,
+    "totalUsers7Days": 26,
+    "totalUsers30Days": 44,
+    "totalUsers90Days": 63,
+    "lastRunStartedAt": "2026-10-02T11:04:14.712Z",
+    "actorReviewCount": 8,
+    "actorReviewRating": 4.999999999999999,
+    "bookmarkCount": 2,
+    "publicActorRunStats30Days": {
+      "ABORTED": 0,
+      "FAILED": 3,
+      "SUCCEEDED": 5855,
+      "TIMED-OUT": 0,
+      "TOTAL": 5858
+    }
+  },
+  "gtx": {
+    "http": 200,
+    "seconds": 0.19,
+    "synthetic_source": "ni hao",
+    "result": "Xin chao"
+  },
+  "audio_only_experiment": {
+    "http": 200,
+    "export_seconds": 22.73,
+    "audio_bytes": 823294,
+    "deepgram_seconds": 4.47,
+    "duration": 67.78,
+    "words": 197,
+    "source_duration": 67.756,
+    "probe_tool": "ffmpeg audio-only extraction; native AVFoundation speed not yet measured"
+  },
+  "production_audio_path": "Deepgram URL ingest of full video; no local transcoding or duplicate paid requests",
+  "long_asr_first_attempt": "120-second timeout; manual retry with longer timeout succeeded; provider might charge both accepted requests",
+  "word_timing": "37 overlapping word intervals on user sample; merged. Public sample tail overshoot clamped at known duration (within 2 seconds); timing_clamped marks adjustment. Larger drift rejected.",
+  "quality_scope": "Timestamp/count/provider integration validated; sampled Mandarin/Vietnamese content inspected, not a full human transcription accuracy evaluation",
+  "physical_device_subtitles_verified": false,
+  "subtitle_language_fallback": {
+    "detected_cjk_residue_cues": 4,
+    "source_video_id": "7683814443658054955",
+    "provider": "Google Translate GTX",
+    "original_chinese_cue_retranslated": true,
+    "all_four_replies_without_han": true,
+    "evidence": "0.14-subtitle-gtx-fallback.json",
+    "paid_gemini_repeat": false
+  }
+}

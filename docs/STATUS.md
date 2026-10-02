@@ -1,21 +1,22 @@
-# Trạng thái 0.13.0-test
+# Trạng thái 0.14.0-test
 
-**Đã đóng gói bản sửa đọc nội dung AI rỗng và bỏ thời gian chờ cố định. Cần nghiệm thu tự dịch trên iPhone.**
+Đã đóng gói **Douyin** với phụ đề Việt theo nút bấm và dịch bình luận GTX. Dịch phân tích AI 0.13 đã được người dùng xác nhận hoạt động và giữ nguyên.
 
-`dist/Douyin-40.6.0-Guest-0.13.0-iPhone15-GEMINI-PRIVATE-TEST.ipa`, 704,898,703 byte. SHA-256 `af8fdfdbe0f72d3ae9f8f029416ad5fbe49cd77008c184e7d8ee205c21ffca74`. Source `a9577829b3b46883360b37d011c097d02336d0a6`.
+`dist/Douyin-40.6.0-0.14.0-iPhone15-SUBTITLES-PRIVATE-TEST.ipa`; 704,937,925 byte. SHA-256 `b09c82dbfe1a244d3680141145f80558944973e6a41787e03333f04f4b538a35`. Source `93997c6986d6290ec1ceef45ad6d216cc3f0f635`.
 
 | Hạng mục | Kết quả |
 |---|---|
-| Lỗi 0.12 | 198 lần capture rỗng, chưa ghi nhận request dịch; renderer thực tế chưa xác định |
-| Capture | Typed Objective-C ivars legacy/V2 đã kiểm ABI; fallback đúng owner khi contentVC trống |
-| Thời điểm dịch | Cache ngay; legacy complete ngay; còn lại 750ms không đổi, không fixed entry delay |
-| Lấy mẫu | 250ms/common run-loop modes; timeout 20s báo capture rỗng cụ thể |
-| UI | Giữ nguồn gốc hiện/cuộn trong lúc chờ, tự chuyển bản dịch khi ready nếu chưa chọn ngôn ngữ |
-| Chi phí/hủy | Một request tự động/entry, không tự retry; cache/cancel/stale checks giữ nguyên |
-| CI | [Run 36995139017](https://github.com/phucdinhIA/Douyin/actions/runs/36995139017): 20 Python, Foundation hooks, 29 Gemini, 36 translation, 142 UIKit đạt |
-| Archive | 5,630 mục readback/hash; 0 mismatch; binary core gốc giữ nguyên |
-| Máy thật | Chưa xác nhận tự dịch 0.13 trên iPhone; cần theo dõi counters capture mới |
+| Phụ đề | Apify videoUrl → Nova-3 Mandarin → Gemini Việt; ID/thời gian kiểm tra riêng |
+| Video ngắn | Nhóm đầu 8 cue, sau 16 cue; ưu tiên vị trí phát, hiện từng nhóm, cache |
+| Bình luận | GTX theo dòng được chọn; giữ nguồn, loại tên/AI/view ẩn, cache riêng |
+| Giao diện | Nút opt-in, hủy/tắt/hiện; pause/seek/loop, đổi model/chuyển nền đã qua fixture |
+| API thật | Mẫu 67,8 giây và 45 phút nhận dạng được; 15/594 cue dịch đủ sau kiểm tra và các lần thử thủ công |
+| CI | [Run 37005881752](https://github.com/phucdinhIA/Douyin/actions/runs/37005881752), 21 Python/29 Gemini/36 AI translation/49 media/161 UIKit đạt |
+| IPA | 5,631 mục readback/hash, 0 mismatch, core gốc giữ nguyên; tên app/localized Douyin |
+| Máy thật | Phụ đề và GTX mới chưa nghiệm thu trên iPhone; dịch AI 0.13 được người dùng xác nhận |
 
-[Kế hoạch](PLAN-0.13.md) · [Test](DEVICE_TESTS.md) · [Validation](VALIDATION.json) · [UI](evidence/ui-gemini-translation-0.13.0.png) · [Lịch sử](evidence/status-0.12.0.md).
+Hai run đầu không đạt strict compile: signed comparison trong UI và malformed-array test với generic Objective-C. Đã sửa, các assertions được giữ. Sau run thành công đầu, sửa hiển thị title nút và tách cache GTX; bản bàn giao dùng run cuối.
 
-V2/Serval vẫn dùng heuristic ổn định, chưa có tín hiệu hoàn tất đã xác minh. Giới hạn nguồn 24.000 đơn vị UTF-16; chỉ renderer trong cây view comment-AI, không đọc app-wide payload hoặc giả phiên Douyin. Các lỗi feed/phát nền/xoay/guest trước đó vẫn cần nghiệm thu riêng. Diagnostics không ghi nguồn hay key.
+[Kế hoạch](PLAN-0.14.md) · [Nghiên cứu](MEDIA-0.14.md) · [Test](DEVICE_TESTS.md) · [Validation](VALIDATION.json) · [Lịch sử](evidence/status-0.13.0.md).
+
+Featured/Tips, phát nền, xoay và guest search trước đó vẫn cần xử lý/kiểm thử riêng; phiên bản này không có bằng chứng mới cho các lỗi đó. Phụ đề mới không thay đổi xác thực Douyin.

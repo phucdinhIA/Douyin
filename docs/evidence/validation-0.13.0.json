@@ -1,57 +1,45 @@
 {
-  "candidate": "Douyin-40.6.0-0.14.0-iPhone15-SUBTITLES-PRIVATE-TEST.ipa",
-  "patch_version": "0.14.0-test",
+  "candidate": "Douyin-40.6.0-Guest-0.13.0-iPhone15-GEMINI-PRIVATE-TEST.ipa",
+  "patch_version": "0.13.0-test",
   "app_version": "40.6.0",
   "app_build": "406019",
   "source_sha256": "3444d6045147b772e8f5e7e844c38a0f72464f34a4eb1af5c5df5f9433d706af",
-  "output_sha256": "b09c82dbfe1a244d3680141145f80558944973e6a41787e03333f04f4b538a35",
-  "library_sha256": "e5fdd7814f4e6c331deed34b8f7af9d267cfa5f1ad5ad50a31d590fa879529f7",
-  "output_size_bytes": 704937925,
-  "compiled_commit": "93997c6986d6290ec1ceef45ad6d216cc3f0f635",
+  "output_sha256": "af8fdfdbe0f72d3ae9f8f029416ad5fbe49cd77008c184e7d8ee205c21ffca74",
+  "library_sha256": "7d572145dfd23a055057e6e205e6b01c6be9a90f86b1b05f7901348d86a5ac6d",
+  "output_size_bytes": 704898703,
+  "compiled_commit": "a9577829b3b46883360b37d011c097d02336d0a6",
   "ci_runs_successful": [
-    37004423924,
-    37005881752
+    36995139017
   ],
-  "ci_runs_failed": [
-    37003782620,
-    37003893920
-  ],
-  "python_tests_passed": 21,
+  "ci_runs_failed": [],
+  "python_tests_passed": 20,
   "foundation_policy_and_hook_regressions_passed": true,
   "warnings_as_errors_build_passed": true,
   "library_adhoc_signature_verified": true,
   "toolchain_text": "Xcode 15.4\nBuild version 15F31d\n17.5",
   "uikit_fixture": {
     "passed": true,
-    "checks_passed": 161,
+    "checks_passed": 142,
     "device": "iPhone 15 Simulator",
     "ios": "18.2",
     "translation_entries_tested": 898,
     "overflow_labels": [],
     "scope": "UIKit fixture only; original Douyin app and network were not executed",
-    "evidence": "evidence/ui-results-0.14.0.json",
-    "visuals_generated": [
-      "evidence/ui-sidebar-0.14.0.png",
-      "evidence/ui-network-error-0.14.0.png",
-      "evidence/ui-search-0.14.0.png",
-      "evidence/ui-settings-0.14.0.png",
-      "evidence/ui-comments-0.14.0.png",
-      "evidence/ui-featured-narrow-0.14.0.png",
-      "evidence/ui-live-0.14.0.png",
-      "evidence/ui-public-finder-0.14.0.png",
-      "evidence/ui-public-profile-0.14.0.png",
-      "evidence/ui-feed-compat-0.14.0.png",
-      "evidence/ui-gemini-0.14.0.png",
-      "evidence/ui-gemini-context-0.14.0.png",
-      "evidence/ui-gemini-translation-0.14.0.png",
-      "evidence/ui-captions-0.14.0.png",
-      "evidence/ui-gtx-comments-0.14.0.png"
-    ],
+    "evidence": "evidence/ui-results-0.13.0.json",
     "visuals_reviewed": [
-      "evidence/ui-feed-compat-0.14.0.png",
-      "evidence/ui-gemini-translation-0.14.0.png",
-      "evidence/ui-captions-0.14.0.png",
-      "evidence/ui-gtx-comments-0.14.0.png"
+      "evidence/ui-sidebar-0.13.0.png",
+      "evidence/ui-network-error-0.13.0.png",
+      "evidence/ui-search-0.13.0.png",
+      "evidence/ui-settings-0.13.0.png",
+      "evidence/ui-comments-0.13.0.png",
+      "evidence/ui-featured-narrow-0.13.0.png",
+      "evidence/ui-live-0.13.0.png",
+      "evidence/ui-public-finder-0.13.0.png",
+      "evidence/ui-public-profile-0.13.0.png",
+      "evidence/ui-feed-compat-0.13.0.png",
+      "evidence/ui-gemini-0.13.0.png",
+      "evidence/ui-gemini-context-0.13.0.png",
+      "evidence/ui-gemini-translation-0.13.0.png"
     ]
   },
   "fixed_native_hooks": 79,
@@ -92,7 +80,7 @@
     "repair_or_server_status_rewrite": false
   },
   "runtime_tested": false,
-  "runtime_tested_scope": "0.14 native compilation and controlled UIKit/mock tests passed; real service probes ran on Windows. Actual Douyin subtitle/comment UI on iPhone awaits acceptance.",
+  "runtime_tested_scope": "0.13 controlled Foundation state and UIKit/mock transport passed; actual Douyin capture on iPhone awaits acceptance",
   "featured_tips_network_root_cause_resolved": false,
   "featured_tips_pagination_verified_on_device": false,
   "background_screen_lock_audio_verified_on_device": false,
@@ -124,8 +112,8 @@
     "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页 1.heic",
     "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页.heic"
   ],
-  "status": "Private TEST IPA packaged; opt-in subtitles and GTX tested by stage and mock integration; physical-device acceptance pending",
-  "zip_entries_read_back_and_sha256_verified": 5631,
+  "status": "Source capture and readiness fix compiled and mock-tested; private TEST IPA packaged; physical-device translation unverified",
+  "zip_entries_read_back_and_sha256_verified": 5630,
   "unchanged_entries_independent_crc_size_mode_comparison": 5620,
   "unchanged_files_independent_audit_sha256_comparison": 4977,
   "prior_audit_total_records": 5011,
@@ -190,16 +178,14 @@
     "chat_history_sent_for_translation": false,
     "original_douyin_analysis_rewritten": false,
     "cache_hit_or_language_toggle_calls_api": false,
-    "physical_device_auto_translation_verified": true,
+    "physical_device_auto_translation_verified": false,
     "stream_completion_known": "Legacy content_complete ABI verified; V2/Serval completion not established",
     "stability_heuristic_used": true,
     "poll_run_loop_modes": "common",
     "cache_hit_immediate": true,
     "verified_legacy_content_complete_sends_immediately": true,
     "original_visible_while_waiting": true,
-    "capture_empty_error_distinct": true,
-    "physical_device_verified_version": "0.13.0-test",
-    "confirmation": "User: AI translation works"
+    "capture_empty_error_distinct": true
   },
   "translation_synthetic_google_probe": {
     "http_status": 200,
@@ -210,9 +196,12 @@
     "tested_version": "0.12.0-test"
   },
   "latest_user_report": {
-    "version": "0.13.0-test",
-    "automatic_ai_translation": "User confirmed working; preserve existing feature",
-    "new_task": "GTX comments and opt-in Vietnamese subtitles, especially videos under 10 minutes"
+    "version": "0.12.0-test",
+    "summary_unavailable": 198,
+    "translation_failed": 1,
+    "translation_sent_counter_present": false,
+    "diagnosis": "Polling ran but source capture remained empty; exact real-device renderer/root not established",
+    "evidence": "evidence/0.13-user-diagnostics-summary.json"
   },
   "renderer_capture": {
     "v2": "LynxMarkdownViewV2._markdownView typed Objective-C ivar -> ServalMarkdownView.getContent",
@@ -221,30 +210,5 @@
     "empty_content_root_fallback": "Exact comment-AI owner view only",
     "evidence": "evidence/0.13-renderer-abi.json",
     "actual_device_renderer_identified": false
-  },
-  "media_contract_tests_passed": 49,
-  "app_display_name": "Douyin",
-  "private_provider_config_matches_local": true,
-  "media": {
-    "actor": "apple_yang/douyin-video-audio-downloader",
-    "asr_model": "nova-3",
-    "source_language": "zh-CN",
-    "target_language": "vi",
-    "translation_model": "gemini-3.5-flash-lite",
-    "opt_in": true,
-    "first_batch_max_cues": 8,
-    "subsequent_batch_max_cues": 16,
-    "timeline_poll_seconds": 0.1,
-    "prioritize_current_playback": true,
-    "maximum_duration_seconds": 3600,
-    "automatic_paid_retries": 0,
-    "subtitle_cache_max_entries": 32,
-    "subtitle_cache_max_bytes": 8388608,
-    "separate_gtx_cache": true,
-    "free_gtx_fallback_for_han_residue": true,
-    "provider_probes": "evidence/0.14-service-probes.json",
-    "abi": "evidence/0.14-media-abi.json",
-    "gtx_probe": "evidence/0.14-gtx-probe.json",
-    "physical_device_subtitles_verified": false
   }
 }

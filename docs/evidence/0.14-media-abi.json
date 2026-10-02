@@ -1,0 +1,158 @@
+{
+  "target": "40.6.0/build406019 original audited arm64 IPA",
+  "classes": [
+    {
+      "binary": "AwemeCore",
+      "class": "AWECommentContainerViewController",
+      "super": null,
+      "methods": [
+        {
+          "selector": "model",
+          "types": "@16@0:8",
+          "imp": "0x5edc40"
+        },
+        {
+          "selector": "setModel:",
+          "types": "v24@0:8@16",
+          "imp": "0x5edc6c"
+        },
+        {
+          "selector": "viewDidAppear:",
+          "types": "v20@0:8B16",
+          "imp": "0x5f3f80"
+        },
+        {
+          "selector": "viewWillDisappear:",
+          "types": "v20@0:8B16",
+          "imp": "0x5f4488"
+        }
+      ]
+    },
+    {
+      "binary": "AwemeCore",
+      "class": "AWECommentFullScreenContainerViewController",
+      "super": null,
+      "methods": [
+        {
+          "selector": "viewDidAppear:",
+          "types": "v20@0:8B16",
+          "imp": "0x5fe624"
+        },
+        {
+          "selector": "viewWillDisappear:",
+          "types": "v20@0:8B16",
+          "imp": "0x5fe6bc"
+        }
+      ]
+    },
+    {
+      "binary": "AwemeCore",
+      "class": "_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel",
+      "super": "YYLabel",
+      "methods": []
+    },
+    {
+      "binary": "AwemeCore",
+      "class": "AWEAwemeModel",
+      "super": "AWEBaseApiModel",
+      "methods": [
+        {
+          "selector": "itemID",
+          "types": "@16@0:8",
+          "imp": "0x12679120"
+        }
+      ]
+    },
+    {
+      "binary": "AwemeCore",
+      "class": "AWEPlayVideoViewController",
+      "super": null,
+      "methods": [
+        {
+          "selector": "setModel:",
+          "types": "v24@0:8@16",
+          "imp": "0x13b650f0"
+        },
+        {
+          "selector": "viewWillDisappear:",
+          "types": "v20@0:8B16",
+          "imp": "0x14c80fb4"
+        },
+        {
+          "selector": "viewDidAppear:",
+          "types": "v20@0:8B16",
+          "imp": "0x14dadf60"
+        },
+        {
+          "selector": "currentPlaybackTime",
+          "types": "d16@0:8",
+          "imp": "0x13d13514"
+        },
+        {
+          "selector": "model",
+          "types": "@16@0:8",
+          "imp": "0x13b560f8"
+        },
+        {
+          "selector": "itemID",
+          "types": "@16@0:8",
+          "imp": "0x1d3984e4"
+        }
+      ]
+    }
+  ],
+  "disassembly": [
+    {
+      "class": "AWEAwemeModel",
+      "binary": "AwemeCore",
+      "kind": "instance",
+      "selector": "itemID",
+      "types": "@16@0:8",
+      "imp": "0x12679120",
+      "size": 12,
+      "notes": [],
+      "disassembly": [
+        "0x12679120: adrp x8, #0x386d9000",
+        "0x12679124: ldrsw x8, [x8, #0x3a8]",
+        "0x12679128: b #0x1237837c"
+      ]
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "binary": "AwemeCore",
+      "kind": "instance",
+      "selector": "currentPlaybackTime",
+      "types": "d16@0:8",
+      "imp": "0x13d13514",
+      "size": 68,
+      "notes": [
+        "playerController",
+        "currPlaybackTime"
+      ],
+      "disassembly": [
+        "0x13d13514: stp d9, d8, [sp, #-0x30]!",
+        "0x13d13518: stp x20, x19, [sp, #0x10]",
+        "0x13d1351c: stp x29, x30, [sp, #0x20]",
+        "0x13d13520: add x29, sp, #0x20",
+        "0x13d13524: adrp x8, #0x3820d000",
+        "0x13d13528: ldr x1, [x8, #0x5f0] ; playerController",
+        "0x13d1352c: bl #0x175c6710",
+        "0x13d13530: mov x29, x29",
+        "0x13d13534: bl #0x175c670c",
+        "0x13d13538: mov x19, x0",
+        "0x13d1353c: adrp x8, #0x37f89000",
+        "0x13d13540: ldr x1, [x8, #0xa78] ; currPlaybackTime",
+        "0x13d13544: bl #0x175c6710",
+        "0x13d13548: bl #0x11fec0ac",
+        "0x13d1354c: fmov d0, d8",
+        "0x13d13550: ldp x29, x30, [sp, #0x20]",
+        "0x13d13554: b #0x11fec0a0"
+      ]
+    }
+  ],
+  "metadata_decoder_errors": {
+    "AwemeCore": 4,
+    "AWESearchFramework": 0
+  },
+  "scope": "Selected methods extracted successfully; full metadata audit has four unrelated decode errors. Imported superclasses can be unresolved statically; runtime class membership checked."
+}

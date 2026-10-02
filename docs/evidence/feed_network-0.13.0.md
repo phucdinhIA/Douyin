@@ -6,20 +6,16 @@
 
 Diagnostics mới: DC normal controller/inner controller với tên cố định; DC normal body builder calls, tidy negotiation removed/no tidy negotiation. Counter body removal xác nhận thao tác, chưa chứng minh request thành công. Unknown controller không bị cast/ép định dạng. Không xuất tên lớp tùy ý, URL hoặc body.
 
-[Kế hoạch](PLAN-0.10.md) · [Nghiên cứu](RESEARCH-0.10.md) · [Test](DEVICE_TESTS.md) · [Lịch sử](evidence/feed_network-0.9.0.md).
+[Kế hoạch](../PLAN-0.10.md) · [Nghiên cứu](../RESEARCH-0.10.md) · [Test](../DEVICE_TESTS.md) · [Lịch sử](feed_network-0.9.0.md).
 
 ## 0.11
 
-Giữ chiến lược feed 0.10; vòng này tích hợp Gemini, chưa có kết quả nghiệm thu feed mới trên máy thật. [Test](DEVICE_TESTS.md).
+Giữ chiến lược feed 0.10; vòng này tích hợp Gemini, chưa có kết quả nghiệm thu feed mới trên máy thật. [Test](../DEVICE_TESTS.md).
 
 ## 0.12
 
-Chỉ thêm dịch phân tích AI khi vào tab; không thay chiến lược feed/phát nền của 0.11. Chưa có kết quả nghiệm thu các lỗi feed mới. [Test](DEVICE_TESTS.md).
+Chỉ thêm dịch phân tích AI khi vào tab; không thay chiến lược feed/phát nền của 0.11. Chưa có kết quả nghiệm thu các lỗi feed mới. [Test](../DEVICE_TESTS.md).
 
 ## 0.13
 
-Sửa capture phân tích AI rỗng, thời điểm tự dịch và timer khi cuộn. Không có bằng chứng nghiệm thu mới cho feed/phát nền; diagnostics 0.12 vẫn có AwemeNetwork -11001/CSP -4. [Test](DEVICE_TESTS.md).
-
-## 0.14
-
-Thêm phụ đề theo nút và dịch bình luận GTX; dịch AI 0.13 được người dùng xác nhận hoạt động. Luồng Apify/Nova-3 không sửa API feed Douyin. Chưa có bằng chứng mới cho Featured/Tips/phát nền/xoay/search. [Luồng phụ đề](MEDIA-0.14.md) · [Test](DEVICE_TESTS.md).
+Sửa capture phân tích AI rỗng, thời điểm tự dịch và timer khi cuộn. Không có bằng chứng nghiệm thu mới cho feed/phát nền; diagnostics 0.12 vẫn có AwemeNetwork -11001/CSP -4. [Test](../DEVICE_TESTS.md).

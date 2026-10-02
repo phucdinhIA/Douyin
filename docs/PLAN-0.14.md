@@ -12,3 +12,5 @@ Mục tiêu: giữ tự dịch tab AI 0.13 đã được người dùng xác nh�
 8. Bàn giao TEST kèm số kiểm tra, thời gian mẫu thực và giới hạn: simulator/mock không nghiệm thu được luồng trong Douyin trên iPhone; người dùng kiểm tra video của họ sau cài. Không ghi “không lỗi” khi chưa có bằng chứng máy thật.
 
 Thử nghiệm tối ưu âm thanh: ffmpeg tải/tách AAC rồi upload Nova-3 mất 27,2 giây trên mẫu 67,8 giây; URL video trực tiếp mất 31,53 giây. Chưa đo được tốc độ AVFoundation trên iPhone, nên bản giao dùng URL trực tiếp đã kiểm thử: không tải/chuyển mã trên điện thoại và không gửi hai yêu cầu nhận dạng song song. Tối ưu đã áp dụng là nhóm dịch nhỏ, ưu tiên cảnh đang xem, cache và hủy khi đổi video. Đây là nhận dạng prerecorded cả clip, chưa có phụ đề trực tiếp ngay khi nhấn.
+
+Kiểm tra chất lượng phát hiện bốn cue của mẫu dài còn lẫn chữ Hán. Phương án đã kiểm thử: dịch lại câu Trung gốc bằng GTX miễn phí, giữ ID/thời gian; không gọi lại Gemini trả phí. Cache phụ đề và bình luận được tách để dịch bình luận không loại transcript ra khỏi cache. Fallback chỉ chạy trên cue bị ảnh hưởng, báo lỗi nếu không nhận được chữ Việt hợp lệ.
