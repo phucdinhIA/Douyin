@@ -264,7 +264,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
 
     AWENetworkErrorFixtureView *featured=[[AWENetworkErrorFixtureView alloc] initWithFrame:self.window.bounds];featured.backgroundColor=UIColor.systemBackgroundColor;
     title=label(featured,@"Featured narrow-label fixture • 0.5.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
-    UILabel *errorTitle=label(featured,@"网络错误",320);errorTitle.frame=CGRectMake((width-60)/2,320,60,30);errorTitle.textAlignment=NSTextAlignmentCenter;
+    UILabel *featuredTitle=label(featured,@"网络错误",320);featuredTitle.frame=CGRectMake((width-60)/2,320,60,30);featuredTitle.textAlignment=NSTextAlignmentCenter;
     UILabel *errorDetail=label(featured,@"请检查网络连接后重试",365);errorDetail.frame=CGRectMake((width-120)/2,365,120,30);errorDetail.textAlignment=NSTextAlignmentCenter;
     UIButton *retryButton=[UIButton buttonWithType:UIButtonTypeSystem];retryButton.frame=CGRectMake((width-100)/2,415,100,42);[retryButton setTitle:@"重试" forState:UIControlStateNormal];[featured addSubview:retryButton];
     UILabel *notice=label(featured,@"操作失败，请稍后重试",485);notice.frame=CGRectMake(20,485,width-40,40);notice.textAlignment=NSTextAlignmentCenter;

@@ -176,10 +176,10 @@ static void DGTranslateLabel(UILabel *label) {
     // setter the app used so that attachment does not freeze its original font.
     if ([objc_getAssociatedObject(label, &labelRichKey) boolValue] && label.attributedText.length) {
         NSAttributedString *value = DGTranslateControlAttributed(label.attributedText, translations);
-        if (value != label.attributedText || [translatedValues containsObject:value.string]) { label.attributedText = value; }
+        if (value != label.attributedText || DGKnownEnglish(value.string)) { label.attributedText = value; }
     } else if (label.text.length) {
         NSString *value = DGTranslateControl(label.text, translations);
-        if (![value isEqualToString:label.text] || [translatedValues containsObject:value]) { label.text = value; }
+        if (![value isEqualToString:label.text] || DGKnownEnglish(value)) { label.text = value; }
     }
     DGApplyLabelLayout(label);
 }
