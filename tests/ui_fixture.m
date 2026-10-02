@@ -18,7 +18,7 @@ static atomic_int translationRequests;
 - (void)startLoading {
     atomic_fetch_add(&translationRequests,1);
     NSHTTPURLResponse *response=[[NSHTTPURLResponse alloc] initWithURL:self.request.URL statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:@{@"Content-Type":@"application/json"}];
-    NSData *data=[NSJSONSerialization dataWithJSONObject:@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":@"Nội dung do AI tạo.\n\nVideo này bàn về các kỹ thuật chụp ảnh.\n\nBản dịch minh họa trong fixture, không phải kết quả kiểm tra trên Douyin thật."}]},@"finishReason":@"STOP"}]} options:0 error:NULL];
+    NSData *data=[NSJSONSerialization dataWithJSONObject:@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":@"Nội dung do AI tạo.\n\nVideo này bàn về các <mark class=\"highlight\">kỹ thuật chụp ảnh</mark>.\n\nBản dịch minh họa trong fixture, không phải kết quả kiểm tra trên Douyin thật."}]},@"finishReason":@"STOP"}]} options:0 error:NULL];
     [self.client URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
 - (void)stopLoading {}
@@ -647,6 +647,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     while (![viText.text containsString:@"kỹ thuật chụp ảnh"] && translationDeadline.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];
     NSLog(@"Translation mock observation: requests=%d, ready=%d",atomic_load(&translationRequests),[viText.text containsString:@"kỹ thuật chụp ảnh"]);
     check(atomic_load(&translationRequests)==1 && [viText.text containsString:@"kỹ thuật chụp ảnh"],@"explicit AI entry translates exactly once through isolated mock transport");
+    check(![viText.text containsString:@"<mark"] && ![viText.text containsString:@"</mark>"],@"translated AI highlights preserve text without displaying HTML mark tags");
     [ai.view layoutIfNeeded];
     UIView *viPanel=findID(ai.view,@"gemini-translation-panel");
     check(!viPanel.hidden && viText.frame.size.height>200 && CGRectGetMaxY(viPanel.frame)<=CGRectGetMinY(findID(ai.view,@"gemini-comment-entry").frame),@"Vietnamese analysis scroll panel fits above Q&A button");
