@@ -259,6 +259,7 @@ static UIView *findID(UIView *root,NSString *identifier) {
 @property(nonatomic,strong) AWEAwemeModel *model;
 @property(nonatomic) double playback;
 @property(nonatomic) BOOL playing;
+@property(nonatomic) BOOL muted;
 @property(nonatomic) NSUInteger pauseCalls,resumeCalls;
 - (double)currentPlaybackTime;
 - (BOOL)pause;
@@ -271,6 +272,8 @@ static UIView *findID(UIView *root,NSString *identifier) {
 - (double)currentPlaybackTime {return self.playback;}
 - (BOOL)pause {self.playing=NO;self.pauseCalls++;return YES;}
 - (BOOL)isPlaying {return self.playing;}
+- (BOOL)isMute {return self.muted;}
+- (void)setPlayerSeekTime:(double)time completion:(void (^)(BOOL))completion {self.playback=time;if (completion) completion(YES);}
 - (void)resumePlayVideo {self.playing=YES;self.resumeCalls++;}
 @end
 @interface MissedAppearancePlayer : AWEPlayVideoViewController
@@ -451,6 +454,19 @@ static NSUInteger countText(UIView *view, NSString *text) {
     UIViewController *modal=[UIViewController new];[host presentViewController:modal animated:NO completion:nil];mediaWait(^BOOL{return modal.view.window!=nil;});
     check(!DGMediaFixtureShortcut(self.window,CGPointMake(280,300)),@"presented modal prevents resolving underlying player");
     [host dismissViewControllerAnimated:NO completion:nil];
+    // A real local audio file exercises native mute ownership and clock synchronization.
+    self.window.rootViewController=player;player.model=model;player.playback=0.2;player.playing=NO;[player viewDidAppear:NO];
+    NSURL *tone=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:@"fixture-voice.wav"]];
+    [NSFileManager.defaultManager copyItemAtURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"] toURL:tone error:NULL];
+    check(DGAudioVoice(player,tone) && player.muted,@"local dubbing activates audio playback session and mutes original source");
+    mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.2)<0.1;});
+    check([DGAudioSnapshot()[@"dubbing_rate"] floatValue]==0,@"native pause also holds dubbed audio");
+    player.playback=1.2;mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-1.2)<0.1;});
+    check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-1.2)<0.1,@"dubbing seeks forward to the actual native video clock");
+    player.playback=0.1;mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.1)<0.1;});
+    check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.1)<0.1,@"dubbing follows backward seek or video loop");
+    player.playing=YES;DGAudioFixtureTick();check([DGAudioSnapshot()[@"dubbing_rate"] floatValue]>0,@"native play resumes dubbed audio");
+    player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"changing video restores original mute state and releases old voice");
     AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.textLayout=[YYTextLayout layoutWithContainer:[NSObject new] text:[[NSAttributedString alloc] initWithString:@"视频很好，谢谢！"]];[comments.view addSubview:native];
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"隐藏的评论";hidden.hidden=YES;[comments.view addSubview:hidden];

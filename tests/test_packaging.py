@@ -171,6 +171,7 @@ class PackagingTests(unittest.TestCase):
             root=pathlib.Path(directory);source=root/'source.ipa';library=root/'fixture.dylib';output=root/'patched.ipa'
             library.write_bytes(b'Fixture only, not a real library')
             media=root/'media.json';media.write_text(json.dumps({'apify_api_key':'fixture-apify','deepgram_api_key':'fixture-deepgram','apify_actor':'apple_yang~douyin-video-audio-downloader'}),encoding='utf8')
+            vbee=root/'vbee.json';vbee.write_text(json.dumps({'app_id':'00000000-0000-0000-0000-000000000001','token':'fixture-vbee','voice_code':'hn_male_manhdung_news_48k-fhg'}))
             with zipfile.ZipFile(source,'w') as archive:
                 archive.writestr(main_path,plistlib.dumps(main))
                 archive.writestr(extension_path,plistlib.dumps(extension))
@@ -179,7 +180,7 @@ class PackagingTests(unittest.TestCase):
                 archive.writestr(patch.APP+'en.lproj/InfoPlist.strings',plistlib.dumps({'CFBundleDisplayName':'Douyin'}))
             with mock_patch.object(patch,'SOURCE_SHA256',patch.sha256(source)), \
                  mock_patch.object(patch,'validate_library',return_value=[]), contextlib.redirect_stdout(io.StringIO()):
-                report=patch.build(source,library,output,patch.sha256(library),media_config=media)
+                report=patch.build(source,library,output,patch.sha256(library),media_config=media,vbee_config=vbee)
             with zipfile.ZipFile(source) as original, zipfile.ZipFile(output) as result:
                 for path,expected in [(main_path,main),(extension_path,extension)]:
                     self.assertEqual(plistlib.loads(original.read(path)),expected)
@@ -195,6 +196,7 @@ class PackagingTests(unittest.TestCase):
                         self.assertEqual(actual['UISupportedInterfaceOrientations~ipad'],expected['UISupportedInterfaceOrientations~ipad'])
                 self.assertEqual(result.read(untouched_path),untouched)
                 self.assertEqual(json.loads(result.read(patch.APP+'DouyinGuest.bundle/media-private.json')),json.loads(media.read_text()))
+                self.assertEqual(json.loads(result.read(patch.APP+'DouyinGuest.bundle/vbee-private.json')),json.loads(vbee.read_text()))
                 localized=plistlib.loads(result.read(patch.APP+'en.lproj/InfoPlist.strings'))
                 self.assertEqual(localized['CFBundleDisplayName'],'Douyin')
                 self.assertEqual(localized['CFBundleName'],'Douyin')

@@ -29,6 +29,8 @@ static void DGAMute(id owner,BOOL muted) {Method m=DGAMethod(owner,@"setMuted:",
 @property(nonatomic) BOOL lastPlaying;
 @property(nonatomic) NSTimeInterval lastObserved;
 @property(nonatomic) NSTimeInterval lastClock;
+@property(nonatomic,strong) NSDictionary *previousNowPlaying;
+@property(nonatomic) BOOL reportedSourceFailure;
 - (void)tick;
 - (void)resign;
 - (void)activate;
@@ -57,6 +59,8 @@ static DGAudioController *DGAudio;
     double time=DGATime(self.owner);if (!isfinite(time)) time=self.lastClock;
     if (!DGSourceURLAllowed(url) || !isfinite(time) || time<0 || !DGAMethod(self.owner,@"setPlayerSeekTime:completion:",@"v32@0:8d16@?24") || !DGAMethod(self.owner,@"setMuted:",@"v20@0:8B16")) {if (self.record) self.record(@"Background source or player ABI unavailable",1);return;}
     if (![self session]) return;[self mute];self.background=[AVPlayer playerWithURL:url];self.background.muted=self.voice!=nil;
+    self.reportedSourceFailure=NO;self.previousNowPlaying=MPNowPlayingInfoCenter.defaultCenter.nowPlayingInfo;
+    MPNowPlayingInfoCenter.defaultCenter.nowPlayingInfo=@{MPMediaItemPropertyTitle:@"Douyin",MPNowPlayingInfoPropertyElapsedPlaybackTime:@(time),MPNowPlayingInfoPropertyPlaybackRate:@1};
     NSUInteger generation=++self.generation;__weak DGAudioController *weakSelf=self;
     [self.background seekToTime:CMTimeMakeWithSeconds(time,600) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
         dispatch_async(dispatch_get_main_queue(),^{DGAudioController *owner=weakSelf;if (!owner || owner.generation!=generation || !finished || UIApplication.sharedApplication.applicationState==UIApplicationStateActive) return;
@@ -69,6 +73,7 @@ static DGAudioController *DGAudio;
 - (void)activate {
     if (!self.background) return;double time=CMTimeGetSeconds(self.background.currentTime);BOOL play=self.background.rate>0 && !self.interrupted;self.generation++;
     [self.background pause];self.background=nil;
+    MPNowPlayingInfoCenter.defaultCenter.nowPlayingInfo=self.previousNowPlaying;self.previousNowPlaying=nil;
     Method seek=DGAMethod(self.owner,@"setPlayerSeekTime:completion:",@"v32@0:8d16@?24");Method resume=DGAMethod(self.owner,@"resumePlayVideo",@"v16@0:8");
     // The completion block's parameter ABI is private; use the audited nullable argument.
     if (seek && isfinite(time)) ((void (*)(id,SEL,double,id))method_getImplementation(seek))(self.owner,NSSelectorFromString(@"setPlayerSeekTime:completion:"),time,nil);
@@ -79,6 +84,10 @@ static DGAudioController *DGAudio;
 - (void)tick {
     BOOL foreground=UIApplication.sharedApplication.applicationState==UIApplicationStateActive;
     if (foreground && self.owner) {self.lastPlaying=DGABool(self.owner,@"isPlaying");self.lastClock=DGATime(self.owner);self.lastObserved=NSProcessInfo.processInfo.systemUptime;}
+    if (self.background) {
+        DGAMute(self.owner,YES);
+        if (self.background.currentItem.status==AVPlayerItemStatusFailed && !self.reportedSourceFailure) {self.reportedSourceFailure=YES;[self.background pause];[self.voice pause];if (self.record) self.record(@"Background companion source failed",1);}
+    }
     if (!self.voice) return;
     double time=foreground ? DGATime(self.owner) : CMTimeGetSeconds(self.background.currentTime);
     BOOL playing=foreground ? DGABool(self.owner,@"isPlaying") : self.background.rate>0;
@@ -92,6 +101,13 @@ static DGAudioController *DGAudio;
     }
     if (playing && !self.seeking) self.voice.rate=rate;else [self.voice pause];
 }
+- (void)ended:(NSNotification *)note {
+    if (note.object!=self.background.currentItem || self.interrupted) return;
+    __weak DGAudioController *weakSelf=self;NSUInteger generation=self.generation;
+    [self.background seekToTime:kCMTimeZero completionHandler:^(BOOL done) {dispatch_async(dispatch_get_main_queue(),^{
+        DGAudioController *owner=weakSelf;if (!owner || !done || owner.generation!=generation) return;[owner.background play];[owner.voice seekToTime:kCMTimeZero];[owner.voice play];
+    });}];
+}
 - (void)interruption:(NSNotification *)note {
     if ([note.userInfo[AVAudioSessionInterruptionTypeKey] unsignedIntegerValue]==AVAudioSessionInterruptionTypeBegan) {self.interrupted=YES;[self.background pause];[self.voice pause];}
     else self.interrupted=NO; // User resumes after a call; do not start unexpected audio.
@@ -102,6 +118,7 @@ static DGAudioController *DGAudio;
     if (self.ownsMute) {DGAMute(self.owner,self.mutedBefore);self.ownsMute=NO;}
     if (self.voiceFile) [NSFileManager.defaultManager removeItemAtURL:self.voiceFile error:NULL];self.voiceFile=nil;
     self.lastPlaying=NO;self.lastObserved=0;
+    if (self.previousNowPlaying) MPNowPlayingInfoCenter.defaultCenter.nowPlayingInfo=self.previousNowPlaying;self.previousNowPlaying=nil;
 }
 @end
 void DGAudioInstall(void (^record)(NSString *,NSUInteger)) {
@@ -111,6 +128,7 @@ void DGAudioInstall(void (^record)(NSString *,NSUInteger)) {
     [center addObserver:DGAudio selector:@selector(activate) name:UIApplicationDidBecomeActiveNotification object:nil];
     [center addObserver:DGAudio selector:@selector(interruption:) name:AVAudioSessionInterruptionNotification object:nil];
     [center addObserver:DGAudio selector:@selector(route:) name:AVAudioSessionRouteChangeNotification object:nil];
+    [center addObserver:DGAudio selector:@selector(ended:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
     DGAudio.timer=[NSTimer timerWithTimeInterval:0.1 repeats:YES block:^(__unused NSTimer *timer) {[DGAudio tick];}];[NSRunLoop.mainRunLoop addTimer:DGAudio.timer forMode:NSRunLoopCommonModes];
     MPRemoteCommandCenter *remote=MPRemoteCommandCenter.sharedCommandCenter;
     [remote.pauseCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(__unused MPRemoteCommandEvent *event) {if (!DGAudio.background) return MPRemoteCommandHandlerStatusNoSuchContent;[DGAudio.background pause];[DGAudio.voice pause];return MPRemoteCommandHandlerStatusSuccess;}];
@@ -123,4 +141,10 @@ BOOL DGAudioVoice(UIViewController *owner,NSURL *file) {
     [DGAudio mute];DGAudio.voiceFile=file;DGAudio.voice=[AVPlayer playerWithURL:file];DGAudio.interrupted=NO;[DGAudio tick];return YES;
 }
 void DGAudioStopVoice(UIViewController *owner) {if (DGAudio.owner==owner) [DGAudio stop];}
-NSDictionary *DGAudioSnapshot(void) {return @{@"background_companion":@(DGAudio.background!=nil),@"dubbing_active":@(DGAudio.voice!=nil),@"audio_interrupted":@(DGAudio.interrupted)};}
+NSDictionary *DGAudioSnapshot(void) {
+    double time=CMTimeGetSeconds(DGAudio.voice.currentTime);
+    return @{@"background_companion":@(DGAudio.background!=nil),@"dubbing_active":@(DGAudio.voice!=nil),@"audio_interrupted":@(DGAudio.interrupted),@"dubbing_rate":@(DGAudio.voice.rate),@"dubbing_time":isfinite(time) ? @(time) : NSNull.null};
+}
+#ifdef DG_GEMINI_FIXTURE
+void DGAudioFixtureTick(void) {[DGAudio tick];}
+#endif

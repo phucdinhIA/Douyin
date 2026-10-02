@@ -21,6 +21,7 @@ info={'CFBundleIdentifier':IDENTIFIER,'CFBundleExecutable':'FixtureApp','CFBundl
       'LSRequiresIPhoneOS':True,'UIDeviceFamily':[1],'UILaunchScreen':{},
       'UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait','UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight']}
 (APP/'Info.plist').write_bytes(plistlib.dumps(info))
+shutil.copy2(ROOT/'tests/fixtures/tone.wav',APP/'tone.wav')
 resources=APP/'DouyinGuest.bundle';resources.mkdir(exist_ok=True)
 for name in ['hooks.json','translations.json']:shutil.copy2(ROOT/'resources'/name,resources/name)
 # Synthetic key used only by mock/local fixtures. Never load personal build config in CI.
