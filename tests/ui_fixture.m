@@ -460,13 +460,15 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"] && [native.text isEqual:@"视频很好，谢谢！"] && atomic_load(&commentRequests)==1,@"GTX shows Vietnamese alongside untouched Chinese original");
     [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];check(atomic_load(&commentRequests)==1,@"reselecting translated comment uses cache without network");
     [self saveWindowImage:@"ui-gtx-comments.png"];
-    [native removeFromSuperview];[comments.view addSubview:native];[comments dismissViewControllerAnimated:NO completion:nil];
+    [native removeFromSuperview];[comments.view addSubview:native];__block BOOL dismissed=NO;[comments dismissViewControllerAnimated:NO completion:^{dismissed=YES;}];mediaWait(^BOOL{return dismissed;});
     DGMediaOpenComments(self.window);mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
     check([((UITableViewController *)((UINavigationController *)comments.presentedViewController).topViewController).tableView numberOfRowsInSection:0]==1,@"settings fallback opens GTX using visible semantic comment text without a native button");
-    [comments dismissViewControllerAnimated:NO completion:nil];
+    dismissed=NO;[comments dismissViewControllerAnimated:NO completion:^{dismissed=YES;}];mediaWait(^BOOL{return dismissed;});
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *second=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,290,320,40)];second.text=@"新的评论";[comments.view addSubview:second];
     atomic_store(&gtxThrottle,YES);DGMediaOpenComments(self.window);mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
     table=(UITableViewController *)((UINavigationController *)comments.presentedViewController).topViewController;[table.view layoutIfNeeded];row=[NSIndexPath indexPathForRow:1 inSection:0];
+    check([table.tableView numberOfRowsInSection:0]==2,@"GTX rate-limit fixture opens fresh sheet after previous modal fully dismisses");
+    NSLog(@"GTX rate-limit fixture rows=%ld requests=%d",(long)[table.tableView numberOfRowsInSection:0],atomic_load(&commentRequests));
     [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];
     mediaWait(^BOOL{return [[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"giới hạn"];});
     check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"giới hạn"],@"GTX HTTP 429 displays a useful rate-limit error instead of hanging");
