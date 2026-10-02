@@ -624,10 +624,17 @@ int main(void) {
             direct.nativeChunk=YES;
             Method bodyMethod=class_getInstanceMethod(cls,@selector(addBodyParamsForChunkModel:));
             IMP bodyIMP=method_getImplementation(bodyMethod);
-            class_replaceMethod(cls,@selector(addBodyParamsForChunkModel:),bodyIMP,"v24@0:8q16");
-            check(direct.enableChunkRequest && manager.shouldRequestWithChunk,
+            // class_replaceMethod preserves an existing method's type encoding.
+            // Add an incompatible override on a new subclass to model real drift.
+            NSString *driftName=[@"TestDrift_" stringByAppendingString:NSStringFromClass(cls)];
+            Class drift=objc_allocateClassPair(cls,driftName.UTF8String,0);
+            check(drift && class_addMethod(drift,@selector(addBodyParamsForChunkModel:),bodyIMP,"v24@0:8q16"),
+                @"fixture registers a genuinely incompatible body method ABI");
+            objc_registerClassPair(drift);
+            AWEFeedDoubleColumnListDataController *incompatible=[drift new];incompatible.nativeChunk=YES;
+            manager.dataController=incompatible;
+            check(incompatible.enableChunkRequest && manager.shouldRequestWithChunk,
                 @"body ABI drift retains original controller format and manager transport");
-            class_replaceMethod(cls,@selector(addBodyParamsForChunkModel:),bodyIMP,"v24@0:8@16");
         }
         serializer.error=[NSError errorWithDomain:@"CSP-Domain" code:-4 userInfo:@{@"PRIVATE-buffer":@"PRIVATE"}];
         [serializer response:tt json:nil error:nil resultError:&resultError];
