@@ -515,6 +515,7 @@ static void DGInstallNative(void) {
     if ([delegate respondsToSelector:@selector(window)]) [self attachWindow:delegate.window];
 }
 - (void)attachWindow:(UIWindow *)window {
+    DGMediaAttachWindow(window);
     if (!window || !window.isKeyWindow || objc_getAssociatedObject(window, &gestureKey)) return;
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(open:)];
     tap.numberOfTouchesRequired = 2; tap.numberOfTapsRequired = 3;
@@ -583,6 +584,9 @@ static void DGInstallNative(void) {
         }]];
     }
     __weak UIAlertController *weakSheet=sheet;
+    [sheet addAction:[UIAlertAction actionWithTitle:@"Dịch bình luận · GTX" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+        [weakSheet dismissViewControllerAnimated:YES completion:^{DGMediaOpenComments(window);}];
+    }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"Gemini Q&A" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
         [weakSheet dismissViewControllerAnimated:YES completion:^{DGGeminiPresentFrom(presenter);}];
     }]];
@@ -596,7 +600,7 @@ static void DGInstallNative(void) {
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.14.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        NSMutableDictionary *report = [@{@"patch_version": @"0.15.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
         report[@"gemini"]=DGGeminiSnapshot();
         report[@"media"]=DGMediaSnapshot();
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled)), @"background_audio": @(atomic_load(&backgroundEnabled)), @"feed_compatibility": @(atomic_load(&feedCompatEnabled))};

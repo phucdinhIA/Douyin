@@ -247,12 +247,35 @@ static UIView *findID(UIView *root,NSString *identifier) {
 @interface AWEPlayVideoViewController : UIViewController
 @property(nonatomic,strong) AWEAwemeModel *model;
 @property(nonatomic) double playback;
+@property(nonatomic) BOOL playing;
+@property(nonatomic) NSUInteger pauseCalls,resumeCalls;
 - (double)currentPlaybackTime;
+- (BOOL)pause;
+- (BOOL)isPlaying;
+- (void)resumePlayVideo;
 @end
 @implementation AWEPlayVideoViewController
 - (void)viewDidAppear:(BOOL)animated {[super viewDidAppear:animated];}
 - (void)viewWillDisappear:(BOOL)animated {[super viewWillDisappear:animated];}
 - (double)currentPlaybackTime {return self.playback;}
+- (BOOL)pause {self.playing=NO;self.pauseCalls++;return YES;}
+- (BOOL)isPlaying {return self.playing;}
+- (void)resumePlayVideo {self.playing=YES;self.resumeCalls++;}
+@end
+@interface MissedAppearancePlayer : AWEPlayVideoViewController
+@end
+@implementation MissedAppearancePlayer
+- (void)viewDidAppear:(BOOL)animated {(void)animated;}
+@end
+@interface AWECommentModel : NSObject
+@property(nonatomic,copy) NSString *content;
+@end
+@implementation AWECommentModel
+@end
+@interface AWECommentNewFeedCell : UIView
+@property(nonatomic,strong) AWECommentModel *commentModel;
+@end
+@implementation AWECommentNewFeedCell
 @end
 @interface AWECommentContainerViewController : UIViewController
 @end
@@ -364,12 +387,24 @@ static NSUInteger countText(UIView *view, NSString *text) {
 - (void)showMediaSamples {
     NSURLSessionConfiguration *cfg=NSURLSessionConfiguration.ephemeralSessionConfiguration;cfg.protocolClasses=@[MediaFixtureProtocol.class];DGMediaFixtureConfiguration(cfg,nil);
     DGMediaInstall(nil);check([DGMediaSnapshot()[@"hooks_installed"] integerValue]==7,@"media installs only seven verified native ABI hooks");
-    AWEPlayVideoViewController *player=[AWEPlayVideoViewController new];AWEAwemeModel *model=[AWEAwemeModel new];model.itemID=@"7534679152504376595";player.model=model;player.playback=0.5;
+    AWEPlayVideoViewController *player=[AWEPlayVideoViewController new];AWEAwemeModel *model=[AWEAwemeModel new];model.itemID=@"7534679152504376595";player.model=model;player.playback=0.5;player.playing=YES;
     player.view.backgroundColor=UIColor.darkGrayColor;self.window.rootViewController=player;[player viewDidAppear:NO];[self.window layoutIfNeeded];
     UILabel *title=label(player.view,@"Video fixture · phụ đề theo thời gian phát",220);title.frame=CGRectMake(18,220,self.window.bounds.size.width-36,60);title.numberOfLines=0;title.textColor=UIColor.whiteColor;
-    UIButton *button=(UIButton *)findID(player.view,@"vietnamese-captions-button");UILabel *caption=(UILabel *)findID(player.view,@"vietnamese-captions-text");
+    UIButton *button=(UIButton *)findID(self.window,@"vietnamese-captions-button");UILabel *caption=(UILabel *)findID(self.window,@"vietnamese-captions-text");
     check(button && caption.hidden && atomic_load(&mediaRequests)==0,@"video appearance adds one opt-in button and sends no provider requests");
-    [button sendActionsForControlEvents:UIControlEventTouchUpInside];mediaWait(^BOOL{return ![DGMediaSnapshot()[@"caption_running"] boolValue];});DGMediaFixtureTick(player);
+    DGMediaAttachWindow(self.window);DGMediaAttachWindow(self.window);NSUInteger shortcutCount=0;
+    for (UIGestureRecognizer *gesture in self.window.gestureRecognizers) if ([gesture isKindOfClass:UITapGestureRecognizer.class] && ((UITapGestureRecognizer *)gesture).numberOfTapsRequired==4) {
+        UITapGestureRecognizer *tap=(UITapGestureRecognizer *)gesture;shortcutCount++;
+        check(tap.numberOfTouchesRequired==1 && !tap.cancelsTouchesInView && !tap.delaysTouchesBegan && !tap.delaysTouchesEnded,@"four taps require one finger and preserve native video touches without delay");
+    }
+    check(shortcutCount==1 && atomic_load(&mediaRequests)==0,@"shortcut attachment is idempotent and fewer than four taps have no action configured");
+    check(DGMediaFixtureShortcut(self.window,CGPointMake(280,300)),@"four-tap production routing starts current visible video");
+    check(!player.playing && player.pauseCalls==1 && [DGMediaSnapshot()[@"caption_waiting"] boolValue],@"video pauses before subtitle provider requests start");
+    int pendingRequests=atomic_load(&mediaRequests);DGMediaFixtureShortcut(self.window,CGPointMake(280,300));
+    check([DGMediaSnapshot()[@"caption_running"] boolValue] && atomic_load(&mediaRequests)==pendingRequests,@"repeated four taps neither cancel nor duplicate pending subtitle work");
+    player.playing=YES;DGMediaFixtureTick(player);check(!player.playing && player.pauseCalls==2,@"native playback cannot run ahead while subtitles are being prepared");
+    mediaWait(^BOOL{return ![DGMediaSnapshot()[@"caption_running"] boolValue];});DGMediaFixtureTick(player);
+    check(player.playing && player.resumeCalls==1 && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"complete subtitles resume the same video once");
     check(!caption.hidden && [caption.text isEqual:@"Xin chào"],@"caption extraction transcription translation and overlay complete via mock pipeline");
     DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin chào"],@"paused playback holds caption without advancing wall time");
     player.playback=1.5;DGMediaFixtureTick(player);check(caption.hidden,@"speech gap hides previous cue");
@@ -381,13 +416,39 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];check(caption.hidden,@"subtitle off hides overlay immediately");
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];DGMediaFixtureTick(player);check(!caption.hidden && atomic_load(&mediaRequests)==requests,@"subtitle re-enable uses complete cache without API cost");
     AWEAwemeModel *other=[AWEAwemeModel new];other.itemID=@"7683814443658054955";player.model=other;check(caption.hidden && ![DGMediaSnapshot()[@"caption_showing"] boolValue],@"changing native video model cancels and clears prior subtitles");
-    [button sendActionsForControlEvents:UIControlEventTouchUpInside];[NSNotificationCenter.defaultCenter postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];check(caption.hidden && ![DGMediaSnapshot()[@"caption_running"] boolValue],@"background notification cancels pending caption pipeline");
+    NSUInteger resumed=player.resumeCalls;
+    [button sendActionsForControlEvents:UIControlEventTouchUpInside];[button sendActionsForControlEvents:UIControlEventTouchUpInside];
+    check(player.playing && player.resumeCalls==resumed+1 && ![DGMediaSnapshot()[@"caption_running"] boolValue],@"manual cancellation restores playback rather than leaving video paused");
+    [button sendActionsForControlEvents:UIControlEventTouchUpInside];mediaWait(^BOOL{return ![DGMediaSnapshot()[@"caption_running"] boolValue];});
+    check(player.playing && ![DGMediaSnapshot()[@"caption_waiting"] boolValue] && [button.currentTitle isEqual:@"Thử lại phụ đề"],@"provider failure restores playback and exposes manual retry");
+    resumed=player.resumeCalls;[button sendActionsForControlEvents:UIControlEventTouchUpInside];[NSNotificationCenter.defaultCenter postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];check(caption.hidden && ![DGMediaSnapshot()[@"caption_running"] boolValue] && player.resumeCalls==resumed,@"background cancels pipeline without unexpectedly resuming video");
+    // An embedded player that never called the hooked native appearance method.
+    UIViewController *host=[UIViewController new];MissedAppearancePlayer *late=[MissedAppearancePlayer new];late.model=model;late.playback=0.5;late.playing=YES;
+    [host addChildViewController:late];late.view.frame=self.window.bounds;[host.view addSubview:late.view];[late didMoveToParentViewController:host];
+    AWEPlayVideoViewController *hiddenPlayer=[AWEPlayVideoViewController new];hiddenPlayer.model=other;[host addChildViewController:hiddenPlayer];hiddenPlayer.view.frame=self.window.bounds;hiddenPlayer.view.hidden=YES;[host.view addSubview:hiddenPlayer.view];
+    UIView *nativeOverlay=[[UIView alloc] initWithFrame:self.window.bounds];[host.view addSubview:nativeOverlay];self.window.rootViewController=host;[self.window layoutIfNeeded];
+    DGMediaAttachWindow(self.window);check(!late.pauseCalls && !hiddenPlayer.pauseCalls,@"late-install recovery adds UI without automatically starting paid work");
+    check(DGMediaFixtureShortcut(self.window,CGPointMake(280,300)) && late.pauseCalls==1 && !hiddenPlayer.pauseCalls,@"shortcut resolves embedded visible player beneath native sibling overlay and excludes hidden player");
+    mediaWait(^BOOL{return ![DGMediaSnapshot()[@"caption_running"] boolValue];});
+    UIButton *nativeControl=[UIButton buttonWithType:UIButtonTypeSystem];nativeControl.frame=CGRectMake(250,280,80,80);[nativeOverlay addSubview:nativeControl];
+    int controlRequests=atomic_load(&mediaRequests);check(!DGMediaFixtureShortcut(self.window,CGPointMake(280,300)) && atomic_load(&mediaRequests)==controlRequests,@"four taps on native controls do not start captions");
+    [nativeControl removeFromSuperview];
+    UIViewController *modal=[UIViewController new];[host presentViewController:modal animated:NO completion:nil];mediaWait(^BOOL{return modal.view.window!=nil;});
+    check(!DGMediaFixtureShortcut(self.window,CGPointMake(280,300)),@"presented modal prevents resolving underlying player");
+    [host dismissViewControllerAnimated:NO completion:nil];
     AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.text=@"视频很好，谢谢！";[comments.view addSubview:native];
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"隐藏的评论";hidden.hidden=YES;[comments.view addSubview:hidden];
     label(comments.view,@"Username must not be captured",140);ServalMarkdownView *analysis=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(10,380,320,50)];analysis.content=@"AI summary must not be captured";[comments.view addSubview:analysis];[comments viewDidAppear:NO];[comments.view layoutIfNeeded];
     check([DGMediaReadVisibleComments(comments.view) isEqual:@[@"视频很好，谢谢！"]],@"GTX captures only visible native comment text excluding names hidden comments and AI");
+    UIView *wrapper=[[UIView alloc] initWithFrame:CGRectZero];[comments.view addSubview:wrapper];
+    AWECommentNewFeedCell *drawn=[[AWECommentNewFeedCell alloc] initWithFrame:CGRectMake(18,300,310,45)];AWECommentModel *commentModel=[AWECommentModel new];commentModel.content=@"模型评论";drawn.commentModel=commentModel;[wrapper addSubview:drawn];
+    check([DGMediaReadVisibleComments(comments.view) containsObject:commentModel.content],@"GTX reads audited model from custom-drawn cell inside zero-size non-clipping wrapper");
+    wrapper.clipsToBounds=YES;check(![DGMediaReadVisibleComments(comments.view) containsObject:commentModel.content],@"GTX respects clipping wrappers and does not send invisible comment model");wrapper.clipsToBounds=NO;
+    drawn.frame=CGRectMake(18,-100,310,45);check(![DGMediaReadVisibleComments(comments.view) containsObject:commentModel.content],@"GTX excludes offscreen model cells");[wrapper removeFromSuperview];
     UIButton *entry=(UIButton *)findID(comments.view,@"gtx-comments-button");check(entry && atomic_load(&commentRequests)==0,@"opening comments does not automatically translate or call GTX");
+    // Native comments may be rendered as a sibling outside the hooked container.
+    [native removeFromSuperview];[self.window addSubview:native];
     [entry sendActionsForControlEvents:UIControlEventTouchUpInside];mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
     UINavigationController *sheet=(UINavigationController *)comments.presentedViewController;UITableViewController *table=(UITableViewController *)sheet.topViewController;[table.view layoutIfNeeded];NSIndexPath *row=[NSIndexPath indexPathForRow:0 inSection:0];
     check([table.tableView numberOfRowsInSection:0]==1,@"GTX sheet lists selected visible comment without changing original");
@@ -395,6 +456,9 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"] && [native.text isEqual:@"视频很好，谢谢！"] && atomic_load(&commentRequests)==1,@"GTX shows Vietnamese alongside untouched Chinese original");
     [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];check(atomic_load(&commentRequests)==1,@"reselecting translated comment uses cache without network");
     [self saveWindowImage:@"ui-gtx-comments.png"];
+    [native removeFromSuperview];[comments.view addSubview:native];[comments dismissViewControllerAnimated:NO completion:nil];
+    DGMediaOpenComments(self.window);mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
+    check([((UITableViewController *)((UINavigationController *)comments.presentedViewController).topViewController).tableView numberOfRowsInSection:0]==1,@"settings fallback opens GTX using visible semantic comment text without a native button");
 }
 
 - (void)showVisualSamples {
@@ -902,7 +966,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
         UIAlertController *sheet=(UIAlertController *)self.host.presentedViewController;
         if (![sheet isKindOfClass:UIAlertController.class]) sheet=(UIAlertController *)self.navigation.presentedViewController;
         check([sheet isKindOfClass:UIAlertController.class] && [sheet.title isEqualToString:@"Douyin"],@"diagnostics sheet can actually be presented on legacy window");
-        check(sheet.actions.count==12,@"settings expose six switches, Gemini actions, two public web actions, copy and close");
+        check(sheet.actions.count==13,@"settings expose six switches, GTX fallback, Gemini actions, two public web actions, copy and close");
         check([sheet.actions[5].title isEqualToString:@"Feed compatibility: ON"],@"feed transport compatibility is exposed and enabled by default");
         [self saveWindowImage:@"ui-feed-compat.png"];
         [sheet dismissViewControllerAnimated:NO completion:^{
