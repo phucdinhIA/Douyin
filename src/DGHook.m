@@ -49,6 +49,7 @@ static NSString *DGErrorCategory(NSError *error) {
         @"BDWebImageHeifDecoderErrorDomain":@"BDHeif", @"BDWebImageVvicDecoderErrorDomain":@"BDVvic",
         @"kTTNetworkErrorDomain":@"TTNetwork", @"kAWEDCFeedErrorDomain":@"DCFeed",
         @"AWEDataLayerNetworkErrorDomain":@"DataNetwork", @"AWEDataLayerBaseErrorDomain":@"DataLayer",
+        @"com.aweme.network.error":@"AwemeNetwork", @"com.bytedance.AwemeError":@"AwemeAPI",
         @"kAWEDCFeedAISearchSecurityErrorDomain":@"DCSearchSecurity", @"AWEDCFeedAISearchErrorDomain":@"DCSearch"}; });
     return known[domain] ?: @"App";
 }
@@ -131,6 +132,8 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
         returnType = @"v"; arguments = @[@"@", @":", @"Q", @"@", @"@"];
     } else if ([kind isEqualToString:@"observeImageFinish"]) {
         returnType = @"v"; arguments = @[@"@", @":", @"@", @"@", @"@", @"@", @"q"];
+    } else if ([kind isEqualToString:@"observeJSONResponse4"]) {
+        returnType=@"@";arguments=@[@"@",@":",@"@",@"@",@"@",@"^@"];
     } else if ([kind isEqualToString:@"observeSearchStatus"]) {
         returnType = boolean; arguments = @[@"@", @":", @"@", @"@"];
     } else return NO;
@@ -330,6 +333,28 @@ static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecor
         block = ^id(id self) {
             id result = ((id (*)(id,SEL))original)(self,sel);
             if (enabled()) { DGRecordFeedList(event,result,0,record); DGRecordResponseStatus(event,self,record); }
+            return result;
+        };
+    } else if ([kind isEqualToString:@"observeJSONResponse4"]) {
+        block=^id(id self,id response,id json,id responseError,NSError *__autoreleasing *resultError) {
+            id result=((id (*)(id,SEL,id,id,id,NSError *__autoreleasing *))original)(self,sel,response,json,responseError,resultError);
+            NSError *error=resultError ? *resultError : nil;
+            if (enabled() && [error isKindOfClass:NSError.class] &&
+                [error.domain isEqualToString:@"com.aweme.network.error"] && (error.code==-11001 || error.code==-4)) {
+                DGRecordError(@"JSON response",error,record);
+                NSString *shape=[json isKindOfClass:NSDictionary.class] ? @"dictionary" :
+                    [json isKindOfClass:NSData.class] ? @"data" : [json isKindOfClass:NSString.class] ? @"string" : json ? @"other" : @"nil";
+                record([@"JSON response input " stringByAppendingString:shape],1);
+                if ([response isKindOfClass:NSHTTPURLResponse.class]) {
+                    NSInteger status=[response statusCode];
+                    if (status>=100 && status<=599) record([NSString stringWithFormat:@"JSON response HTTP %ld",(long)status],1);
+                    NSString *mime=[[response MIMEType] lowercaseString];
+                    NSString *type=[mime isEqualToString:@"application/json"] ? @"json" :
+                        [mime isEqualToString:@"text/html"] ? @"html" : [mime isEqualToString:@"application/octet-stream"] ? @"binary" : @"other";
+                    record([@"JSON response content type " stringByAppendingString:type],1);
+                }
+                if ([responseError isKindOfClass:NSError.class]) DGRecordError(@"JSON transport",responseError,record);
+            }
             return result;
         };
     } else if ([kind isEqualToString:@"observeSearchStatus"]) {

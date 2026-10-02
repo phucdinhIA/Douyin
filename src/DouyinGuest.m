@@ -490,6 +490,7 @@ static void DGInstallNative(void) {
 - (void)attachWindow:(UIWindow *)window;
 - (void)open:(UITapGestureRecognizer *)gesture;
 - (void)presentSettingsInWindow:(UIWindow *)window;
+- (void)presentPublicFinder:(UIViewController *)presenter profileLink:(BOOL)profileLink;
 @end
 
 @implementation DGSettings
@@ -520,11 +521,45 @@ static void DGInstallNative(void) {
     if (gesture.state != UIGestureRecognizerStateRecognized || ![gesture.view isKindOfClass:UIWindow.class]) return;
     [self presentSettingsInWindow:(UIWindow *)gesture.view];
 }
+- (void)presentPublicFinder:(UIViewController *)presenter profileLink:(BOOL)profileLink {
+    NSString *message=profileLink ? @"Paste an official HTTPS Douyin /user/ link. Opens in your browser; availability depends on Douyin." :
+        @"Search public Douyin profiles with Bing. Your name query is sent when you tap Search. Results and guest video availability may vary.";
+    UIAlertController *prompt=[UIAlertController alertControllerWithTitle:profileLink ? @"Open public profile" : @"Find public profiles" message:message preferredStyle:UIAlertControllerStyleAlert];
+    [prompt addTextFieldWithConfigurationHandler:^(UITextField *field) {
+        field.placeholder=profileLink ? @"https://www.douyin.com/user/..." : @"Creator name";
+        field.autocorrectionType=UITextAutocorrectionTypeNo;
+        if (profileLink) {field.keyboardType=UIKeyboardTypeURL;field.autocapitalizationType=UITextAutocapitalizationTypeNone;}
+    }];
+    __weak UIAlertController *weakPrompt=prompt;
+    [prompt addAction:[UIAlertAction actionWithTitle:profileLink ? @"Open" : @"Search" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+        UIAlertController *activePrompt=weakPrompt;
+        NSString *input=activePrompt.textFields.firstObject.text;
+        NSURL *url=profileLink ? DGPublicProfileURL(input) : DGPublicProfileSearchURL(input);
+        void (^showError)(NSString *)=^(NSString *detail) {
+            void (^presentError)(void)=^{
+                UIAlertController *error=[UIAlertController alertControllerWithTitle:@"Cannot open" message:detail preferredStyle:UIAlertControllerStyleAlert];
+                [error addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil]];
+                if (!presenter.presentedViewController) [presenter presentViewController:error animated:YES completion:nil];
+            };
+            if (presenter.presentedViewController==activePrompt) [presenter dismissViewControllerAnimated:YES completion:presentError];
+            else presentError();
+        };
+        if (!url) {showError(profileLink ? @"Use an official HTTPS Douyin /user/ link." : @"Enter a name of 1–120 characters.");return;}
+        [UIApplication.sharedApplication openURL:url options:@{} completionHandler:^(BOOL success) {
+            dispatch_async(dispatch_get_main_queue(),^{
+                DGCount(success ? @"Public profile browser opened" : @"Public profile browser unavailable",1);
+                if (!success) showError(@"Your browser could not open this page.");
+            });
+        }];
+    }]];
+    [prompt addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [presenter presentViewController:prompt animated:YES completion:nil];
+}
 - (void)presentSettingsInWindow:(UIWindow *)window {
     UIViewController *presenter = window.rootViewController;
     while (presenter.presentedViewController) presenter = presenter.presentedViewController;
     if (!presenter || [presenter isKindOfClass:UIAlertController.class]) return;
-    NSString *message = [NSString stringWithFormat:@"Test build • 40.6.0 (406019)\nNative hooks: %lu/%lu active\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)DGActiveHookCount(), (unsigned long)hookSpecs.count];
+    NSString *message = [NSString stringWithFormat:@"Test build • 40.7.0 (406019)\nNative hooks: %lu/%lu active\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)DGActiveHookCount(), (unsigned long)hookSpecs.count];
     UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Douyin Guest" message:message preferredStyle:UIAlertControllerStyleAlert];
     NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls", @"Search diagnostics", @"Background audio"];
     NSArray *keys = @[@"DGGuestEnabled", @"DGAdsEnabled", @"DGEnglishEnabled", @"DGSearchEnabled", @"DGBackgroundEnabled"];
@@ -541,8 +576,14 @@ static void DGInstallNative(void) {
             if (i == 4) atomic_store(&backgroundEnabled, next);
         }]];
     }
+    __weak UIAlertController *weakSheet=sheet;
+    for (NSNumber *link in @[@NO,@YES]) {
+        [sheet addAction:[UIAlertAction actionWithTitle:link.boolValue ? @"Open public profile link" : @"Find public profiles (web)" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+            [weakSheet dismissViewControllerAnimated:YES completion:^{[self presentPublicFinder:presenter profileLink:link.boolValue];}];
+        }]];
+    }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.6.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        NSMutableDictionary *report = [@{@"patch_version": @"0.7.0-test", @"app_version": @"40.7.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled)), @"background_audio": @(atomic_load(&backgroundEnabled))};
         report[@"search_adapter_hooks"] = DGSearchAdapterSnapshot();
         report[@"native_hooks_active"] = @(DGActiveHookCount());
@@ -566,7 +607,7 @@ __attribute__((constructor)) static void DGStart(void) {
         BOOL supportedID = [bundle.bundleIdentifier isEqualToString:@"com.ss.iphone.ugc.Aweme"] ||
                            [bundle.bundleIdentifier hasPrefix:@"com.ss.iphone.ugc.Aweme."];
         if (!supportedID ||
-            ![[bundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] isEqualToString:@"40.6.0"] ||
+            ![[bundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] isEqualToString:@"40.7.0"] ||
             ![[bundle objectForInfoDictionaryKey:@"CFBundleVersion"] isEqualToString:@"406019"]) return;
         id words = DGReadJSON(@"translations"), specs = DGReadJSON(@"hooks");
         if (![words isKindOfClass:NSDictionary.class] || ![specs isKindOfClass:NSArray.class]) return;

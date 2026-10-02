@@ -3,6 +3,20 @@
 #import "DGPolicy.h"
 #import "DGHook.h"
 
+@interface TestJSON : NSObject
+@property NSUInteger calls;
+@property (strong) NSError *error;
+@property (strong) id output;
+- (id)response:(id)response json:(id)json error:(id)transport resultError:(NSError *__autoreleasing *)error;
+@end
+@implementation TestJSON
+- (id)response:(id)response json:(id)json error:(id)transport resultError:(NSError *__autoreleasing *)error {
+    (void)response;(void)json;(void)transport;self.calls++;
+    if (error) *error=self.error;
+    return self.output;
+}
+@end
+
 @interface TestBackground : NSObject
 @property NSUInteger calls;
 @property NSInteger state;
@@ -419,6 +433,31 @@ int main(void) {
         check([newEvents[@"TestImageFeed failed: underlying error cycle"] unsignedIntegerValue]==1,@"NSError cycle ends without recursion");
         NSError *chain=under;for (NSUInteger i=0;i<6;i++) chain=[NSError errorWithDomain:@"BDWebImageErrorDomain" code:1 userInfo:@{NSUnderlyingErrorKey:chain}];
         [imageFeed failed:chain];check([newEvents[@"TestImageFeed failed: underlying error depth capped"] unsignedIntegerValue]==1,@"underlying-error walk is bounded");
+        NSURL *searchURL=DGPublicProfileSearchURL(@"  刘德华 & name=other  ");
+        NSURLComponents *searchComponents=[NSURLComponents componentsWithURL:searchURL resolvingAgainstBaseURL:NO];
+        check([searchComponents.host isEqualToString:@"www.bing.com"] && searchComponents.queryItems.count==1 &&
+            [searchComponents.queryItems[0].value isEqualToString:@"site:douyin.com/user/ 刘德华 & name=other"],@"public search keeps Unicode and reserved characters in one encoded query");
+        check(!DGPublicProfileSearchURL(@" \n") && !DGPublicProfileSearchURL(@"name\nother") &&
+            !DGPublicProfileSearchURL([@"x" stringByPaddingToLength:121 withString:@"x" startingAtIndex:0]),@"public search rejects empty, control and oversized input");
+        check([DGPublicProfileURL(@"https://douyin.com/user/MS4wAb_-12?tracking=private").absoluteString isEqualToString:@"https://www.douyin.com/user/MS4wAb_-12"],@"official profile link is canonicalized without tracking query");
+        for (NSString *link in @[@"http://douyin.com/user/id",@"https://douyin.com.evil.test/user/id",@"https://douyin.com@evil.test/user/id",@"https://u:p@douyin.com/user/id",@"https://douyin.com:443/user/id",@"https://douyin.com/user/%2fid",@"https://douyin.com/user/../id",@"https://douyin.com/video/123",@"javascript:alert(1)",@"https://douyin.com/user/id#fragment"])
+            check(!DGPublicProfileURL(link),@"profile links reject untrusted hosts, credentials, schemes and paths");
+        Method jsonMethod=class_getInstanceMethod(TestJSON.class,@selector(response:json:error:resultError:));
+        __block BOOL observeJSON=YES;
+        check(DGInstallHook(@{@"class":@"TestJSON",@"selector":@"response:json:error:resultError:",@"operation":@"observeJSONResponse4",@"types":[NSString stringWithUTF8String:method_getTypeEncoding(jsonMethod)]},^BOOL{return observeJSON;},recordNew),@"JSON pointer ABI observer installs");
+        TestJSON *serializer=[TestJSON new];serializer.output=@"output";
+        serializer.error=[NSError errorWithDomain:@"com.aweme.network.error" code:-11001 userInfo:@{NSLocalizedDescriptionKey:@"PRIVATE-html-payload"}];
+        NSHTTPURLResponse *http=[[NSHTTPURLResponse alloc] initWithURL:[NSURL URLWithString:@"https://private.invalid/?cookie=PRIVATE"] statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:@{@"Content-Type":@"text/html"}];
+        NSError *resultError=nil;
+        id result=[serializer response:http json:@"PRIVATE-html" error:nil resultError:&resultError];
+        check(result==serializer.output && resultError==serializer.error && serializer.calls==1,@"JSON observer preserves output and NSError pointer and forwards once");
+        check([newEvents[@"JSON response error AwemeNetwork -11001"] unsignedIntegerValue]==1 &&
+            [newEvents[@"JSON response HTTP 200"] unsignedIntegerValue]==1 && [newEvents[@"JSON response content type html"] unsignedIntegerValue]==1 &&
+            [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,@"JSON classification reveals shape and HTTP status without body, URL, headers or secrets");
+        before=[newEvents copy];[serializer response:nil json:nil error:nil resultError:NULL];
+        check(serializer.calls==2 && [newEvents isEqual:before],@"nullable result-error pointer is forwarded safely");
+        observeJSON=NO;[serializer response:http json:@{} error:nil resultError:&resultError];
+        check(serializer.calls==3 && resultError==serializer.error && [newEvents isEqual:before],@"JSON observation OFF preserves native failure without collecting events");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
     return 0;

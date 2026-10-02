@@ -29,6 +29,7 @@ OPERATIONS = {
     'observeImageFinish': 'v56@0:8@16@24@32@40q48', 'observeListGetter': '@16@0:8',
     'backgroundSwitch': 'B16@0:8', 'backgroundState': 'q16@0:8',
     'observeBool0': 'B16@0:8', 'observeVoid0': 'v16@0:8',
+    'observeJSONResponse4': '@48@0:8@16@24@32^@40',
 }
 
 def sha256(path: pathlib.Path) -> str:
@@ -190,8 +191,12 @@ def validate_resources(resource_dir: pathlib.Path):
         if not isinstance(spec['class_method'], bool): raise ValueError('Invalid method kind')
         if spec['operation'] in ('backgroundSwitch','backgroundState'):
             expected={'switchState':'backgroundSwitch','audioSwitchState':'backgroundState','audioSceneState':'backgroundState'}
-            if spec['class']!='AWEAwemeBackgroundPlayStoreService' or spec['class_method'] or spec['feature']!='background' or expected.get(spec['selector'])!=spec['operation']:
+            component=(spec['class']=='AWEFeedBGPlaySettings' and spec['class_method'] and spec['selector']=='enableBGPlayComponent' and spec['operation']=='backgroundSwitch')
+            store=(spec['class']=='AWEAwemeBackgroundPlayStoreService' and not spec['class_method'] and expected.get(spec['selector'])==spec['operation'])
+            if spec['feature']!='background' or not (component or store):
                 raise ValueError('Background preference hook outside verified local store')
+        if spec['operation']=='observeJSONResponse4' and (spec['class'],spec['selector'],spec['class_method'],spec['feature'])!=('AWEJSONResponseSerializer','responseObjectForResponse:jsonObj:responseError:resultError:',False,'diagnostics'):
+            raise ValueError('JSON observer outside verified serializer')
     for key, value in translations.items():
         if not isinstance(key, str) or not isinstance(value, str) or not key or not value:
             raise ValueError('Invalid translation')
@@ -237,6 +242,10 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
             info['CFBundleDisplayName'] = 'Douyin Guest'
             info['CFBundleDevelopmentRegion'] = 'en'
             info['DGSourceSHA256'] = SOURCE_SHA256
+            # Allow the existing native full-screen controllers to request landscape.
+            # Their controller/delegate policies still decide when rotation occurs.
+            info['UISupportedInterfaceOrientations'] = ['UIInterfaceOrientationPortrait',
+                'UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight']
             # App Store thinning leaves an exact-model allowlist. It can reject
             # newer arm64 phones before launch; retain family/capability/minimum OS checks.
             if 'UISupportedDevices' in info:

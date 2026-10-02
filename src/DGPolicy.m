@@ -3,6 +3,29 @@
 #import <dispatch/dispatch.h>
 #include <string.h>
 
+NSURL *DGPublicProfileSearchURL(NSString *name) {
+    if (![name isKindOfClass:NSString.class]) return nil;
+    NSString *query=[name stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    if (!query.length || query.length>120 || [query rangeOfCharacterFromSet:NSCharacterSet.controlCharacterSet].location!=NSNotFound) return nil;
+    NSURLComponents *url=[NSURLComponents new];url.scheme=@"https";url.host=@"www.bing.com";url.path=@"/search";
+    url.queryItems=@[[NSURLQueryItem queryItemWithName:@"q" value:[@"site:douyin.com/user/ " stringByAppendingString:query]]];
+    return url.URL;
+}
+
+NSURL *DGPublicProfileURL(NSString *input) {
+    if (![input isKindOfClass:NSString.class] || input.length>2048) return nil;
+    NSString *value=[input stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    NSURLComponents *url=[NSURLComponents componentsWithString:value];
+    if (![url.scheme.lowercaseString isEqualToString:@"https"] ||
+        ![@[@"douyin.com",@"www.douyin.com"] containsObject:url.host.lowercaseString] ||
+        url.user || url.password || url.port || url.fragment) return nil;
+    NSString *path=url.percentEncodedPath;
+    NSRegularExpression *pattern=[NSRegularExpression regularExpressionWithPattern:@"^/user/[A-Za-z0-9_-]{1,256}/?$" options:0 error:NULL];
+    if ([pattern numberOfMatchesInString:path options:0 range:NSMakeRange(0,path.length)]!=1) return nil;
+    url.host=@"www.douyin.com";url.scheme=@"https";url.query=nil;
+    return url.URL;
+}
+
 static NSRange DGCollectionPrefix(NSString *text) {
     for (NSString *prefix in @[@"观看完整合集：", @"观看完整合集:", @"合集 · "]) {
         if ([text hasPrefix:prefix] && text.length > prefix.length)

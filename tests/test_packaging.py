@@ -72,12 +72,12 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(entry.compress_type,zipfile.ZIP_STORED)
     def test_resources_validate_and_no_identity_hooks(self):
         hooks,words=patch.validate_resources(ROOT/'resources')
-        self.assertEqual(len(hooks),63)
+        self.assertEqual(len(hooks),75)
         self.assertEqual(words['首页'],'Home')
         self.assertFalse(any(x['selector'] in ['isLogin','isLoggedIn','hasMore','isAds'] for x in hooks))
         self.assertEqual(sum(x['feature']=='search' for x in hooks),5)
         self.assertEqual({x['selector'] for x in hooks if x['feature']=='background'},
-                         {'switchState','audioSwitchState','audioSceneState'})
+                         {'switchState','audioSwitchState','audioSceneState','enableBGPlayComponent'})
         self.assertFalse(any(x['selector'] in ['listenVideoStatus','setListenVideoStatus:',
             'isVIPSubscribeContentAllowedListenWithAwemeModel:','shouldEnterBackgroundPlayMode']
             and x['operation'] not in ('observeBool0',) for x in hooks))
@@ -92,7 +92,9 @@ class PackagingTests(unittest.TestCase):
         main = {'CFBundleIdentifier':'com.ss.iphone.ugc.Aweme', 'CFBundleShortVersionString':'40.6.0',
                 'CFBundleVersion':'406019', 'UISupportedDevices':['iPhone9,1'],
                 'UIDeviceFamily':[1,2], 'UIRequiredDeviceCapabilities':['arm64'], 'MinimumOSVersion':'15.0',
-                'UIBackgroundModes':['audio','fetch','voip','remote-notification']}
+                'UIBackgroundModes':['audio','fetch','voip','remote-notification'],
+                'UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait'],
+                'UISupportedInterfaceOrientations~ipad':['UIInterfaceOrientationPortrait','UIInterfaceOrientationPortraitUpsideDown','UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight']}
         extension = {'CFBundleIdentifier':'fixture.extension', 'UISupportedDevices':['iPhone9,1'],
                      'UIDeviceFamily':[1], 'UIRequiredDeviceCapabilities':{'arm64':True}, 'MinimumOSVersion':'15.0'}
         main_path=patch.APP+'Info.plist'
@@ -118,7 +120,10 @@ class PackagingTests(unittest.TestCase):
                     self.assertNotIn('UISupportedDevices',actual)
                     for key in ['UIDeviceFamily','UIRequiredDeviceCapabilities','MinimumOSVersion']:
                         self.assertEqual(actual[key],expected[key])
-                    if path==main_path:self.assertEqual(actual['UIBackgroundModes'],expected['UIBackgroundModes'])
+                    if path==main_path:
+                        self.assertEqual(actual['UIBackgroundModes'],expected['UIBackgroundModes'])
+                        self.assertEqual(actual['UISupportedInterfaceOrientations'],['UIInterfaceOrientationPortrait','UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight'])
+                        self.assertEqual(actual['UISupportedInterfaceOrientations~ipad'],expected['UISupportedInterfaceOrientations~ipad'])
                 self.assertEqual(result.read(untouched_path),untouched)
             self.assertEqual({x['path'] for x in report['removed_thinning_allowlists']},{main_path,extension_path})
             self.assertNotIn(untouched_path,report['modified'])

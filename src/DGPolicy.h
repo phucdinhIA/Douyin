@@ -1,6 +1,8 @@
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
+NSURL * _Nullable DGPublicProfileSearchURL(NSString *name);
+NSURL * _Nullable DGPublicProfileURL(NSString *input);
 NSString *DGTranslate(NSString *text, NSDictionary<NSString *, NSString *> *translations);
 // Call only for a verified presentation field/control, never a comment body.
 NSString *DGTranslateControl(NSString *text, NSDictionary<NSString *, NSString *> *translations);

@@ -565,5 +565,113 @@
     "operation": "translateGetter",
     "feature": "english",
     "evidence_imp": "0x10a35d24"
+  },
+  {
+    "class_method": true,
+    "class": "AWEFeedBGPlaySettings",
+    "selector": "enableBGPlayComponent",
+    "types": "B16@0:8",
+    "operation": "backgroundSwitch",
+    "feature": "background",
+    "evidence_imp": "0x12ea8118"
+  },
+  {
+    "class_method": false,
+    "class": "AWEJSONResponseSerializer",
+    "selector": "responseObjectForResponse:jsonObj:responseError:resultError:",
+    "types": "@48@0:8@16@24@32^@40",
+    "operation": "observeJSONResponse4",
+    "feature": "diagnostics",
+    "evidence_imp": "0x12b11b84"
+  },
+  {
+    "class_method": false,
+    "class": "AWEPlayVideoViewController",
+    "selector": "backgroundPlayFeatureEnable",
+    "types": "B16@0:8",
+    "operation": "observeBool0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d3825fc"
+  },
+  {
+    "class_method": false,
+    "class": "AWEPlayVideoViewController",
+    "selector": "backgroundPlaySwitchON",
+    "types": "B16@0:8",
+    "operation": "observeBool0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d38264c"
+  },
+  {
+    "class_method": false,
+    "class": "AWEPlayVideoViewController",
+    "selector": "enableBackgroundPlay",
+    "types": "B16@0:8",
+    "operation": "observeBool0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d383a84"
+  },
+  {
+    "class_method": false,
+    "class": "AWEPlayVideoViewController",
+    "selector": "shouldEnterBackgroundPlayMode",
+    "types": "B16@0:8",
+    "operation": "observeBool0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d382750"
+  },
+  {
+    "class_method": false,
+    "class": "AWEPlayVideoViewController",
+    "selector": "backgroundIsPlaying",
+    "types": "B16@0:8",
+    "operation": "observeBool0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d3834a0"
+  },
+  {
+    "class_method": false,
+    "class": "AWEAwemeBackgroundPlayModule",
+    "selector": "shouldResponseNotification",
+    "types": "B16@0:8",
+    "operation": "observeBool0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d0cded8"
+  },
+  {
+    "class_method": false,
+    "class": "AWELandscapeFeedViewController",
+    "selector": "shouldAutorotate",
+    "types": "B16@0:8",
+    "operation": "observeBool0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x15dae94c"
+  },
+  {
+    "class_method": false,
+    "class": "AWEPlayVideoViewController",
+    "selector": "onApplicationDidEnterBackground",
+    "types": "v16@0:8",
+    "operation": "observeVoid0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d36a3a0"
+  },
+  {
+    "class_method": false,
+    "class": "AWEAwemeBackgroundPlayModule",
+    "selector": "appDidEnterBackgroundNotification",
+    "types": "v16@0:8",
+    "operation": "observeVoid0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d0cc13c"
+  },
+  {
+    "class_method": false,
+    "class": "AWEAwemeBackgroundPlayModule",
+    "selector": "viewDidAppear",
+    "types": "v16@0:8",
+    "operation": "observeVoid0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d0cb65c"
   }
 ]
