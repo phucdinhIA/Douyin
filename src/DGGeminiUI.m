@@ -212,6 +212,7 @@ void DGGeminiPresentFrom(UIViewController *presenter) {
 @property(nonatomic,strong) DGGeminiClient *client;
 @property(nonatomic) BOOL hadWindow;
 @property(nonatomic) BOOL tabEntered;
+@property(nonatomic) BOOL automaticSpent;
 - (void)open;
 - (void)start;
 - (void)stop;
@@ -236,6 +237,8 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     __weak DGGeminiEntry *weakSelf=self;
     self.session=[[DGTranslationSession alloc] initWithStore:DGTranslationCache sender:^(NSString *source,void (^completion)(NSString *,NSString *)) {
         DGGeminiEntry *entry=weakSelf;
+        if (entry.automaticSpent) {completion(nil,@"Yêu cầu trước đã dừng. Bấm Dịch lại nếu bạn muốn thử thêm một lượt.");return;}
+        entry.automaticSpent=YES;
         entry.client=[[DGGeminiClient alloc] initWithKey:DGConfig[@"api_key"] model:DGGeminiFastModel
 #ifdef DG_GEMINI_FIXTURE
             configuration:DGTranslationConfiguration
@@ -279,7 +282,10 @@ static __weak DGGeminiEntry *DGActiveTranslation;
 }
 - (void)retryTranslation {
     if (!self.session.active || !DGOn() || !self.owner.view.window) return;
-    [self stop];[self start];
+    [self stop];self.automaticSpent=NO;[self start];
+}
+- (void)becameActive:(NSNotification *)notification {
+    (void)notification;if (self.tabEntered && self.owner.view.window && !self.owner.view.hidden) [self start];
 }
 - (void)stop {
     [self.timer invalidate];self.timer=nil;[self.session leave];self.panel.hidden=YES;self.button.hidden=YES;
@@ -317,7 +323,9 @@ static void DGAttachEntry(UIViewController *owner) {
             [entry.translation.topAnchor constraintEqualToAnchor:entry.status.bottomAnchor constant:8],[entry.translation.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:4],[entry.translation.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-4],[entry.translation.bottomAnchor constraintEqualToAnchor:entry.retry.topAnchor],
             [entry.retry.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:12],[entry.retry.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-12],[entry.retry.bottomAnchor constraintEqualToAnchor:entry.panel.bottomAnchor],[entry.retry.heightAnchor constraintEqualToConstant:44]]];
         objc_setAssociatedObject(owner,&DGEntryKey,entry,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        [NSNotificationCenter.defaultCenter addObserver:entry selector:@selector(becameActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     }
+    if (!entry.tabEntered) entry.automaticSpent=NO;
     entry.tabEntered=YES;[owner.view bringSubviewToFront:entry.panel];[owner.view bringSubviewToFront:entry.button];[entry start];
 }
 static BOOL DGOverride(Class cls,NSString *selector,NSString *types,id (^factory)(IMP)) {

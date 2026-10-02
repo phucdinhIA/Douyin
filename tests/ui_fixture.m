@@ -421,9 +421,15 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(atomic_load(&translationRequests)==1 && [((UILabel *)findID(ai.view,@"gemini-translation-status")).text containsString:@"Không gọi API lại"],@"same analysis reopening shows persistent cache without billing");
     [NSNotificationCenter.defaultCenter postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];
     check(viPanel.hidden && ![DGGeminiSnapshot()[@"translation_active"] boolValue],@"backgrounding stops automatic translation activity");
+    [NSNotificationCenter.defaultCenter postNotificationName:UIApplicationDidBecomeActiveNotification object:nil];translationTime=NSProcessInfo.processInfo.systemUptime;DGGeminiTranslationFixtureTick(ai,translationTime);DGGeminiTranslationFixtureTick(ai,translationTime+4);
+    check(!viPanel.hidden && atomic_load(&translationRequests)==1,@"returning to an explicitly opened AI tab restores cached translation without billing");
+    [ai commentAIParseTabWillLeave];markdown.content=@"新的分析\n";[ai commentAIParseTabDidEnter];translationTime=NSProcessInfo.processInfo.systemUptime;DGGeminiTranslationFixtureTick(ai,translationTime);DGGeminiTranslationFixtureTick(ai,translationTime+4);
+    [ai viewWillDisappear:NO];[ai viewDidAppear:NO];translationTime=NSProcessInfo.processInfo.systemUptime;DGGeminiTranslationFixtureTick(ai,translationTime);DGGeminiTranslationFixtureTick(ai,translationTime+4);
+    check([((UILabel *)findID(ai.view,@"gemini-translation-status")).text containsString:@"Yêu cầu trước đã dừng"],@"returning after cancelling a sent request does not automatically spend a second request in same tab entry");
+    markdown.content=captured;
     [ai commentAIParseTabWillLeave];
     [NSUserDefaults.standardUserDefaults setBool:YES forKey:@"DGGeminiDisabled"];
-    [ai commentAIParseTabDidEnter];DGGeminiTranslationFixtureTick(ai,translationTime+20);check(atomic_load(&translationRequests)==1 && viPanel.hidden,@"Gemini OFF cannot auto-translate on tab entry");[ai commentAIParseTabWillLeave];
+    int requestsBeforeOff=atomic_load(&translationRequests);[ai commentAIParseTabDidEnter];DGGeminiTranslationFixtureTick(ai,translationTime+20);check(atomic_load(&translationRequests)==requestsBeforeOff && viPanel.hidden,@"Gemini OFF cannot auto-translate on tab entry");[ai commentAIParseTabWillLeave];
     AWESearchAIGCQueryContext *queryContext=[AWESearchAIGCQueryContext new];queryContext.query=@"Dịch giúp tôi";
     [ai inputViewSendQueryContext:queryContext sourceFrom:0];
     check(ai.nativeSends==1 && !ai.presentedViewController,@"Gemini OFF retains original submit policy without taking over");
