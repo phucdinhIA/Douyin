@@ -6,6 +6,7 @@ NSString *DGTranslate(NSString *text, NSDictionary<NSString *, NSString *> *tran
 NSString *DGTranslateControl(NSString *text, NSDictionary<NSString *, NSString *> *translations);
 NSAttributedString *DGTranslateControlAttributed(NSAttributedString *text,
                                                  NSDictionary<NSString *, NSString *> *translations);
+NSAttributedString *DGTranslateCollectionAttributed(NSAttributedString *text);
 id DGTranslateEvaluationConfig(id config, NSDictionary<NSString *, NSString *> *translations);
 id DGTranslateSurvey(id payload);
 NSAttributedString *DGTranslateAttributed(NSAttributedString *text,

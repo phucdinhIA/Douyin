@@ -230,8 +230,21 @@ static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecor
                 record([event stringByAppendingString:@" reads"],1);
                 if ([kind isEqualToString:@"translateSurveyGetter"]) translated = DGTranslateSurvey(value);
                 else if ([kind isEqualToString:@"translateRichGetter"] && [value isKindOfClass:NSAttributedString.class])
-                    translated = DGTranslateControlAttributed(value,words);
-                else if ([value isKindOfClass:NSString.class]) translated = DGTranslateControl(value,words);
+                    translated = DGTranslateCollectionAttributed(value);
+                else if ([kind isEqualToString:@"translateGetter"] && [value isKindOfClass:NSString.class]) {
+                    BOOL linked = NO;
+                    if ([name isEqualToString:@"AWEUIKitViewControllerEmptyPageConfig"] && [selectorName isEqualToString:@"informativeText"]) {
+                        SEL rangeSelector=NSSelectorFromString(@"linkRange");
+                        Method rangeMethod=class_getInstanceMethod(object_getClass(self),rangeSelector);
+                        if (rangeMethod && !strcmp(method_getTypeEncoding(rangeMethod),"{_NSRange=QQ}16@0:8")) {
+                            NSRange range=((NSRange (*)(id,SEL))method_getImplementation(rangeMethod))(self,rangeSelector);
+                            linked = range.length > 0;
+                        }
+                    }
+                    // A separate linkRange is measured in source characters.
+                    // Leave linked text intact rather than corrupt its action span.
+                    if (!linked) translated = DGTranslateControl(value,words);
+                }
                 if (![translated isEqual:value]) record([event stringByAppendingString:@" translated"],1);
             }
             return translated;

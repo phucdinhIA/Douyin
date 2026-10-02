@@ -301,6 +301,8 @@ int main(void) {
         check([localizedCollection.string isEqual:@"Collection: 测试合集"] &&
               [[localizedCollection attribute:@"link" atIndex:12 effectiveRange:NULL] isEqual:@"PRIVATE-collection-id"] &&
               [[localizedCollection attribute:@"role" atIndex:12 effectiveRange:NULL] isEqual:@"title"],@"collection prefix translation preserves mixed title content and link attributes");
+        NSAttributedString *bareCollectionTitle=[[NSAttributedString alloc] initWithString:@"满意"];
+        check(DGTranslateCollectionAttributed(bareCollectionTitle)==bareCollectionTitle,@"a bare collection title matching a survey word is preserved by the header getter");
         NSDictionary *configuration=@{@"ratingPointDes":@"一般,满意",@"textPlaceholder":@"回复",@"bizParams":@{@"text":@"满意"},@"postedText":@"满意",@"minCount":@1};
         NSDictionary *localizedConfig=DGTranslateEvaluationConfig(configuration,controlWords);
         check([localizedConfig[@"ratingPointDes"] isEqual:@"Neutral,Satisfied"] &&
@@ -321,6 +323,10 @@ int main(void) {
         check(DGTranslateSurvey(deep)==deep,@"overdeep survey returns original without partial translation");
         NSMutableArray *large=[NSMutableArray new];for (NSUInteger i=0;i<2050;i++) [large addObject:@"满意"];
         check(DGTranslateSurvey(large)==large,@"survey traversal has bounded work and rejects oversized payload atomically");
+        NSMutableDictionary *mutableSurvey=[@{@"options":[NSMutableArray arrayWithObject:[@{@"label":@"满意"} mutableCopy]]} mutableCopy];
+        id mutableEnglish=DGTranslateSurvey(mutableSurvey);
+        check([mutableEnglish isKindOfClass:NSMutableDictionary.class] && [mutableEnglish[@"options"] isKindOfClass:NSMutableArray.class] &&
+              [mutableEnglish[@"options"][0] isKindOfClass:NSMutableDictionary.class] && [mutableSurvey[@"options"][0][@"label"] isEqual:@"满意"],@"mutable survey container contracts are preserved without mutating the source");
         NSMutableDictionary *newEvents=[NSMutableDictionary new];
         DGRecord recordNew=^(NSString *event,NSUInteger n){newEvents[event]=@([newEvents[event] unsignedIntegerValue]+n);};
         __block BOOL localize=YES;

@@ -74,6 +74,7 @@
 @property (copy) NSString *titleText;
 @property (copy) NSString *informativeText;
 @property (copy) NSString *primaryButtonTitle;
+@property NSRange linkRange;
 @end
 @implementation AWEUIKitViewControllerEmptyPageConfig
 @end
@@ -459,6 +460,9 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([emptyConfig.titleText isEqualToString:@"Network error"] && [emptyConfig.informativeText isEqualToString:@"Check your connection and retry"] && [emptyConfig.primaryButtonTitle isEqualToString:@"Retry"],@"native empty config fields translate before any view/window or text measurement exists");
     CGFloat configWidth=[emptyConfig.titleText sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]}].width;
     check(configWidth>[@"网络错误" sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]}].width,@"renderer measuring its config receives the English width");
+    emptyConfig.linkRange=NSMakeRange(0,2);
+    check([emptyConfig.informativeText isEqualToString:@"请检查网络连接后重试"],@"empty config with a separate character link range preserves its source text and action span");
+    emptyConfig.linkRange=NSMakeRange(0,0);
     AWENetworkErrorFixtureView *narrowError=[[AWENetworkErrorFixtureView alloc] initWithFrame:CGRectMake(0,0,300,100)];[parent addSubview:narrowError];
     UILabel *narrowTitle=label(narrowError,@"网络错误",0);narrowTitle.frame=CGRectMake(0,0,60,28);
     UILabel *narrowDetail=label(narrowError,@"请检查网络连接后重试",30);narrowDetail.frame=CGRectMake(0,30,120,28);

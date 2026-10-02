@@ -37,8 +37,7 @@ NSString *DGTranslateControl(NSString *text, NSDictionary<NSString *, NSString *
     return text;
 }
 
-NSAttributedString *DGTranslateControlAttributed(NSAttributedString *text,
-                                                 NSDictionary<NSString *, NSString *> *translations) {
+NSAttributedString *DGTranslateCollectionAttributed(NSAttributedString *text) {
     NSRange prefix = DGCollectionPrefix(text.string);
     if (prefix.location != NSNotFound) {
         // Replace only the UI prefix. Keep collection title, tappable spans and
@@ -49,6 +48,13 @@ NSAttributedString *DGTranslateControlAttributed(NSAttributedString *text,
             [[NSAttributedString alloc] initWithString:@"Collection: " attributes:style]];
         return result;
     }
+    return text;
+}
+
+NSAttributedString *DGTranslateControlAttributed(NSAttributedString *text,
+                                                 NSDictionary<NSString *, NSString *> *translations) {
+    NSAttributedString *collection = DGTranslateCollectionAttributed(text);
+    if (collection != text) return collection;
     NSString *value = DGTranslateControl(text.string, translations);
     return DGTranslateAttributed(text, @{text.string:value});
 }
@@ -75,7 +81,7 @@ id DGTranslateEvaluationConfig(id config, NSDictionary<NSString *, NSString *> *
             result[key] = value;
         }
     }
-    return result ? [result copy] : config;
+    return result ? ([config isKindOfClass:NSMutableDictionary.class] ? result : [result copy]) : config;
 }
 
 static id DGSurveyNode(id node, NSUInteger depth, NSUInteger *budget, BOOL *valid) {
@@ -92,7 +98,7 @@ static id DGSurveyNode(id node, NSUInteger depth, NSUInteger *budget, BOOL *vali
     if ([node isKindOfClass:NSArray.class]) {
         NSMutableArray *result = [NSMutableArray new]; BOOL changed = NO;
         for (id value in node) { id mapped = DGSurveyNode(value,depth+1,budget,valid); [result addObject:mapped]; changed |= mapped != value; if (!*valid) return node; }
-        return changed ? [result copy] : node;
+        return changed ? ([node isKindOfClass:NSMutableArray.class] ? result : [result copy]) : node;
     }
     if ([node isKindOfClass:NSDictionary.class]) {
         NSMutableDictionary *result = nil;
@@ -106,7 +112,7 @@ static id DGSurveyNode(id node, NSUInteger depth, NSUInteger *budget, BOOL *vali
             if (!*valid) return node;
             if (mapped != value) { if (!result) result = [node mutableCopy]; result[key] = mapped; }
         }
-        return result ? [result copy] : node;
+        return result ? ([node isKindOfClass:NSMutableDictionary.class] ? result : [result copy]) : node;
     }
     return node;
 }
@@ -125,7 +131,9 @@ id DGTranslateSurvey(id payload) {
     if (!valid || result == tree) return payload;
     if (!jsonText) return result;
     NSData *data = [NSJSONSerialization dataWithJSONObject:result options:0 error:NULL];
-    return data ? [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] : payload;
+    if (!data) return payload;
+    NSString *text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    return [payload isKindOfClass:NSMutableString.class] ? [text mutableCopy] : text;
 }
 
 NSString *DGTranslate(NSString *text, NSDictionary<NSString *, NSString *> *translations) {
