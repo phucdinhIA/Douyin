@@ -10,7 +10,7 @@ def run(*args,timeout=180):
     return subprocess.check_output(list(args),text=True,timeout=timeout).strip()
 
 sdk=run('xcrun','--sdk','iphonesimulator','--show-sdk-path')
-sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DGGemini.m','DGTranslation.m','DGGeminiUI.m','DouyinGuest.m']]
+sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DGGemini.m','DGTranslation.m','DGGeminiUI.m','DGMedia.m','DGMediaUI.m','DouyinGuest.m']]
 sources.append(str(ROOT/'tests/ui_fixture.m'))
 run('xcrun','--sdk','iphonesimulator','clang','-target','arm64-apple-ios15.0-simulator',
     '-isysroot',sdk,'-fobjc-arc','-fblocks','-O1','-Wall','-Wextra','-Werror','-DDG_GEMINI_FIXTURE=1','-I'+str(ROOT/'src'),
@@ -25,6 +25,7 @@ resources=APP/'DouyinGuest.bundle';resources.mkdir(exist_ok=True)
 for name in ['hooks.json','translations.json']:shutil.copy2(ROOT/'resources'/name,resources/name)
 # Synthetic key used only by mock/local fixtures. Never load personal build config in CI.
 (resources/'gemini-private.json').write_text(json.dumps({'api_key':'fixture-key-no-network'}))
+(resources/'media-private.json').write_text(json.dumps({'apify_api_key':'fixture-apify-no-network','deepgram_api_key':'fixture-deepgram-no-network','apify_actor':'apple_yang~douyin-video-audio-downloader'}))
 sdk_fixture=APP/'AWEFixtureSDK.bundle'
 sdk_fixture.mkdir(exist_ok=True)
 (sdk_fixture/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':'local.fixture.sdk','CFBundlePackageType':'BNDL'}))
@@ -50,7 +51,7 @@ try:
     while not result.exists() and time.monotonic()<deadline:time.sleep(1)
     if not result.exists():raise RuntimeError('UIKit fixture did not finish; it may have crashed')
     shutil.copy2(result,OUT/'ui-results.json')
-    for name in ['ui-sidebar.png','ui-network-error.png','ui-search.png','ui-settings.png','ui-comments.png','ui-featured-narrow.png','ui-live.png','ui-public-finder.png','ui-public-profile.png','ui-feed-compat.png','ui-gemini.png','ui-gemini-context.png','ui-gemini-translation.png']:
+    for name in ['ui-sidebar.png','ui-network-error.png','ui-search.png','ui-settings.png','ui-comments.png','ui-featured-narrow.png','ui-live.png','ui-public-finder.png','ui-public-profile.png','ui-feed-compat.png','ui-gemini.png','ui-gemini-context.png','ui-gemini-translation.png','ui-captions.png','ui-gtx-comments.png']:
         visual=container/'Documents'/name
         if not visual.exists():raise RuntimeError('Visual fixture output missing: '+name)
         shutil.copy2(visual,OUT/name)

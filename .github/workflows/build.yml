@@ -34,6 +34,11 @@ jobs:
           build/translation_tests
       - name: UIKit fixture on iPhone 15 Simulator
         run: python3 scripts/test_ui_simulator.py
+      - name: Subtitle and GTX request/cache regressions
+        run: |
+          clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
+            src/DGGemini.m src/DGTranslation.m src/DGMedia.m tests/media_tests.m -framework Foundation -o build/media_tests
+          build/media_tests
       - name: Record source and toolchain
         run: |
           git rev-parse HEAD > build/SOURCE_COMMIT
@@ -69,5 +74,7 @@ jobs:
             build/ui-fixture/ui-gemini.png
             build/ui-fixture/ui-gemini-context.png
             build/ui-fixture/ui-gemini-translation.png
+            build/ui-fixture/ui-captions.png
+            build/ui-fixture/ui-gtx-comments.png
           if-no-files-found: warn
           retention-days: 14

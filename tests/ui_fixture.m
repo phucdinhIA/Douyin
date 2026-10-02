@@ -6,6 +6,7 @@
 #import "DGPolicy.h"
 #import "DGHook.h"
 #import "DGGeminiUI.h"
+#import "DGMediaUI.h"
 static atomic_int translationRequests;
 @interface TranslationFixtureProtocol : NSURLProtocol
 @end
@@ -237,6 +238,66 @@ static UIView *findID(UIView *root,NSString *identifier) {
     else [self.text drawInRect:rect withAttributes:@{NSFontAttributeName:self.font,NSForegroundColorAttributeName:UIColor.labelColor}];
 }
 @end
+
+@interface AWEAwemeModel : NSObject
+@property(nonatomic,copy) NSString *itemID;
+@end
+@implementation AWEAwemeModel
+@end
+@interface AWEPlayVideoViewController : UIViewController
+@property(nonatomic,strong) AWEAwemeModel *model;
+@property(nonatomic) double playback;
+- (double)currentPlaybackTime;
+@end
+@implementation AWEPlayVideoViewController
+- (void)viewDidAppear:(BOOL)animated {[super viewDidAppear:animated];}
+- (void)viewWillDisappear:(BOOL)animated {[super viewWillDisappear:animated];}
+- (double)currentPlaybackTime {return self.playback;}
+@end
+@interface AWECommentContainerViewController : UIViewController
+@end
+@implementation AWECommentContainerViewController
+- (void)viewDidAppear:(BOOL)animated {[super viewDidAppear:animated];}
+- (void)viewWillDisappear:(BOOL)animated {[super viewWillDisappear:animated];}
+@end
+@interface AWECommentFullScreenContainerViewController : AWECommentContainerViewController
+@end
+@implementation AWECommentFullScreenContainerViewController
+@end
+@interface _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel : YYLabel
+@end
+@implementation _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel
+@end
+static atomic_int mediaRequests,commentRequests;
+static NSData *mediaJSON(id value) {return [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];}
+static NSData *mediaBody(NSURLRequest *request) {
+    if (request.HTTPBody) return request.HTTPBody;
+    NSInputStream *stream=request.HTTPBodyStream;NSMutableData *result=[NSMutableData new];[stream open];uint8_t bytes[4096];NSInteger count;
+    while ((count=[stream read:bytes maxLength:sizeof(bytes)])>0) [result appendBytes:bytes length:(NSUInteger)count];[stream close];return result;
+}
+@interface MediaFixtureProtocol : NSURLProtocol
+@end
+@implementation MediaFixtureProtocol
++ (BOOL)canInitWithRequest:(NSURLRequest *)request {(void)request;return YES;}
++ (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request {return request;}
+- (void)startLoading {
+    atomic_fetch_add(&mediaRequests,1);NSURLRequest *request=self.request;NSInteger status=200;NSData *data;
+    if ([request.URL.host isEqual:@"api.apify.com"]) {
+        if ([request.URL.path containsString:@"/runs"]) {status=201;data=mediaJSON(@{@"data":@{@"id":@"run1",@"status":@"SUCCEEDED",@"defaultDatasetId":@"data1"}});}
+        else data=mediaJSON(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"duration":@10,@"errMsg":@""}]);
+    } else if ([request.URL.host isEqual:@"api.deepgram.com"]) data=mediaJSON(@{@"metadata":@{@"duration":@10},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[@{@"word":@"??",@"start":@0,@"end":@1},@{@"word":@"??",@"start":@2,@"end":@3},@{@"word":@"??",@"start":@5,@"end":@6}]}]}]}});
+    else if ([request.URL.host isEqual:@"generativelanguage.googleapis.com"]) {
+        NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSString *text=body[@"contents"][0][@"parts"][0][@"text"];NSArray *input=[NSJSONSerialization JSONObjectWithData:[text dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];
+        for (NSDictionary *cue in input) [rows addObject:@{@"id":cue[@"id"],@"text":@[@"Xin ch?o",@"Trung Qu?c",@"C?m ?n"][[cue[@"id"] unsignedIntegerValue]]}];
+        data=mediaJSON(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":[[NSString alloc] initWithData:mediaJSON(@{@"translations":rows}) encoding:NSUTF8StringEncoding]}]},@"finishReason":@"STOP"}]});
+    } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);data=mediaJSON(@[@[@[@"Video r?t hay, c?m ?n b?n!",@"????????"]]]);}
+    else {status=500;data=mediaJSON(@{});}
+    [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
+}
+- (void)stopLoading {}
+@end
+static void mediaWait(BOOL (^finished)(void)) {NSDate *until=[NSDate dateWithTimeIntervalSinceNow:5];while (!finished() && until.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
+
 @interface FixtureGuestAdapter : NSObject
 + (BOOL)enableGuestSearch;
 + (BOOL)hasRemainingGuestSearchCount;
@@ -286,6 +347,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
 @property (strong, nonatomic) UINavigationController *navigation;
 - (void)runCases;
 - (void)showVisualSamples;
+- (void)showMediaSamples;
 @end
 @implementation FixtureDelegate
 - (void)saveWindowImage:(NSString *)name {
@@ -298,6 +360,41 @@ static NSUInteger countText(UIView *view, NSString *text) {
     BOOL saved=[UIImagePNGRepresentation(snapshot) writeToURL:[documents URLByAppendingPathComponent:name] atomically:YES];
     check(drawn && saved,[NSString stringWithFormat:@"render visual fixture %@",name]);
 }
+
+- (void)showMediaSamples {
+    NSURLSessionConfiguration *cfg=NSURLSessionConfiguration.ephemeralSessionConfiguration;cfg.protocolClasses=@[MediaFixtureProtocol.class];DGMediaFixtureConfiguration(cfg,nil);
+    DGMediaInstall(nil);check([DGMediaSnapshot()[@"hooks_installed"] integerValue]==7,@"media installs only seven verified native ABI hooks");
+    AWEPlayVideoViewController *player=[AWEPlayVideoViewController new];AWEAwemeModel *model=[AWEAwemeModel new];model.itemID=@"7534679152504376595";player.model=model;player.playback=0.5;
+    player.view.backgroundColor=UIColor.darkGrayColor;self.window.rootViewController=player;[player viewDidAppear:NO];[self.window layoutIfNeeded];
+    UILabel *title=label(player.view,@"Video fixture ? ph? ?? theo th?i gian ph?t",220);title.frame=CGRectMake(18,220,self.window.bounds.size.width-36,60);title.numberOfLines=0;title.textColor=UIColor.whiteColor;
+    UIButton *button=(UIButton *)findID(player.view,@"vietnamese-captions-button");UILabel *caption=(UILabel *)findID(player.view,@"vietnamese-captions-text");
+    check(button && caption.hidden && atomic_load(&mediaRequests)==0,@"video appearance adds one opt-in button and sends no provider requests");
+    [button sendActionsForControlEvents:UIControlEventTouchUpInside];mediaWait(^BOOL{return ![DGMediaSnapshot()[@"caption_running"] boolValue];});DGMediaFixtureTick(player);
+    check(!caption.hidden && [caption.text isEqual:@"Xin ch?o"],@"caption extraction transcription translation and overlay complete via mock pipeline");
+    DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin ch?o"],@"paused playback holds caption without advancing wall time");
+    player.playback=1.5;DGMediaFixtureTick(player);check(caption.hidden,@"speech gap hides previous cue");
+    player.playback=5.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"C?m ?n"] && !caption.hidden,@"seek forward uses actual native playback time");
+    player.playback=0.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin ch?o"],@"seek backward and video loop restore first cue");
+    [self saveWindowImage:@"ui-captions.png"];int requests=atomic_load(&mediaRequests);
+    [button sendActionsForControlEvents:UIControlEventTouchUpInside];check(caption.hidden,@"subtitle off hides overlay immediately");
+    [button sendActionsForControlEvents:UIControlEventTouchUpInside];DGMediaFixtureTick(player);check(!caption.hidden && atomic_load(&mediaRequests)==requests,@"subtitle re-enable uses complete cache without API cost");
+    AWEAwemeModel *other=[AWEAwemeModel new];other.itemID=@"7683814443658054955";player.model=other;check(caption.hidden && ![DGMediaSnapshot()[@"caption_showing"] boolValue],@"changing native video model cancels and clears prior subtitles");
+    [button sendActionsForControlEvents:UIControlEventTouchUpInside];[NSNotificationCenter.defaultCenter postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];check(caption.hidden && ![DGMediaSnapshot()[@"caption_running"] boolValue],@"background notification cancels pending caption pipeline");
+    AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
+    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.text=@"????????";[comments.view addSubview:native];
+    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"?????";hidden.hidden=YES;[comments.view addSubview:hidden];
+    label(comments.view,@"Username must not be captured",140);ServalMarkdownView *analysis=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(10,380,320,50)];analysis.content=@"AI summary must not be captured";[comments.view addSubview:analysis];[comments viewDidAppear:NO];[comments.view layoutIfNeeded];
+    check([DGMediaReadVisibleComments(comments.view) isEqual:@[@"????????"]],@"GTX captures only visible native comment text excluding names hidden comments and AI");
+    UIButton *entry=(UIButton *)findID(comments.view,@"gtx-comments-button");check(entry && atomic_load(&commentRequests)==0,@"opening comments does not automatically translate or call GTX");
+    [entry sendActionsForControlEvents:UIControlEventTouchUpInside];mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
+    UINavigationController *sheet=(UINavigationController *)comments.presentedViewController;UITableViewController *table=(UITableViewController *)sheet.topViewController;[table.view layoutIfNeeded];NSIndexPath *row=[NSIndexPath indexPathForRow:0 inSection:0];
+    check([table.tableView numberOfRowsInSection:0]==1,@"GTX sheet lists selected visible comment without changing original");
+    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];mediaWait(^BOOL{return [[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video r?t hay"];});
+    check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video r?t hay"] && [native.text isEqual:@"????????"] && atomic_load(&commentRequests)==1,@"GTX shows Vietnamese alongside untouched Chinese original");
+    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];check(atomic_load(&commentRequests)==1,@"reselecting translated comment uses cache without network");
+    [self saveWindowImage:@"ui-gtx-comments.png"];
+}
+
 - (void)showVisualSamples {
     CGFloat width=self.window.bounds.size.width,height=self.window.bounds.size.height;
     AWENetworkErrorFixtureView *errorCanvas=[[AWENetworkErrorFixtureView alloc] initWithFrame:self.window.bounds];
@@ -313,7 +410,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-network-error.png"];
 
     AWELeftSideBarFixtureView *sidebar=[[AWELeftSideBarFixtureView alloc] initWithFrame:self.window.bounds];sidebar.backgroundColor=UIColor.systemGroupedBackgroundColor;
-    title=label(sidebar,@"Sidebar fixture • 0.13.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
+    title=label(sidebar,@"Sidebar fixture • 0.14.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
     UILabel *settings=label(sidebar,@"设置",105);settings.frame=CGRectMake(285,105,32,22);settings.font=[UIFont systemFontOfSize:16];
     NSArray *sections=@[
         @[@"常用功能",@[@"观看历史",@"离线缓存",@"稍后再看",@"抖音创作者中心",@"直播广场",@"使用管理助手",@"我的二维码",@"未成年人保护"],@[@"clock",@"arrow.down.circle",@"play.rectangle",@"person.crop.circle",@"video",@"timer",@"qrcode",@"shield"]],
@@ -339,7 +436,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     AWESearchResultFixtureView *searchCanvas=[[AWESearchResultFixtureView alloc] initWithFrame:self.window.bounds];
     searchCanvas.backgroundColor=UIColor.systemBackgroundColor;
     AWESearchFilterCollectionViewCell *filters=[[AWESearchFilterCollectionViewCell alloc] initWithFrame:self.window.bounds];[searchCanvas addSubview:filters];
-    title=label(filters,@"Search controls fixture • 0.13.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(filters,@"Search controls fixture • 0.14.0",80);title.frame=CGRectMake(20,80,width-40,30);
     NSArray *searchWords=@[@"综合排序",@"视频",@"用户",@"直播",@"一周内",@"最多点赞",@"切换为单列模式",@"切换为双列模式",@"相关搜索",@"大家都在搜",@"没有搜索到相关内容",@"试试换个搜索词"];
     CGFloat rowY=140;
     for (NSUInteger i=0;i<searchWords.count;i++) {
@@ -355,14 +452,14 @@ static NSUInteger countText(UIView *view, NSString *text) {
 
     AWESettingsFixtureViewController *settingsScreen=[AWESettingsFixtureViewController new];settingsScreen.view.backgroundColor=UIColor.systemBackgroundColor;
     NSArray *settingsWords=@[@"设置",@"账号管理",@"个性化内容推荐",@"通知消息管理",@"私信和通话通知",@"字体大小",@"缓存设置",@"后台播放设置",@"小窗播放设置",@"字幕设置",@"黑名单管理",@"隐私政策及简明版"];
-    title=label(settingsScreen.view,@"Settings fixture • 0.13.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(settingsScreen.view,@"Settings fixture • 0.14.0",80);title.frame=CGRectMake(20,80,width-40,30);
     for (NSUInteger i=0;i<settingsWords.count;i++) { UILabel *item=label(settingsScreen.view,settingsWords[i],135+i*43);item.frame=CGRectMake(20,135+i*43,180,36); }
     screen=settingsScreen;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-settings.png"];
 
     AWECommentFixtureView *commentCanvas=[[AWECommentFixtureView alloc] initWithFrame:self.window.bounds];commentCanvas.backgroundColor=UIColor.systemBackgroundColor;
     AWECommentVCHeaderBarView *commentHeader=[[AWECommentVCHeaderBarView alloc] initWithFrame:CGRectMake(16,70,width-32,150)];[commentCanvas addSubview:commentHeader];
-    title=label(commentHeader,@"Comment controls fixture • 0.13.0",0);title.frame=CGRectMake(4,0,width-40,28);title.font=[UIFont boldSystemFontOfSize:17];
+    title=label(commentHeader,@"Comment controls fixture • 0.14.0",0);title.frame=CGRectMake(4,0,width-40,28);title.font=[UIFont boldSystemFontOfSize:17];
     UILabel *headerCount=label(commentHeader,@"评论 1081",45);headerCount.frame=CGRectMake(4,45,170,28);
     UILabel *collection=label(commentHeader,@"观看完整合集：示例合集",82);collection.frame=CGRectMake(4,82,width-40,30);
     UILabel *summary=label(commentHeader,@"AI 解析",118);summary.frame=CGRectMake(4,118,130,28);
@@ -385,7 +482,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-comments.png"];
 
     AWENetworkErrorFixtureView *featured=[[AWENetworkErrorFixtureView alloc] initWithFrame:self.window.bounds];featured.backgroundColor=UIColor.systemBackgroundColor;
-    title=label(featured,@"Featured narrow-label fixture • 0.13.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
+    title=label(featured,@"Featured narrow-label fixture • 0.14.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
     UILabel *featuredTitle=label(featured,@"网络错误",320);featuredTitle.frame=CGRectMake((width-60)/2,320,60,30);featuredTitle.textAlignment=NSTextAlignmentCenter;
     UILabel *errorDetail=label(featured,@"请检查网络连接后重试",365);errorDetail.frame=CGRectMake((width-120)/2,365,120,30);errorDetail.textAlignment=NSTextAlignmentCenter;
     UIButton *retryButton=[UIButton buttonWithType:UIButtonTypeSystem];retryButton.frame=CGRectMake((width-100)/2,415,100,42);[retryButton setTitle:@"重试" forState:UIControlStateNormal];[featured addSubview:retryButton];
@@ -394,7 +491,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-featured-narrow.png"];
 
     UIView *live=[[UIView alloc] initWithFrame:self.window.bounds];live.backgroundColor=UIColor.systemBackgroundColor;
-    title=label(live,@"LIVE controls fixture • 0.13.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:18];
+    title=label(live,@"LIVE controls fixture • 0.14.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:18];
     _TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView *tags=[[_TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView alloc] initWithFrame:CGRectMake(20,140,width-40,44)];[live addSubview:tags];
     NSArray *cn=@[@"明星",@"聊天",@"唱歌",@"团播",@"颜值"];
     CGFloat slot=(width-40)/5;
@@ -802,7 +899,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(),^{
         UIAlertController *sheet=(UIAlertController *)self.host.presentedViewController;
         if (![sheet isKindOfClass:UIAlertController.class]) sheet=(UIAlertController *)self.navigation.presentedViewController;
-        check([sheet isKindOfClass:UIAlertController.class] && [sheet.title isEqualToString:@"Douyin Guest"],@"diagnostics sheet can actually be presented on legacy window");
+        check([sheet isKindOfClass:UIAlertController.class] && [sheet.title isEqualToString:@"Douyin"],@"diagnostics sheet can actually be presented on legacy window");
         check(sheet.actions.count==12,@"settings expose six switches, Gemini actions, two public web actions, copy and close");
         check([sheet.actions[5].title isEqualToString:@"Feed compatibility: ON"],@"feed transport compatibility is exposed and enabled by default");
         [self saveWindowImage:@"ui-feed-compat.png"];
@@ -826,6 +923,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
         // callbacks, even when runCases itself starts from a timer.
         [NSTimer scheduledTimerWithTimeInterval:0.05 repeats:NO block:^(__unused NSTimer *timer) {
         [self showVisualSamples];
+        [self showMediaSamples];
         BOOL success=YES; for (NSDictionary *item in checks) if (![item[@"passed"] boolValue]) success=NO;
         NSDictionary *report=@{@"scope":@"UIKit fixture only; original Douyin app and network were not executed",@"ios":UIDevice.currentDevice.systemVersion,@"device":UIDevice.currentDevice.model,@"checks":checks,@"passed":@(success),@"count":@(checks.count),@"fitting_observation":fittingObservation,@"overflow_labels":overflowLabels,@"translation_entries_tested":@(words.count)};
         NSData *result=[NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:NULL];

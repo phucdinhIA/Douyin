@@ -34,7 +34,7 @@ class PackagingTests(unittest.TestCase):
         source=(ROOT/'src/DouyinGuest.m').read_text(encoding='utf8')
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleShortVersionString"] isEqualToString:@"40.6.0"',source)
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleVersion"] isEqualToString:@"406019"',source)
-        self.assertIn('@"patch_version": @"0.13.0-test", @"app_version": @"40.6.0"',source)
+        self.assertIn('@"patch_version": @"0.14.0-test", @"app_version": @"40.6.0"',source)
     def test_injection_preserves_offsets_code_and_input(self):
         original = binary(); snapshot = bytes(original)
         modified = patch.inject_load_command(original)
@@ -105,6 +105,15 @@ class PackagingTests(unittest.TestCase):
             for value in [[],{'api_key':''},{'api_key':'line\nbreak'},{'api_key':123},{'api_key':'x','endpoint':'https://other.example'},{'api_key':'x'*513}]:
                 path.write_text(json.dumps(value),encoding='utf8')
                 with self.subTest(value_type=type(value).__name__),self.assertRaises(ValueError):patch.private_gemini_payload(path)
+    def test_media_config_validates_actor_and_separate_credentials(self):
+        valid={'apify_api_key':'fixture-apify','deepgram_api_key':'fixture-deepgram','apify_actor':'apple_yang~douyin-video-audio-downloader'}
+        with tempfile.TemporaryDirectory() as directory:
+            path=pathlib.Path(directory)/'media.json'
+            path.write_text(json.dumps(valid),encoding='utf8')
+            self.assertEqual(json.loads(patch.private_media_payload(path)),valid)
+            for value in [[],{},dict(valid,endpoint='https://other.example'),dict(valid,apify_actor='other'),dict(valid,deepgram_api_key='x\r\nCookie: y'),dict(valid,apify_api_key=''),dict(valid,deepgram_api_key=4)]:
+                path.write_text(json.dumps(value),encoding='utf8')
+                with self.subTest(value_type=type(value).__name__),self.assertRaises(ValueError):patch.private_media_payload(path)
     def test_transport_hook_rejects_out_of_scope_resources(self):
         hooks,words=patch.validate_resources(ROOT/'resources')
         transport=next(x for x in hooks if x['operation']=='preferStandardFeed')
@@ -161,6 +170,7 @@ class PackagingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root=pathlib.Path(directory);source=root/'source.ipa';library=root/'fixture.dylib';output=root/'patched.ipa'
             library.write_bytes(b'Fixture only, not a real library')
+            media=root/'media.json';media.write_text(json.dumps({'apify_api_key':'fixture-apify','deepgram_api_key':'fixture-deepgram','apify_actor':'apple_yang~douyin-video-audio-downloader'}),encoding='utf8')
             with zipfile.ZipFile(source,'w') as archive:
                 archive.writestr(main_path,plistlib.dumps(main))
                 archive.writestr(extension_path,plistlib.dumps(extension))
@@ -169,7 +179,7 @@ class PackagingTests(unittest.TestCase):
                 archive.writestr(patch.APP+'en.lproj/InfoPlist.strings',plistlib.dumps({'CFBundleDisplayName':'Douyin'}))
             with mock_patch.object(patch,'SOURCE_SHA256',patch.sha256(source)), \
                  mock_patch.object(patch,'validate_library',return_value=[]), contextlib.redirect_stdout(io.StringIO()):
-                report=patch.build(source,library,output,patch.sha256(library))
+                report=patch.build(source,library,output,patch.sha256(library),media_config=media)
             with zipfile.ZipFile(source) as original, zipfile.ZipFile(output) as result:
                 for path,expected in [(main_path,main),(extension_path,extension)]:
                     self.assertEqual(plistlib.loads(original.read(path)),expected)
@@ -178,10 +188,16 @@ class PackagingTests(unittest.TestCase):
                     for key in ['UIDeviceFamily','UIRequiredDeviceCapabilities','MinimumOSVersion']:
                         self.assertEqual(actual[key],expected[key])
                     if path==main_path:
+                        self.assertEqual(actual['CFBundleDisplayName'],'Douyin')
+                        self.assertEqual(actual['CFBundleName'],'Douyin')
                         self.assertEqual(actual['UIBackgroundModes'],expected['UIBackgroundModes'])
                         self.assertEqual(actual['UISupportedInterfaceOrientations'],['UIInterfaceOrientationPortrait','UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight'])
                         self.assertEqual(actual['UISupportedInterfaceOrientations~ipad'],expected['UISupportedInterfaceOrientations~ipad'])
                 self.assertEqual(result.read(untouched_path),untouched)
+                self.assertEqual(json.loads(result.read(patch.APP+'DouyinGuest.bundle/media-private.json')),json.loads(media.read_text()))
+                localized=plistlib.loads(result.read(patch.APP+'en.lproj/InfoPlist.strings'))
+                self.assertEqual(localized['CFBundleDisplayName'],'Douyin')
+                self.assertEqual(localized['CFBundleName'],'Douyin')
             self.assertEqual({x['path'] for x in report['removed_thinning_allowlists']},{main_path,extension_path})
             self.assertNotIn(untouched_path,report['modified'])
 

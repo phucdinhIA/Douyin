@@ -232,9 +232,21 @@ def private_gemini_payload(path: pathlib.Path):
         raise ValueError('Invalid personal Gemini config')
     return json.dumps(config, ensure_ascii=True).encode('utf-8')
 
+def private_media_payload(path: pathlib.Path):
+    config = json.loads(path.read_text(encoding='utf-8'))
+    if not isinstance(config, dict) or set(config) != {'apify_api_key','deepgram_api_key','apify_actor'}:
+        raise ValueError('Invalid personal media config')
+    if config['apify_actor'] != 'apple_yang~douyin-video-audio-downloader':
+        raise ValueError('Unsupported media actor')
+    for field in ('apify_api_key','deepgram_api_key'):
+        key = config[field]
+        if not isinstance(key,str) or not 1 <= len(key) <= 512 or any(c.isspace() for c in key):
+            raise ValueError('Invalid personal media credential')
+    return json.dumps(config,ensure_ascii=True).encode('utf-8')
+
 
 def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
-          library_sha256: str, resource_dir: pathlib.Path = ROOT/'resources', gemini_config: pathlib.Path = None):
+          library_sha256: str, resource_dir: pathlib.Path = ROOT/'resources', gemini_config: pathlib.Path = None, media_config: pathlib.Path = None):
     source, library, output = source.resolve(), library.resolve(), output.resolve()
     if output == source or output == library or output.exists() or output.with_suffix('.validation.json').exists():
         raise ValueError('Output must be a new file distinct from inputs')
@@ -248,6 +260,7 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
     private_payload = None
     if gemini_config is not None:
         private_payload = private_gemini_payload(gemini_config)
+    media_payload = private_media_payload(media_config) if media_config is not None else None
     changes, removals, corrections, hashes = [], [], [], {}
     thinning_allowlists = []
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -264,7 +277,8 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
             injected = inject_load_command(original.read(APP+'Aweme'))
             english_info = plistlib.loads(original.read(APP+'en.lproj/InfoPlist.strings'))
             info.update(english_info)
-            info['CFBundleDisplayName'] = 'Douyin Guest'
+            info['CFBundleDisplayName'] = 'Douyin'
+            info['CFBundleName'] = 'Douyin'
             info['CFBundleDevelopmentRegion'] = 'en'
             info['DGSourceSHA256'] = SOURCE_SHA256
             # Allow the existing native full-screen controllers to request landscape.
@@ -290,7 +304,8 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
                 if name.startswith(APP) and name.count('/') == 3 and name.endswith('.lproj/InfoPlist.strings'):
                     localized = plistlib.loads(original.read(entry))
                     localized.update(english_info)
-                    localized['CFBundleDisplayName'] = 'Douyin Guest'
+                    localized['CFBundleDisplayName'] = 'Douyin'
+                    localized['CFBundleName'] = 'Douyin'
                     modified[name] = plistlib.dumps(localized, fmt=plistlib.FMT_BINARY)
                 digest = hashlib.sha256()
                 with target.open(clone_info(entry, name), 'w', force_zip64=entry.file_size >= 2**31) as destination:
@@ -309,6 +324,8 @@ def build(source: pathlib.Path, library: pathlib.Path, output: pathlib.Path,
             }
             if private_payload is not None:
                 additions[APP+'DouyinGuest.bundle/gemini-private.json'] = private_payload
+            if media_payload is not None:
+                additions[APP+'DouyinGuest.bundle/media-private.json'] = media_payload
             for name, payload in additions.items():
                 entry = zipfile.ZipInfo(name, date_time=(2026,10,1,0,0,0))
                 entry.external_attr = (0o100755 if name.endswith('.dylib') else 0o100644)<<16
@@ -348,5 +365,6 @@ if __name__ == '__main__':
     parser.add_argument('output',type=pathlib.Path)
     parser.add_argument('--library-sha256',required=True)
     parser.add_argument('--gemini-config',type=pathlib.Path,help='Local personal config, excluded from source and CI')
+    parser.add_argument('--media-config',type=pathlib.Path,help='Local Apify/Deepgram credentials, excluded from source and CI')
     args = parser.parse_args()
-    build(args.source,args.library,args.output,args.library_sha256,gemini_config=args.gemini_config)
+    build(args.source,args.library,args.output,args.library_sha256,gemini_config=args.gemini_config,media_config=args.media_config)

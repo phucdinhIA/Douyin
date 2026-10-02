@@ -8,6 +8,7 @@
 #import "DGPolicy.h"
 #import "DGHook.h"
 #import "DGGeminiUI.h"
+#import "DGMediaUI.h"
 
 static atomic_bool guestEnabled, adsEnabled, englishEnabled, searchEnabled, backgroundEnabled, feedCompatEnabled;
 static NSDictionary<NSString *, NSString *> *translations;
@@ -460,6 +461,7 @@ static NSUInteger DGActiveHookCount(void) {
 
 static void DGInstallNative(void) {
     DGGeminiInstall(^(NSString *event,NSUInteger count) {DGCount(event,count);});
+    DGMediaInstall(^(NSString *event,NSUInteger count) {DGCount(event,count);});
     for (NSDictionary *spec in hookSpecs) {
         NSString *key = DGHookKey(spec);
         NSValue *implementation = installed[key];
@@ -563,7 +565,7 @@ static void DGInstallNative(void) {
     while (presenter.presentedViewController) presenter = presenter.presentedViewController;
     if (!presenter || [presenter isKindOfClass:UIAlertController.class]) return;
     NSString *message = [NSString stringWithFormat:@"Test build • 40.6.0 (406019)\nNative hooks: %lu/%lu active\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)DGActiveHookCount(), (unsigned long)hookSpecs.count];
-    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Douyin Guest" message:message preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Douyin" message:message preferredStyle:UIAlertControllerStyleAlert];
     NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls", @"Search diagnostics", @"Background audio", @"Feed compatibility"];
     NSArray *keys = @[@"DGGuestEnabled", @"DGAdsEnabled", @"DGEnglishEnabled", @"DGSearchEnabled", @"DGBackgroundEnabled", @"DGFeedCompatEnabled"];
     BOOL flags[] = {atomic_load(&guestEnabled), atomic_load(&adsEnabled), atomic_load(&englishEnabled), atomic_load(&searchEnabled), atomic_load(&backgroundEnabled), atomic_load(&feedCompatEnabled)};
@@ -594,8 +596,9 @@ static void DGInstallNative(void) {
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.13.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        NSMutableDictionary *report = [@{@"patch_version": @"0.14.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
         report[@"gemini"]=DGGeminiSnapshot();
+        report[@"media"]=DGMediaSnapshot();
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled)), @"background_audio": @(atomic_load(&backgroundEnabled)), @"feed_compatibility": @(atomic_load(&feedCompatEnabled))};
         report[@"search_adapter_hooks"] = DGSearchAdapterSnapshot();
         report[@"native_hooks_active"] = @(DGActiveHookCount());
