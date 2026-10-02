@@ -31,6 +31,8 @@ static void DGAMute(id owner,BOOL muted) {Method m=DGAMethod(owner,@"setMuted:",
 @property(nonatomic) NSTimeInterval lastClock;
 @property(nonatomic,strong) NSDictionary *previousNowPlaying;
 @property(nonatomic) BOOL reportedSourceFailure;
+@property(nonatomic,copy) void (^ready)(BOOL);
+@property(nonatomic) NSTimeInterval readyStarted;
 - (void)tick;
 - (void)resign;
 - (void)activate;
@@ -90,6 +92,9 @@ static DGAudioController *DGAudio;
         if (self.background.currentItem.status==AVPlayerItemStatusFailed && !self.reportedSourceFailure) {self.reportedSourceFailure=YES;[self.background pause];[self.voice pause];if (self.record) self.record(@"Background companion source failed",1);}
     }
     if (!self.voice) return;
+    if (self.ready && (self.voice.currentItem.status==AVPlayerItemStatusFailed || NSProcessInfo.processInfo.systemUptime-self.readyStarted>8)) {
+        void (^callback)(BOOL)=self.ready;self.ready=nil;[self stop];callback(NO);return;
+    }
     double time=foreground ? DGATime(self.owner) : CMTimeGetSeconds(self.background.currentTime);
     BOOL playing=foreground ? DGABool(self.owner,@"isPlaying") : self.background.rate>0;
     double duration=CMTimeGetSeconds(self.voice.currentItem.duration);if (isfinite(duration) && time>=duration) {[self.voice pause];return;}
@@ -101,6 +106,9 @@ static DGAudioController *DGAudio;
         [self.voice seekToTime:CMTimeMakeWithSeconds(time,600) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(__unused BOOL done) {dispatch_async(dispatch_get_main_queue(),^{weakSelf.seeking=NO;});}];
     }
     if (playing && !self.seeking) self.voice.rate=rate;else [self.voice pause];
+    if (self.ready && foreground && !self.seeking && self.voice.currentItem.status==AVPlayerItemStatusReadyToPlay && delta<0.1) {
+        void (^callback)(BOOL)=self.ready;self.ready=nil;callback(YES);
+    }
 }
 - (void)ended:(NSNotification *)note {
     if (note.object!=self.background.currentItem || self.interrupted) return;
@@ -115,6 +123,7 @@ static DGAudioController *DGAudio;
 }
 - (void)route:(NSNotification *)note {if ([note.userInfo[AVAudioSessionRouteChangeReasonKey] unsignedIntegerValue]==AVAudioSessionRouteChangeReasonOldDeviceUnavailable) {[self.background pause];[self.voice pause];self.interrupted=YES;}}
 - (void)stop {
+    self.ready=nil;
     self.generation++;[self.background pause];self.background=nil;[self.voice pause];self.voice=nil;self.seeking=NO;
     if (self.ownsMute) {DGAMute(self.owner,self.mutedBefore);self.ownsMute=NO;}
     if (self.voiceFile) [NSFileManager.defaultManager removeItemAtURL:self.voiceFile error:NULL];self.voiceFile=nil;
@@ -143,6 +152,10 @@ BOOL DGAudioVoice(UIViewController *owner,NSURL *file) {
     if (!isfinite(duration) || duration<=0 || ![asset tracksWithMediaType:AVMediaTypeAudio].count) return NO;
     if (DGAudio.owner!=owner || !DGAMethod(owner,@"setMuted:",@"v20@0:8B16") || !DGAMethod(owner,@"isMute",@"B16@0:8") || ![DGAudio session]) return NO;
     [DGAudio mute];DGAudio.voiceFile=file;DGAudio.voice=[AVPlayer playerWithURL:file];DGAudio.interrupted=NO;[DGAudio tick];return YES;
+}
+void DGAudioPrepareVoice(UIViewController *owner,NSURL *file,void (^completion)(BOOL)) {
+    if (!DGAudioVoice(owner,file)) {completion(NO);return;}
+    DGAudio.ready=completion;DGAudio.readyStarted=NSProcessInfo.processInfo.systemUptime;[DGAudio tick];
 }
 void DGAudioStopVoice(UIViewController *owner) {if (DGAudio.owner==owner) [DGAudio stop];}
 NSDictionary *DGAudioSnapshot(void) {

@@ -196,11 +196,14 @@ static BOOL DGMediaPause(UIViewController *owner) {
     NSString *identifier=self.videoID;__weak DGCaptionEntry *weakSelf=self;
     self.vbee.completion=^(NSURL *file,NSString *failure) {
         DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || ![identifier isEqual:entry.videoID] || ![identifier isEqual:DGVideoID(entry.owner)]) {if (file) [NSFileManager.defaultManager removeItemAtURL:file error:NULL];return;}
-        entry.running=NO;entry.preparingVoice=NO;
-        BOOL voice=file && DGAudioVoice(entry.owner,file);
-        if (file && !voice) [NSFileManager.defaultManager removeItemAtURL:file error:NULL];
-        entry.status.text=voice ? @"Phụ đề và lồng tiếng Việt đã sẵn sàng" : failure ?: @"Chưa gắn được giọng đọc vào player · dùng phụ đề";
-        [entry.button setTitle:@"Tắt phụ đề / lồng tiếng" forState:UIControlStateNormal];[entry resumeWaiting];
+        void (^prepared)(BOOL)=^(BOOL voice) {
+            DGCaptionEntry *current=weakSelf;if (!current || !current.showing || ![identifier isEqual:DGVideoID(current.owner)]) return;
+            current.running=NO;current.preparingVoice=NO;
+            if (file && !voice) [NSFileManager.defaultManager removeItemAtURL:file error:NULL];
+            current.status.text=voice ? @"Phụ đề và lồng tiếng Việt đã sẵn sàng" : failure ?: @"Chưa gắn được giọng đọc vào player · dùng phụ đề";
+            [current.button setTitle:@"Tắt phụ đề / lồng tiếng" forState:UIControlStateNormal];[current resumeWaiting];
+        };
+        if (file) {entry.status.text=@"Đang đồng bộ giọng đọc với video";DGAudioPrepareVoice(entry.owner,file,prepared);}else prepared(NO);
     };[self.vbee start:self.cues];
 }
 - (void)tick {

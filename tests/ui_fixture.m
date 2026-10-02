@@ -470,7 +470,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-1.2)<0.1,@"dubbing seeks forward to the actual native video clock");
     player.playback=0.1;mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.1)<0.1;});
     check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.1)<0.1,@"dubbing follows backward seek or video loop");
-    player.playing=YES;DGAudioFixtureTick();check([DGAudioSnapshot()[@"dubbing_rate"] floatValue]>0,@"native play resumes dubbed audio");
+    player.playing=YES;mediaWait(^BOOL {DGAudioFixtureTick();return [DGAudioSnapshot()[@"dubbing_rate"] floatValue]>0;});check([DGAudioSnapshot()[@"dubbing_rate"] floatValue]>0,@"native play resumes dubbed audio");
     player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"changing video restores original mute state and releases old voice");
     DGMediaFixtureVbee(@{@"app_id":@"00000000-0000-0000-0000-000000000001",@"token":@"synthetic-vbee",@"voice_code":@"hn_male_manhdung_news_48k-fhg"});
     DGMediaFixtureConfiguration(cfg,nil);player.model=model;player.playback=0.5;player.playing=YES;
