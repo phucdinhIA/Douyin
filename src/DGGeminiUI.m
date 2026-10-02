@@ -1,12 +1,20 @@
 #import "DGGeminiUI.h"
 #import "DGGemini.h"
+#import "DGTranslation.h"
 #import <objc/runtime.h>
 #include <string.h>
 
 static NSDictionary *DGConfig;
 static void (^DGRecordAI)(NSString *,NSUInteger);
-static BOOL DGSendHookInstalled, DGEntryHookInstalled, DGLeaveHookInstalled;
+static BOOL DGSendHookInstalled, DGEntryHookInstalled, DGLeaveHookInstalled, DGDisappearHookInstalled, DGAppearHookInstalled;
 static char DGEntryKey;
+static DGTranslationStore *DGTranslationCache;
+#ifdef DG_GEMINI_FIXTURE
+static NSURLSessionConfiguration *DGTranslationConfiguration;
+void DGGeminiTranslationFixtureConfiguration(NSURLSessionConfiguration *configuration,NSURL *cacheURL) {
+    DGTranslationConfiguration=configuration;DGTranslationCache=[[DGTranslationStore alloc] initWithURL:cacheURL];
+}
+#endif
 static NSString *const DGCommentAIClass=@"AWEFeedDoubleColumnCommentAIParseViewController";
 
 static id DGAIGetter(id object,NSString *name) {
@@ -183,18 +191,111 @@ void DGGeminiPresentFrom(UIViewController *presenter) {
 - (void)dealloc {[_client cancel];}
 @end
 
+@interface DGTranslationPanel : UIView
+@property(nonatomic) BOOL passthrough;
+@end
+@implementation DGTranslationPanel
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *hit=[super hitTest:point withEvent:event];return self.passthrough && hit==self ? nil : hit;
+}
+@end
 @interface DGGeminiEntry : NSObject
 @property(nonatomic,weak) UIViewController *owner;
 @property(nonatomic,strong) UIButton *button;
+@property(nonatomic,strong) DGTranslationPanel *panel;
+@property(nonatomic,strong) UITextView *translation;
+@property(nonatomic,strong) UILabel *status;
+@property(nonatomic,strong) UISegmentedControl *language;
+@property(nonatomic,strong) UIButton *retry;
+@property(nonatomic,strong) NSTimer *timer;
+@property(nonatomic,strong) DGTranslationSession *session;
+@property(nonatomic,strong) DGGeminiClient *client;
+@property(nonatomic) BOOL hadWindow;
+@property(nonatomic) BOOL tabEntered;
 - (void)open;
+- (void)start;
+- (void)stop;
+- (void)tickAt:(NSTimeInterval)time;
 @end
+static __weak DGGeminiEntry *DGActiveTranslation;
 @implementation DGGeminiEntry
 - (void)open {if (DGOn()) DGPresentChat(self.owner,DGSummaryForController(self.owner),nil);}
+- (void)languageChanged {
+    BOOL original=self.language.selectedSegmentIndex==1;
+    self.translation.hidden=original;self.status.hidden=original;self.retry.hidden=original || ![self.retry.accessibilityValue isEqual:@"available"];
+    self.panel.backgroundColor=original ? UIColor.clearColor : UIColor.systemBackgroundColor;
+    self.panel.passthrough=original;
+}
+- (void)start {
+    if (self.session.active || !DGOn()) return;
+    if (DGActiveTranslation!=self) [DGActiveTranslation stop];DGActiveTranslation=self;
+    if (!DGTranslationCache) {
+        NSURL *base=[NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
+        DGTranslationCache=[[DGTranslationStore alloc] initWithURL:[base URLByAppendingPathComponent:@"DouyinGuest/ai-vi-v1.json"]];
+    }
+    __weak DGGeminiEntry *weakSelf=self;
+    self.session=[[DGTranslationSession alloc] initWithStore:DGTranslationCache sender:^(NSString *source,void (^completion)(NSString *,NSString *)) {
+        DGGeminiEntry *entry=weakSelf;
+        entry.client=[[DGGeminiClient alloc] initWithKey:DGConfig[@"api_key"] model:DGGeminiFastModel
+#ifdef DG_GEMINI_FIXTURE
+            configuration:DGTranslationConfiguration
+#endif
+        ];
+        if (DGRecordAI) DGRecordAI(@"Gemini translation sent",1);
+        [entry.client translateSource:source completion:^(NSString *answer,NSString *failure) {
+            DGGeminiEntry *current=weakSelf;
+            if (!DGOn() || !current.tabEntered || !current.owner.view.window || current.owner.view.hidden) {[current stop];return;}
+            if (![DGSummaryForController(current.owner) isEqualToString:source]) {
+                completion(nil,@"Phân tích đã thay đổi trong lúc dịch. Bấm Dịch lại để dịch nội dung mới.");return;
+            }
+            completion(answer,failure);
+        }];
+    } cancel:^{[weakSelf.client cancel];weakSelf.client=nil;}];
+    self.session.update=^(NSString *state,NSString *text) {
+        DGGeminiEntry *entry=weakSelf;if (!entry) return;
+        BOOL ready=[state isEqual:@"ready"] || [state isEqual:@"cached"];
+        entry.status.text=ready ? ([state isEqual:@"cached"] ? @"Bản dịch đã lưu · Không gọi API lại" : @"Đã dịch · Gemini 3.5 Flash-Lite") : text;
+        entry.translation.text=ready ? text : @"Chỉ dịch phần phân tích AI đang mở. Nội dung được gửi tới Google Gemini bằng API của bạn.\n\nChọn Bản gốc để xem nội dung của Douyin trong lúc chờ.";
+        entry.retry.accessibilityValue=[state isEqual:@"failed"] ? @"available" : @"unavailable";
+        [entry languageChanged];
+        if (DGRecordAI && ([state isEqual:@"cached"] || [state isEqual:@"ready"] || [state isEqual:@"failed"])) DGRecordAI([@"Gemini translation " stringByAppendingString:state],1);
+        if (!entry.session.waiting) {[entry.timer invalidate];entry.timer=nil;}
+    };
+    self.hadWindow=NO;self.panel.hidden=NO;self.button.hidden=NO;self.language.selectedSegmentIndex=0;
+    [self.session enterAt:NSProcessInfo.processInfo.systemUptime];
+#ifndef DG_GEMINI_FIXTURE
+    self.timer=[NSTimer scheduledTimerWithTimeInterval:0.5 repeats:YES block:^(__unused NSTimer *timer) {[weakSelf tickAt:NSProcessInfo.processInfo.systemUptime];}];
+#endif
+    [NSNotificationCenter.defaultCenter removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(stop) name:UIApplicationDidEnterBackgroundNotification object:nil];
+}
+- (void)tickAt:(NSTimeInterval)time {
+    if (!DGOn() || !self.owner || (self.hadWindow && (!self.owner.view.window || self.owner.view.hidden)) || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive) {[self stop];return;}
+    if (!self.owner.view.window || self.owner.view.hidden) {
+        [self.session observeSource:@"" at:time];return;
+    }
+    self.hadWindow=YES;
+    [self.session observeSource:DGSummaryForController(self.owner) at:time];
+}
+- (void)retryTranslation {
+    if (!self.session.active || !DGOn() || !self.owner.view.window) return;
+    [self stop];[self start];
+}
+- (void)stop {
+    [self.timer invalidate];self.timer=nil;[self.session leave];self.panel.hidden=YES;self.button.hidden=YES;
+    [NSNotificationCenter.defaultCenter removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+}
+- (void)dealloc {[_timer invalidate];[_client cancel];[NSNotificationCenter.defaultCenter removeObserver:self];}
 @end
+#ifdef DG_GEMINI_FIXTURE
+void DGGeminiTranslationFixtureTick(UIViewController *owner,NSTimeInterval time) {
+    DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);[entry tickAt:time];
+}
+#endif
 static void DGAttachEntry(UIViewController *owner) {
     DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);
-    if (!DGOn()) {entry.button.hidden=YES;return;}
-    if (!owner.isViewLoaded || !owner.view.window) return;
+    if (!DGOn()) {[entry stop];return;}
+    if (!owner.isViewLoaded) return;
     if (!entry) {
         entry=[DGGeminiEntry new];entry.owner=owner;entry.button=[UIButton buttonWithType:UIButtonTypeSystem];
         [entry.button setTitle:@"Ask Gemini · Your AI" forState:UIControlStateNormal];entry.button.accessibilityIdentifier=@"gemini-comment-entry";
@@ -203,9 +304,21 @@ static void DGAttachEntry(UIViewController *owner) {
         [entry.button addTarget:entry action:@selector(open) forControlEvents:UIControlEventTouchUpInside];
         [owner.view addSubview:entry.button];
         [NSLayoutConstraint activateConstraints:@[[entry.button.leadingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.leadingAnchor constant:12],[entry.button.trailingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.trailingAnchor constant:-12],[entry.button.bottomAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.bottomAnchor constant:-8],[entry.button.heightAnchor constraintEqualToConstant:48]]];
+        entry.panel=[DGTranslationPanel new];entry.panel.translatesAutoresizingMaskIntoConstraints=NO;entry.panel.layer.cornerRadius=12;entry.panel.clipsToBounds=YES;entry.panel.accessibilityIdentifier=@"gemini-translation-panel";[owner.view addSubview:entry.panel];
+        entry.language=[[UISegmentedControl alloc] initWithItems:@[@"Tiếng Việt",@"Bản gốc"]];entry.language.accessibilityIdentifier=@"gemini-translation-language";[entry.language addTarget:entry action:@selector(languageChanged) forControlEvents:UIControlEventValueChanged];
+        entry.status=[UILabel new];entry.status.numberOfLines=0;entry.status.font=[UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];entry.status.textColor=UIColor.secondaryLabelColor;entry.status.accessibilityIdentifier=@"gemini-translation-status";
+        entry.translation=[UITextView new];entry.translation.editable=NO;entry.translation.font=[UIFont preferredFontForTextStyle:UIFontTextStyleBody];entry.translation.accessibilityIdentifier=@"gemini-translation-text";
+        entry.retry=[UIButton buttonWithType:UIButtonTypeSystem];[entry.retry setTitle:@"Dịch lại" forState:UIControlStateNormal];entry.retry.accessibilityIdentifier=@"gemini-translation-retry";[entry.retry addTarget:entry action:@selector(retryTranslation) forControlEvents:UIControlEventTouchUpInside];
+        for (UIView *view in @[entry.language,entry.status,entry.translation,entry.retry]) {view.translatesAutoresizingMaskIntoConstraints=NO;[entry.panel addSubview:view];}
+        [NSLayoutConstraint activateConstraints:@[
+            [entry.panel.topAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.topAnchor constant:64],[entry.panel.bottomAnchor constraintEqualToAnchor:entry.button.topAnchor constant:-8],[entry.panel.leadingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.leadingAnchor constant:8],[entry.panel.trailingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.trailingAnchor constant:-8],
+            [entry.language.topAnchor constraintEqualToAnchor:entry.panel.topAnchor constant:8],[entry.language.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:12],[entry.language.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-12],
+            [entry.status.topAnchor constraintEqualToAnchor:entry.language.bottomAnchor constant:8],[entry.status.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:12],[entry.status.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-12],
+            [entry.translation.topAnchor constraintEqualToAnchor:entry.status.bottomAnchor constant:8],[entry.translation.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:4],[entry.translation.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-4],[entry.translation.bottomAnchor constraintEqualToAnchor:entry.retry.topAnchor],
+            [entry.retry.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:12],[entry.retry.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-12],[entry.retry.bottomAnchor constraintEqualToAnchor:entry.panel.bottomAnchor],[entry.retry.heightAnchor constraintEqualToConstant:44]]];
         objc_setAssociatedObject(owner,&DGEntryKey,entry,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
-    entry.button.hidden=NO;[owner.view bringSubviewToFront:entry.button];
+    entry.tabEntered=YES;[owner.view bringSubviewToFront:entry.panel];[owner.view bringSubviewToFront:entry.button];[entry start];
 }
 static BOOL DGOverride(Class cls,NSString *selector,NSString *types,id (^factory)(IMP)) {
     Method method=class_getInstanceMethod(cls,NSSelectorFromString(selector));
@@ -238,9 +351,15 @@ void DGGeminiInstall(void (^record)(NSString *,NSUInteger)) {
         return ^(UIViewController *owner) {((void (*)(id,SEL))original)(owner,NSSelectorFromString(@"commentAIParseTabDidEnter"));DGAttachEntry(owner);};
     });
     if (!DGLeaveHookInstalled) DGLeaveHookInstalled=DGOverride(cls,@"commentAIParseTabWillLeave",@"v16@0:8",^id(IMP original) {
-        return ^(UIViewController *owner) {((void (*)(id,SEL))original)(owner,NSSelectorFromString(@"commentAIParseTabWillLeave"));DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);entry.button.hidden=YES;};
+        return ^(UIViewController *owner) {DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);entry.tabEntered=NO;[entry stop];((void (*)(id,SEL))original)(owner,NSSelectorFromString(@"commentAIParseTabWillLeave"));};
+    });
+    if (!DGDisappearHookInstalled) DGDisappearHookInstalled=DGOverride(cls,@"viewWillDisappear:",@"v20@0:8B16",^id(IMP original) {
+        return ^(UIViewController *owner,BOOL animated) {DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);[entry stop];((void (*)(id,SEL,BOOL))original)(owner,@selector(viewWillDisappear:),animated);};
+    });
+    if (!DGAppearHookInstalled) DGAppearHookInstalled=DGOverride(cls,@"viewDidAppear:",@"v20@0:8B16",^id(IMP original) {
+        return ^(UIViewController *owner,BOOL animated) {((void (*)(id,SEL,BOOL))original)(owner,@selector(viewDidAppear:),animated);DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);if (entry.tabEntered) DGAttachEntry(owner);};
     });
 }
 NSDictionary *DGGeminiSnapshot(void) {
-    return @{@"configured":@([DGConfig[@"api_key"] isKindOfClass:NSString.class] && [DGConfig[@"api_key"] length]>0),@"enabled":@(DGOn()),@"native_send_hook":@(DGSendHookInstalled),@"native_entry_hook":@(DGEntryHookInstalled),@"native_leave_hook":@(DGLeaveHookInstalled),@"model":[NSUserDefaults.standardUserDefaults boolForKey:@"DGGeminiFast"] ? DGGeminiFastModel : DGGeminiQualityModel};
+    return @{@"configured":@([DGConfig[@"api_key"] isKindOfClass:NSString.class] && [DGConfig[@"api_key"] length]>0),@"enabled":@(DGOn()),@"native_send_hook":@(DGSendHookInstalled),@"native_entry_hook":@(DGEntryHookInstalled),@"native_leave_hook":@(DGLeaveHookInstalled),@"translation_disappear_hook":@(DGDisappearHookInstalled),@"translation_active":@(DGActiveTranslation.session.active),@"translation_model":DGGeminiFastModel,@"translation_cache_entries_max":@32,@"translation_automatic_retries":@0,@"model":[NSUserDefaults.standardUserDefaults boolForKey:@"DGGeminiFast"] ? DGGeminiFastModel : DGGeminiQualityModel};
 }

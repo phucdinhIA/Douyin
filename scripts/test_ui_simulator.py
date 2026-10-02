@@ -10,10 +10,10 @@ def run(*args,timeout=180):
     return subprocess.check_output(list(args),text=True,timeout=timeout).strip()
 
 sdk=run('xcrun','--sdk','iphonesimulator','--show-sdk-path')
-sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DGGemini.m','DGGeminiUI.m','DouyinGuest.m']]
+sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DGGemini.m','DGTranslation.m','DGGeminiUI.m','DouyinGuest.m']]
 sources.append(str(ROOT/'tests/ui_fixture.m'))
 run('xcrun','--sdk','iphonesimulator','clang','-target','arm64-apple-ios15.0-simulator',
-    '-isysroot',sdk,'-fobjc-arc','-fblocks','-O1','-Wall','-Wextra','-Werror','-I'+str(ROOT/'src'),
+    '-isysroot',sdk,'-fobjc-arc','-fblocks','-O1','-Wall','-Wextra','-Werror','-DDG_GEMINI_FIXTURE=1','-I'+str(ROOT/'src'),
     *sources,'-framework','Foundation','-framework','UIKit','-framework','CoreGraphics','-o',str(APP/'FixtureApp'))
 info={'CFBundleIdentifier':IDENTIFIER,'CFBundleExecutable':'FixtureApp','CFBundlePackageType':'APPL',
       'CFBundleName':'DGFixture','CFBundleDisplayName':'UIKit Fixture',
@@ -50,7 +50,7 @@ try:
     while not result.exists() and time.monotonic()<deadline:time.sleep(1)
     if not result.exists():raise RuntimeError('UIKit fixture did not finish; it may have crashed')
     shutil.copy2(result,OUT/'ui-results.json')
-    for name in ['ui-sidebar.png','ui-network-error.png','ui-search.png','ui-settings.png','ui-comments.png','ui-featured-narrow.png','ui-live.png','ui-public-finder.png','ui-public-profile.png','ui-feed-compat.png','ui-gemini.png','ui-gemini-context.png']:
+    for name in ['ui-sidebar.png','ui-network-error.png','ui-search.png','ui-settings.png','ui-comments.png','ui-featured-narrow.png','ui-live.png','ui-public-finder.png','ui-public-profile.png','ui-feed-compat.png','ui-gemini.png','ui-gemini-context.png','ui-gemini-translation.png']:
         visual=container/'Documents'/name
         if not visual.exists():raise RuntimeError('Visual fixture output missing: '+name)
         shutil.copy2(visual,OUT/name)

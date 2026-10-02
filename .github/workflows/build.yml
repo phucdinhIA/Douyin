@@ -27,6 +27,11 @@ jobs:
           clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
             src/DGGemini.m tests/gemini_tests.m -framework Foundation -o build/gemini_tests
           build/gemini_tests
+      - name: AI translation gating and cache regressions
+        run: |
+          clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
+            src/DGGemini.m src/DGTranslation.m tests/translation_tests.m -framework Foundation -o build/translation_tests
+          build/translation_tests
       - name: UIKit fixture on iPhone 15 Simulator
         run: python3 scripts/test_ui_simulator.py
       - name: Record source and toolchain
@@ -63,5 +68,6 @@ jobs:
             build/ui-fixture/ui-feed-compat.png
             build/ui-fixture/ui-gemini.png
             build/ui-fixture/ui-gemini-context.png
+            build/ui-fixture/ui-gemini-translation.png
           if-no-files-found: warn
           retention-days: 14
