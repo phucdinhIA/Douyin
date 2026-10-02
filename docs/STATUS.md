@@ -1,22 +1,20 @@
-# Trạng thái 0.5.0-test
+# Trạng thái 0.6.0-test
 
-**Candidate giao diện/chẩn đoán; chưa hoàn thành toàn bộ yêu cầu guest.** Featured/Tips, ảnh tải chậm và quyền đọc/tìm kiếm phía server chưa được khắc phục hoặc chứng nhận. Hai tab vẫn giữ.
+**Đã tạo candidate LIVE/phát nền cục bộ và kiểm tra build/fixture/IPA. Chưa nghiệm thu trên iPhone thật, chưa hoàn thành tính năng guest phía máy chủ.** Search, toàn bộ bình luận, Featured/Tips và độ trễ ảnh vẫn chưa được khắc phục/chứng nhận. Hai tab vẫn giữ.
 
-File cục bộ `dist/Douyin-40.6.0-Guest-0.5.0-iPhone15-TEST.ipa` — 704,839,640 byte. SHA-256: `dcaad8fc9a26eccf1a4e54f73da709cf4891e67e2d49e191044e3f670ce84d35`. Thư viện `adc66517d67e17e09dca5a74b1178fe2ae26222186216982ce3583f662446cee`, build từ `b1feb4be8302b70554e5dbe72e4d3db459129cdb`; thay đổi tài liệu về sau không làm đổi binary.
+File `dist/Douyin-40.6.0-Guest-0.6.0-iPhone15-TEST.ipa` — 704,842,179 byte. SHA-256 `30c5efc6db43d33bf48cf3251c6ed53ad897b8f1c401ca4b7afa06119be62d68`. Dylib `f6ac1f3df2c910f50061eaf6e05f15d32d5295772feab10b909688dac98bf575`, source `d6dab646f39c607ead57abf94bab18e03b4affeb`. Commit tài liệu sau đó không đổi binary.
 
-| Kiểm tra | Bằng chứng |
+| Kiểm tra | Kết quả thực tế |
 |---|---|
-| CI macOS | [Vòng 36950206145](https://github.com/phucdinhIA/Douyin/actions/runs/36950206145): 14 Python tests, Foundation regression, arm64 build/signature đạt |
-| UIKit thật trong fixture | 74/74 checks trên iPhone 15 Simulator/iOS 18.2; 873 labels ở 120pt, Featured 60/120pt, comment controls, collection links, survey config, bảo vệ nội dung |
-| IPA | 5,629 entry đọc lại/hash; 5,620 entry khớp CRC/size/mode; 4,977 file khớp SHA audit; 0 mismatch |
-| Binary gốc | AwemeCore nguyên vẹn; executable đổi 51 byte header; size/code giữ nguyên |
-| Native metadata | 50 fixed hooks; 7 presentation, 5 search observer gateways, 8 observers feed/search/image/comment, 30 ad/login; runtime vẫn kiểm ABI |
-| iPhone thật | **0.5.0 chưa cài/chạy; không thay bằng kết quả fixture** |
+| macOS CI | [Vòng 36954417420](https://github.com/phucdinhIA/Douyin/actions/runs/36954417420): 14 Python tests, Foundation, arm64 warnings-as-errors và signature đạt |
+| UIKit fixture | 94/94 checks; iPhone 15 Simulator/iOS 18.2; 893 nhãn ở 120pt, LIVE 63/32pt và khôi phục khi nới rộng; bảo vệ room/chat/comment |
+| IPA độc lập | 5,629 entry đọc lại/hash, 5,620 entry CRC/size/mode nguyên vẹn, 4,977 SHA so audit, 0 mismatch |
+| Binary gốc | AwemeCore nguyên vẹn; executable chỉ đổi 51 byte header, giữ size/code |
+| Preference âm thanh | 3 getter cục bộ, OFF trả giá trị gốc, không sửa listenVideoStatus/quyền/account/session; giữ background modes |
+| iPhone 15/iOS 18.5 | **0.6.0 chưa được cài/chạy; chưa xác nhận audio khóa màn hình, interruption hoặc UI Douyin thật** |
 
-Đã review sáu ảnh fixture: [comments](evidence/ui-comments-0.5.0.png), [Featured hẹp](evidence/ui-featured-narrow-0.5.0.png), [sidebar](evidence/ui-sidebar-0.5.0.png), [error](evidence/ui-network-error-0.5.0.png), [Search](evidence/ui-search-0.5.0.png), [Settings](evidence/ui-settings-0.5.0.png). Chữ Trung trong comment/result mẫu là nội dung được giữ nguyên. Các ảnh này **không phải Douyin thật**. [Kết quả checks](evidence/ui-results-0.5.0.json).
+Đã review bảy ảnh **fixture**, không phải app Douyin thật: [LIVE](evidence/ui-live-0.6.0.png), [comments](evidence/ui-comments-0.6.0.png), [Featured hẹp](evidence/ui-featured-narrow-0.6.0.png), [sidebar](evidence/ui-sidebar-0.6.0.png), [error](evidence/ui-network-error-0.6.0.png), [Search](evidence/ui-search-0.6.0.png), [Settings](evidence/ui-settings-0.6.0.png). Chữ Trung ở sample room/chat/comment/result là nội dung được giữ.
 
-Vòng 36949411290 lỗi compile fixture do trùng biến, đã sửa. Vòng 36949649357 đạt 73 checks nhưng review ảnh thấy hai rating bị cắt/tách từ; đã rút ngắn nhãn và thêm ca kiểm 5 cột 64.2pt rồi chạy lại toàn bộ. Không dùng artifact từ vòng thất bại hoặc ảnh chưa đạt bố cục để giao IPA. [Thiết kế, bằng chứng thiết bị và nghiên cứu chọn lọc](ROUND_0.5.md), [metadata](evidence/methods-0.5.0.json), [nguồn pinned](evidence/research-0.5.0.json).
+Vòng 36953743503 bị trùng biến trong Foundation test; vòng 36953877340 bị trùng biến trong UIKit visual fixture. Đã sửa và chạy lại; không dùng artifacts thất bại để đóng gói. Các vòng fixture không đạt bổ sung, nếu có, được ghi trong [kế hoạch/kiểm tra](ROUND_0.6.md).
 
-Tìm kiếm giữ enableGuestSearch/hasRemainingGuestSearchCount gốc; mục tùy chọn đổi thành **Search diagnostics**. 2483 đã xuất hiện trên 0.4.0; bỏ popup hoặc ép flag không tạo kết quả server. Không có chức năng giả tài khoản, sửa TLS hoặc request signing. Image observers không thêm retry/download hay đổi URL/cache; không được mô tả là đã sửa ảnh trắng.
-
-**Bước còn thiếu:** ký/cài 0.5.0 bằng Sideloadly, kiểm giao diện và lấy diagnostics riêng sau Retry Featured, Retry Tips, Search lỗi và ảnh trắng. [Các ca cần chạy](DEVICE_TESTS.md). Mong đợi patch_version 0.5.0-test và native_hooks_expected 50; báo mismatch/overwritten nếu có. [Trạng thái 0.4.0 lưu lại](evidence/status-0.4.0.md).
+[Kế hoạch và nghiên cứu](ROUND_0.6.md), [13 ABI mới](evidence/0.6-native-hook-abi.json), [nguồn HTTPS đã đọc](evidence/0.6-research.json), [validation máy đọc được](VALIDATION.json), [nghiệm thu thiết bị](DEVICE_TESTS.md). Lịch sử [0.5](evidence/status-0.5.0.md) giữ nguyên.

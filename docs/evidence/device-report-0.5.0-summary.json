@@ -1,0 +1,23 @@
+{
+  "patch_version": "0.5.0-test",
+  "ios": "18.5",
+  "active_hooks": 50,
+  "expected_hooks": 50,
+  "dc_feed_callbacks": 8,
+  "dc_feed_App_minus4": 4,
+  "dc_feed_App_minus11001": 4,
+  "search_status_2483": 6,
+  "search_status_limit_reported": 6,
+  "observed_search_adapter_classes": 0,
+  "image_failure_callbacks": 36,
+  "image_App_minus1001": 13,
+  "image_App_minus1011": 1,
+  "image_App_900014": 22,
+  "image_finish_callbacks": 466,
+  "image_finish_with_image": 464,
+  "image_finish_without_image": 2,
+  "comment_getter_accesses": 185,
+  "comment_input_item_samples": 2177,
+  "comment_response_status0_samples": 155,
+  "interpretation": "App is an unknown-domain bucket; repeated getters and app-wide image counters do not measure unique comments or comment-image failure rate"
+}

@@ -1,3 +1,5 @@
+> Kế hoạch/nghiên cứu hiện tại: [vòng 0.6.0](ROUND_0.6.md). Phần dưới lưu lịch sử.
+
 > Thiết kế/nghiên cứu hiện tại: [vòng 0.5.0](ROUND_0.5.md). Các phần 0.1–0.4 bên dưới lưu lịch sử; ép guest quota đã bỏ trong 0.5.0, chưa đạt quyền server không giới hạn.
 
 # Nguồn tham khảo và quyết định

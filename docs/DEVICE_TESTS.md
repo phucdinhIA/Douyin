@@ -1,25 +1,28 @@
-# Kiểm tra 0.5.0 trên iPhone 15 / iOS 18.5
+# Kiểm tra 0.6.0 trên iPhone 15 / iOS 18.5
 
-0.4.0 đã được người dùng chạy; 0.5.0 chưa chạy. Ký/cài `Douyin-40.6.0-Guest-0.5.0-iPhone15-TEST.ipa` bằng Sideloadly, chọn lại đúng file; giữ dữ liệu/candidate cũ. Không đổi hẳn bundle ID. Hai ngón tay chạm ba lần → Douyin Guest → Copy diagnostics.
+0.5.0 đã chạy trên thiết bị theo diagnostics người dùng; 0.6.0 chưa chạy. Ký/cài `Douyin-40.6.0-Guest-0.6.0-iPhone15-TEST.ipa` bằng Sideloadly, giữ dữ liệu và IPA cũ. Hai ngón tay chạm ba lần mở Douyin Guest. `Background audio` mặc định ON; thay đổi rồi đóng hẳn/mở lại. Copy diagnostics phải báo 0.6.0-test, expected63; ghi active/installed/mismatch/overwritten.
 
-## Vòng ngắn để lấy bằng chứng đúng lỗi
+## Nghiệm thu âm thanh nền
 
-| Ca | Thao tác | Ghi nhận |
-|---|---|---|
-| Phiên bản | Mở app, Copy diagnostics | 0.5.0-test; fixed expected 50; active/installed và mọi mismatch/overwritten |
-| Featured | Đóng hẳn/mở, chỉ Retry Featured 1 lần, Copy diagnostics | DC/generic feed callbacks, numeric response status và category/code; tab vẫn giữ, chữ không cắt |
-| Tips | Đóng hẳn/mở, chỉ Retry Tips 1 lần, Copy diagnostics | Tách khỏi lần Featured để ghép lỗi; toast tiếng Anh, không fake success |
-| Search | Đóng/mở, Search diagnostics ON, nhập từ khóa công khai 2 lần, Copy diagnostics khi lỗi | Invocation/nil/compatible, status2483 hoặc mã khác; native quota giữ nguyên, adapter installed/active0 theo thiết kế |
-| Ảnh comment | Đóng/mở, mở comment, ghi thời gian ảnh trắng; Copy diagnostics lúc trắng rồi sau 15–30 giây hoặc sau chạm/đợi | So sánh image failures/finish counters; image SDK bao phủ toàn app nên không kết luận mọi counter là ảnh comment |
-| Bình luận | Cuộn đến khi không tải thêm hoặc nhắc login, Copy diagnostics | CommentArray accesses/item samples và response status; samples không phải số comment duy nhất; ghi còn cuộn được hay không |
+| Ca | Thao tác và tiêu chí |
+|---|---|
+| Khóa màn hình | Video công khai đang phát có tiếng, khóa 30 giây rồi 2 phút; tiếng còn phát, mở khóa không mất hình/vị trí; ghi độ dài video và thời gian ngừng nếu có |
+| Pause | Pause video rồi khóa; không tự phát lại |
+| Đổi app | Đang phát → Home/app khác → quay lại; không hai luồng âm thanh hoặc màn đen |
+| Cuộc gọi | Khi khóa có audio, nhận cuộc gọi; app phải nhường âm thanh, không tự phát đè cuộc gọi |
+| Tai nghe | Rút tai nghe/disconnect Bluetooth; giữ xử lý route của app, ghi có dừng hay phát qua loa; không giả định native xử lý đã đạt |
+| Remote controls | Nếu native hiện lockscreen media controls, thử Pause/Play; không tạo remote controls giả nếu app không cấp |
+| OFF | Background audio OFF → đóng/mở, đối chiếu cùng video; OFF trả preference gốc, nếu người dùng đã bật native background trước đó thì OFF không ép native thành tắt |
+| Tương thích | Video ngắn/dài/ngang/ảnh, LIVE; chuyển foreground/background 5 lần, không crash/tự phát khi đã pause |
 
-Chạm ảnh để xem và nhấn giữ để mở menu là hai luồng khác nhau. Không đăng nhập để lấy bằng chứng này. Nếu app hỏi login khi đọc thêm/search, ghi nhận yêu cầu thật; bản sửa chưa chứng minh quyền đó có cho guest.
+Chạy từng ca rồi Copy diagnostics; quan sát `switchState/audioSwitchState/audioSceneState preference ON`, native `shouldEnterBackgroundPlayMode original YES/NO`, entry/exit calls, `backgroundIsPlaying original YES/NO`. Cài hook không chứng minh hook được gọi hay audio nghe được. Không retry playback loop để ép vượt quyết định native.
 
-## Giao diện và hồi quy
+## LIVE và các chức năng còn lỗi
 
-- Comment header/count, AI summary, prefix collection, reply controls, survey question/five ratings, bottom login notice, toast; comment bodies/usernames/titles gốc giữ nguyên. Kiểm vùng link collection bấm đúng và Back trở về đúng.
-- Search/filter/sidebar/Settings/player/privacy/notifications; font mặc định/lớn, light/dark, portrait/landscape. Chữ không tràn, vùng bấm và nội dung không bị rewrite. Ghi control còn Trung hoặc bị cắt; không coi toàn bộ Lynx đã dịch chỉ vì fixture đạt.
-- LIVE/Nearby/luồng public khác: pause/resume/seek, video ảnh/ngang/dài, cuộn 30 phút, 5 cold start và 5 background/foreground; ghi crash/màn đen hoặc server dừng cấp feed.
-- OFF từng ad/login/English, đóng/mở để đối chiếu; đổi Wi-Fi/di động; tắt/bật mạng và Retry. Không xóa cache/tài khoản hay dùng retry liên tục. Like/post/follow giữ yêu cầu tài khoản; không báo thành công giả.
+- Năm control 明星/聊天/唱歌/团播/颜值: Stars/Chat/Singing/Groups/Beauty; ô rất hẹp có Sing/Team/Looks. Kiểm đủ chữ, vùng bấm, xoay màn, cỡ chữ lớn; tên phòng/chat của người dùng không bị dịch. Mở menu LIVE, Quality và background settings nếu có; ghi nguyên chữ control còn sót.
+- Featured và Tips: từng tab trong **phiên riêng**, Retry một lần rồi Copy diagnostics. Tách DCFeed/DataNetwork/TTNetwork/URL/App và numeric code/underlying, không equate generic feed success với hai tab. Hai tab vẫn giữ.
+- Search: nhập từ khóa công khai hai lần, Copy diagnostics ngay khi 2483/login/blank/error; không fake thành công. `search_adapter_hooks installed/active0` theo thiết kế.
+- Comments: mở và cuộn đến khi dừng/login; status0 getter samples không chứng minh toàn bộ comment đã được cấp. Ảnh trắng: ghi thời gian, diagnostics lúc trắng và sau 15–30 giây/chạm; image counters là toàn app và có retry. Chạm và nhấn giữ là luồng khác nhau.
+- Kiểm feed/Nearby/LIVE 30 phút, 5 cold start, mất mạng/khôi phục và Retry, ad/login/English OFF so sánh sau restart. Giữ yêu cầu tài khoản cho Like/Follow/post; không ghi thành công giả.
 
-**Chưa đạt nghiệm thu hoàn chỉnh** nếu Featured/Tips vẫn lỗi, ảnh vẫn trắng chậm, control bị cắt/dịch nhầm, app crash hoặc guest không được server cấp kết quả. Gửi diagnostics từng phiên cùng hành vi tương ứng để phân biệt các nhánh; không cần gửi cookie/token.
+**Chưa nghiệm thu hoàn chỉnh** nếu bất kỳ tính năng yêu cầu còn lỗi, guest bị máy chủ giới hạn, audio nền không hoạt động hoặc UI dịch nhầm/cắt chữ. Không gửi cookie/token; chỉ cần hành vi và diagnostics từng phiên.

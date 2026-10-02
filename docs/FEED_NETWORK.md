@@ -1,3 +1,5 @@
+> Hiện tại: **0.6.0-test**. Diagnostics 0.5.0 đã xác nhận luồng DC feed thất bại 8/8 callback: App -4 bốn lần, App -11001 bốn lần; generic feed vẫn có success. Chưa ghép riêng hai code với Featured/Tips và App chưa xác định domain. 0.6 phân loại domain/underlying rõ hơn, không xóa tab hoặc giả success, chưa sửa root cause. Ảnh có 36 failure callback và 466 finish, có retry và bao phủ toàn app; không dùng các số này làm tỷ lệ ảnh bình luận lỗi. [Kế hoạch mới](ROUND_0.6.md), [kiểm từng tab trong phiên riêng](DEVICE_TESTS.md). Phần dưới lưu lịch sử.
+
 > Cập nhật hiện tại: **0.5.0-test**. Phần 0.2–0.4 bên dưới là lịch sử. Diagnostics 0.4 generic feed có success nhưng Featured/Tips vẫn lỗi, chưa ghép được callback với hai tab. 0.5 thêm DC feed và typed numeric status, chưa xác định nguyên nhân. Làm từng kênh trong phiên riêng theo [quy trình mới](DEVICE_TESTS.md); không dùng hướng dẫn cài 0.4 ở phần lịch sử. Xem [bản sửa hiện tại](ROUND_0.5.md).
 
 # Lỗi Featured / Tips và kết quả điều tra
