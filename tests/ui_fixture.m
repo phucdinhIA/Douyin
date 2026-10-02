@@ -775,6 +775,9 @@ static NSUInteger countText(UIView *view, NSString *text) {
                     @"profile-link prompt uses the URL keyboard and official-link wording");
                 [self saveWindowImage:@"ui-public-profile.png"];
                 [linkPrompt dismissViewControllerAnimated:NO completion:^{
+        // This final visual/async section is reached from dispatch-based modal
+        // callbacks, even when runCases itself starts from a timer.
+        [NSTimer scheduledTimerWithTimeInterval:0.05 repeats:NO block:^(__unused NSTimer *timer) {
         [self showVisualSamples];
         BOOL success=YES; for (NSDictionary *item in checks) if (![item[@"passed"] boolValue]) success=NO;
         NSDictionary *report=@{@"scope":@"UIKit fixture only; original Douyin app and network were not executed",@"ios":UIDevice.currentDevice.systemVersion,@"device":UIDevice.currentDevice.model,@"checks":checks,@"passed":@(success),@"count":@(checks.count),@"fitting_observation":fittingObservation,@"overflow_labels":overflowLabels,@"translation_entries_tested":@(words.count)};
@@ -782,6 +785,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
         NSURL *documents=[NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
         [result writeToURL:[documents URLByAppendingPathComponent:@"ui-results.json"] atomically:YES];
         NSLog(@"UI fixture finished: %@",success ? @"PASS" : @"FAIL");
+        }];
                 }];
               });
             }];
