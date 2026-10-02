@@ -1,0 +1,52 @@
+[
+  {
+    "name": "douyin-official-download",
+    "url": "https://www.douyin.com/downloadpage/app",
+    "final_url": "https://www.douyin.com/downloadpage/app",
+    "status": 200,
+    "bytes": 805585,
+    "sha256": "80f039b4bb3ddc9be5109f114b98e490a59aec34f829b128ef48a697ef3caf86",
+    "retrieved_utc": "2026-10-02T07:13:15.256455+00:00"
+  },
+  {
+    "name": "douyin-apkpure-metadata",
+    "url": "https://apkpure.com/douyin/com.ss.android.ugc.aweme",
+    "error_type": "HTTPError"
+  },
+  {
+    "name": "apple-background-audio",
+    "url": "https://developer.apple.com/tutorials/data/documentation/avfaudio/avaudiosession/category-swift.struct/playback.json",
+    "final_url": "https://developer.apple.com/tutorials/data/documentation/avfaudio/avaudiosession/category-swift.struct/playback.json",
+    "status": 200,
+    "bytes": 23499,
+    "sha256": "71fd93f023ff58f33eb2b887397e70a47fe5255aac8dd928daec717bd5ee1a5e",
+    "retrieved_utc": "2026-10-02T07:12:53.845440+00:00"
+  },
+  {
+    "name": "apple-background-modes",
+    "url": "https://developer.apple.com/tutorials/data/documentation/bundleresources/information-property-list/uibackgroundmodes.json",
+    "final_url": "https://developer.apple.com/tutorials/data/documentation/bundleresources/information-property-list/uibackgroundmodes.json",
+    "status": 200,
+    "bytes": 12381,
+    "sha256": "6f7295e2e73dd7213d353fea71677faf7f15147620e70b0d0d8b8b9bc3f5c22d",
+    "retrieved_utc": "2026-10-02T07:12:53.869471+00:00"
+  },
+  {
+    "name": "dyyy-pinned",
+    "url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/DYYY.xm",
+    "final_url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/DYYY.xm",
+    "status": 200,
+    "bytes": 293000,
+    "sha256": "6f005f7903bf315947662ea478136db0db6a21e7dd2d53a426491d10fc94408a",
+    "retrieved_utc": "2026-10-02T07:12:54.373479+00:00"
+  },
+  {
+    "name": "android-player-tracking",
+    "url": "https://raw.githubusercontent.com/1zzzzzlll/douyim/1f662082493f909dcf121a9681aac1574a97421a/README.md",
+    "final_url": "https://raw.githubusercontent.com/1zzzzzlll/douyim/1f662082493f909dcf121a9681aac1574a97421a/README.md",
+    "status": 200,
+    "bytes": 8154,
+    "sha256": "e01641080c7d9078d036b2f0596b788f9db0f7f45f9c43030e79f1c7f7bba6d1",
+    "retrieved_utc": "2026-10-02T07:12:54.384639+00:00"
+  }
+]

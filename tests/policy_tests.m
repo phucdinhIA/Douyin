@@ -11,11 +11,15 @@
 @end
 
 @interface AWEDCFeedDefaultDataController : NSObject
+@property NSUInteger bodyCalls;
+@property (strong) NSDictionary *configuredBody;
+- (void)buildRequestParams:(NSMutableDictionary *)body;
 - (void)initFetchWithCompletion:(void (^)(id,NSError *))completion;
 - (void)refreshWithCompletion:(void (^)(id,NSError *))completion;
 - (void)loadMoreWithCompletion:(void (^)(id,NSError *))completion;
 @end
 @implementation AWEDCFeedDefaultDataController
+- (void)buildRequestParams:(NSMutableDictionary *)body {self.bodyCalls++;[body addEntriesFromDictionary:self.configuredBody ?: @{}];}
 - (void)initFetchWithCompletion:(void (^)(id,NSError *))completion {if (completion) completion(nil,nil);}
 - (void)refreshWithCompletion:(void (^)(id,NSError *))completion {[self initFetchWithCompletion:completion];}
 - (void)loadMoreWithCompletion:(void (^)(id,NSError *))completion {[self initFetchWithCompletion:completion];}
@@ -107,6 +111,30 @@
 - (NSInteger)localState { self.calls++; return self.state; }
 - (BOOL)decision { self.calls++; return self.allowed; }
 - (void)enter { self.calls++; }
+@end
+
+@interface AWEPlayVideoViewController : NSObject
+@property (strong) id model;
+@property BOOL pauseBySingleClick;
+@end
+@implementation AWEPlayVideoViewController
+@end
+@interface AWEAwemeBackgroundPlayModule : NSObject
+@property (strong) id model;
+@property (strong) id delegate;
+@property BOOL active;
+@property BOOL eligible;
+@property BOOL nativeResponse;
+@property NSUInteger notificationCalls;
+@property NSUInteger eligibilityCalls;
+- (BOOL)isActivePlayModule;
+- (BOOL)shouldEnterBackgroundPlayMode;
+- (BOOL)shouldResponseNotification;
+@end
+@implementation AWEAwemeBackgroundPlayModule
+- (BOOL)isActivePlayModule {return self.active;}
+- (BOOL)shouldEnterBackgroundPlayMode {self.eligibilityCalls++;return self.eligible;}
+- (BOOL)shouldResponseNotification {self.notificationCalls++;return self.nativeResponse;}
 @end
 @interface TestCyclicError : NSError
 @property (strong) NSError *next;
@@ -647,6 +675,61 @@ int main(void) {
             @"CSP EOF error keeps native failure and never exports buffer details");
         check(!DGInstallHook(@{@"class":@"TestBackground",@"selector":@"localState",@"operation":@"standardFeedFormat",@"types":@"q16@0:8"},^BOOL{return YES;},recordNew),
             @"format operation rejects non-BOOL ABI");
+
+        __block BOOL bodyCompat=YES;
+        Method builder=class_getInstanceMethod(AWEDCFeedDefaultDataController.class,@selector(buildRequestParams:));
+        check(DGInstallHook(@{@"class":@"AWEDCFeedDefaultDataController",@"selector":@"buildRequestParams:",@"operation":@"normalFeedBody",
+            @"types":[NSString stringWithUTF8String:method_getTypeEncoding(builder)]},^BOOL{return bodyCompat;},recordNew),
+            @"normal controller body-builder ABI installs");
+        AWEDCFeedDefaultDataController *normal=[AWEDCFeedDefaultDataController new];
+        NSDictionary *configured=@{@"is_tidy":@"true",@"cursor":@53,@"has_more":@NO,@"PRIVATE-cookie":@"PRIVATE"};
+        normal.configuredBody=configured;
+        NSMutableDictionary *body=[@{@"existing":@4} mutableCopy];[normal buildRequestParams:body];
+        NSMutableDictionary *expected=[configured mutableCopy];[expected removeObjectForKey:@"is_tidy"];expected[@"existing"]=@4;
+        check(normal.bodyCalls==1 && [body isEqual:expected] && [configured[@"is_tidy"] isEqual:@"true"],
+            @"normal JSON request omits only tidy-format negotiation without changing config, pagination or credentials");
+        bodyCompat=NO;body=[NSMutableDictionary new];[normal buildRequestParams:body];
+        check(normal.bodyCalls==2 && [body isEqual:configured],@"OFF keeps original body and calls builder once");
+        bodyCompat=YES;
+        for (id flag in @[@"false",@YES,@5,@{@"unexpected":@1}]) {
+            normal.configuredBody=@{@"is_tidy":flag};body=[NSMutableDictionary new];[normal buildRequestParams:body];
+            check(body[@"is_tidy"]==flag,@"unknown or non-string format values are not reinterpreted");
+        }
+        normal.configuredBody=@{};body=[NSMutableDictionary new];[normal buildRequestParams:body];
+        check(body.count==0 && [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,
+            @"empty body stays empty and diagnostics do not expose parameters");
+
+        __block BOOL notificationEnabled=YES;
+        Method notificationMethod=class_getInstanceMethod(AWEAwemeBackgroundPlayModule.class,@selector(shouldResponseNotification));
+        check(DGInstallHook(@{@"class":@"AWEAwemeBackgroundPlayModule",@"selector":@"shouldResponseNotification",@"operation":@"backgroundNotification",
+            @"types":[NSString stringWithUTF8String:method_getTypeEncoding(notificationMethod)]},^BOOL{return notificationEnabled;},recordNew),
+            @"background notification lifecycle recovery installs");
+        AWEAwemeBackgroundPlayModule *module=[AWEAwemeBackgroundPlayModule new];
+        AWEPlayVideoViewController *delegate=[AWEPlayVideoViewController new];
+        module.delegate=delegate;module.model=video;delegate.model=video;module.active=YES;module.eligible=YES;
+        check(module.shouldResponseNotification && module.notificationCalls==1 && module.eligibilityCalls==1,
+            @"active matching unpaused module recovers missed event only with native eligibility YES");
+        delegate.pauseBySingleClick=YES;check(!module.shouldResponseNotification && module.eligibilityCalls==1,
+            @"explicit user pause cannot be overridden by notification recovery");
+        delegate.pauseBySingleClick=NO;module.active=NO;check(!module.shouldResponseNotification,
+            @"inactive/reused video modules cannot start background playback");
+        module.active=YES;module.eligible=NO;check(!module.shouldResponseNotification,
+            @"native model/PiP/lock eligibility denial is preserved");
+        module.eligible=YES;delegate.model=ad;check(!module.shouldResponseNotification,
+            @"different model identity cannot trigger background recovery");
+        delegate.model=video;module.model=nil;check(!module.shouldResponseNotification,@"missing model preserves native NO");
+        module.model=video;module.delegate=[NSObject new];check(!module.shouldResponseNotification,@"unknown delegate preserves native NO");
+        module.delegate=delegate;notificationEnabled=NO;
+        NSUInteger decisions=module.eligibilityCalls;
+        check(!module.shouldResponseNotification && module.eligibilityCalls==decisions,@"OFF restores original NO without extra gate calls");
+        module.nativeResponse=YES;check(module.shouldResponseNotification,@"OFF keeps native YES");
+        notificationEnabled=YES;module.active=NO;check(module.shouldResponseNotification && module.eligibilityCalls==decisions,
+            @"native YES is forwarded once without imposing extra recovery conditions");
+        Class badDelegate=objc_allocateClassPair(AWEPlayVideoViewController.class,"TestBackgroundWrongPauseABI",0);
+        class_addMethod(badDelegate,@selector(pauseBySingleClick),class_getMethodImplementation(AWEPlayVideoViewController.class,@selector(pauseBySingleClick)),"q16@0:8");
+        objc_registerClassPair(badDelegate);
+        AWEPlayVideoViewController *bad=[badDelegate new];bad.model=video;module.delegate=bad;module.active=YES;module.nativeResponse=NO;
+        check(!module.shouldResponseNotification && module.eligibilityCalls==decisions,@"pause ABI drift rejects recovery before invoking incompatible getter");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
     return 0;

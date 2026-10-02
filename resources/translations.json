@@ -891,5 +891,10 @@
   "直播设置": "Live settings",
   "取消清屏": "Show controls",
   "更多直播": "More live",
-  "弹幕设置": "Chat settings"
+  "弹幕设置": "Chat settings",
+  "内容由AI生成，仅供参考": "AI-generated. For reference only.",
+  "问AI或按住说话": "Ask AI or hold to speak",
+  "登录后才能与AI聊天": "Log in to chat with AI",
+  "登录后可与AI聊天": "Log in to chat with AI",
+  "登录后使用AI": "Log in to use AI"
 }

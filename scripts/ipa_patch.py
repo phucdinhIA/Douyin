@@ -32,6 +32,8 @@ OPERATIONS = {
     'observeJSONResponse4': '@48@0:8@16@24@32^@40',
     'preferStandardFeed': 'B16@0:8',
     'standardFeedFormat': 'B16@0:8',
+    'normalFeedBody': 'v24@0:8@16',
+    'backgroundNotification': 'B16@0:8',
 }
 
 def sha256(path: pathlib.Path) -> str:
@@ -197,12 +199,16 @@ def validate_resources(resource_dir: pathlib.Path):
             store=(spec['class']=='AWEAwemeBackgroundPlayStoreService' and not spec['class_method'] and expected.get(spec['selector'])==spec['operation'])
             if spec['feature']!='background' or not (component or store):
                 raise ValueError('Background preference hook outside verified local store')
+        if spec['operation']=='backgroundNotification' or (spec['class'],spec['selector'])==('AWEAwemeBackgroundPlayModule','shouldResponseNotification'):
+            if (spec['class'],spec['selector'],spec['class_method'],spec['feature'],spec['operation'])!=('AWEAwemeBackgroundPlayModule','shouldResponseNotification',False,'background','backgroundNotification'):
+                raise ValueError('Background notification hook outside verified lifecycle gate')
         if spec['operation']=='observeJSONResponse4' and (spec['class'],spec['selector'],spec['class_method'],spec['feature'])!=('AWEJSONResponseSerializer','responseObjectForResponse:jsonObj:responseError:resultError:',False,'diagnostics'):
             raise ValueError('JSON observer outside verified serializer')
-        if spec['operation'] in ('preferStandardFeed','standardFeedFormat') or spec['feature']=='feed_compat':
+        if spec['operation'] in ('preferStandardFeed','standardFeedFormat','normalFeedBody') or spec['feature']=='feed_compat':
             verified={('AWEDCFeedListDataManager','shouldRequestWithChunk',False,'feed_compat','preferStandardFeed'),
                       ('AWEFeedDoubleColumnListDataController','enableChunkRequest',False,'feed_compat','standardFeedFormat'),
-                      ('AWESearchCachalotDCFeedDataController','enableChunkRequest',False,'feed_compat','standardFeedFormat')}
+                      ('AWESearchCachalotDCFeedDataController','enableChunkRequest',False,'feed_compat','standardFeedFormat'),
+                      ('AWEDCFeedDefaultDataController','buildRequestParams:',False,'feed_compat','normalFeedBody')}
             if (spec['class'],spec['selector'],spec['class_method'],spec['feature'],spec['operation']) not in verified:
                 raise ValueError('Feed transport hook outside verified native selector')
     for key, value in translations.items():

@@ -34,7 +34,7 @@ class PackagingTests(unittest.TestCase):
         source=(ROOT/'src/DouyinGuest.m').read_text(encoding='utf8')
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleShortVersionString"] isEqualToString:@"40.6.0"',source)
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleVersion"] isEqualToString:@"406019"',source)
-        self.assertIn('@"patch_version": @"0.9.0-test", @"app_version": @"40.6.0"',source)
+        self.assertIn('@"patch_version": @"0.10.0-test", @"app_version": @"40.6.0"',source)
     def test_injection_preserves_offsets_code_and_input(self):
         original = binary(); snapshot = bytes(original)
         modified = patch.inject_load_command(original)
@@ -78,12 +78,12 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(entry.compress_type,zipfile.ZIP_STORED)
     def test_resources_validate_and_no_identity_hooks(self):
         hooks,words=patch.validate_resources(ROOT/'resources')
-        self.assertEqual(len(hooks),78)
+        self.assertEqual(len(hooks),79)
         self.assertEqual(words['首页'],'Home')
         self.assertFalse(any(x['selector'] in ['isLogin','isLoggedIn','hasMore','isAds'] for x in hooks))
         self.assertEqual(sum(x['feature']=='search' for x in hooks),5)
         self.assertEqual({x['selector'] for x in hooks if x['feature']=='background'},
-                         {'switchState','audioSwitchState','audioSceneState','enableBGPlayComponent'})
+                         {'switchState','audioSwitchState','audioSceneState','enableBGPlayComponent','shouldResponseNotification'})
         self.assertFalse(any(x['selector'] in ['listenVideoStatus','setListenVideoStatus:',
             'isVIPSubscribeContentAllowedListenWithAwemeModel:','shouldEnterBackgroundPlayMode']
             and x['operation'] not in ('observeBool0',) for x in hooks))
@@ -120,6 +120,19 @@ class PackagingTests(unittest.TestCase):
                     invalid=[{**x,**changes} if x is target else x for x in hooks]
                     (resource/'hooks.json').write_text(json.dumps(invalid),encoding='utf8')
                     with self.subTest(target=target['class'],changes=changes),self.assertRaises(ValueError):
+                        patch.validate_resources(resource)
+    def test_body_and_notification_hooks_reject_unverified_targets(self):
+        hooks,words=patch.validate_resources(ROOT/'resources')
+        targets=[x for x in hooks if x['operation'] in ('normalFeedBody','backgroundNotification')]
+        self.assertEqual(len(targets),2)
+        with tempfile.TemporaryDirectory() as directory:
+            resource=pathlib.Path(directory)
+            (resource/'translations.json').write_text(json.dumps(words),encoding='utf8')
+            for target in targets:
+                for changes in [{'class':'AWEUserService'},{'selector':'isLogin'},
+                        {'class_method':True},{'operation':'false0'},{'feature':'guest'}]:
+                    (resource/'hooks.json').write_text(json.dumps([{**x,**changes} if x is target else x for x in hooks]),encoding='utf8')
+                    with self.subTest(target=target['operation'],changes=changes),self.assertRaises(ValueError):
                         patch.validate_resources(resource)
     def test_build_removes_device_thinning_without_weakening_capabilities(self):
         main = {'CFBundleIdentifier':'com.ss.iphone.ugc.Aweme', 'CFBundleShortVersionString':'40.6.0',

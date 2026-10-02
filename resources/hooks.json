@@ -634,8 +634,8 @@
     "class": "AWEAwemeBackgroundPlayModule",
     "selector": "shouldResponseNotification",
     "types": "B16@0:8",
-    "operation": "observeBool0",
-    "feature": "diagnostics",
+    "operation": "backgroundNotification",
+    "feature": "background",
     "evidence_imp": "0x1d0cded8"
   },
   {
@@ -703,5 +703,15 @@
     "feature": "feed_compat",
     "evidence_binary": "AWESearchFramework",
     "evidence_imp": "0xb680b0"
+  },
+  {
+    "class": "AWEDCFeedDefaultDataController",
+    "selector": "buildRequestParams:",
+    "class_method": false,
+    "types": "v24@0:8@16",
+    "operation": "normalFeedBody",
+    "feature": "feed_compat",
+    "evidence_binary": "AwemeCore",
+    "evidence_imp": "0xf72440c"
   }
 ]

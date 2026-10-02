@@ -1,0 +1,65 @@
+[
+  {
+    "class": "AWEDCFeedDefaultDataController",
+    "binary": "AwemeCore",
+    "instance": [
+      {
+        "selector": "fetchDataWithPullType:completion:",
+        "types": "v32@0:8q16@?24",
+        "imp": "0xf723878"
+      },
+      {
+        "selector": "buildRequestParams:",
+        "types": "v24@0:8@16",
+        "imp": "0xf72440c"
+      }
+    ]
+  },
+  {
+    "class": "AWEAwemeBackgroundPlayModule",
+    "binary": "AwemeCore",
+    "instance": [
+      {
+        "selector": "shouldEnterBackgroundPlayMode",
+        "types": "B16@0:8",
+        "imp": "0x1d0cc810"
+      },
+      {
+        "selector": "isActivePlayModule",
+        "types": "B16@0:8",
+        "imp": "0x1d0cdcd8"
+      },
+      {
+        "selector": "shouldResponseNotification",
+        "types": "B16@0:8",
+        "imp": "0x1d0cded8"
+      },
+      {
+        "selector": "delegate",
+        "types": "@16@0:8",
+        "imp": "0x1d0d0a54"
+      },
+      {
+        "selector": "model",
+        "types": "@16@0:8",
+        "imp": "0x1d0d0a78"
+      }
+    ]
+  },
+  {
+    "class": "AWEPlayVideoViewController",
+    "binary": "AwemeCore",
+    "instance": [
+      {
+        "selector": "pauseBySingleClick",
+        "types": "B16@0:8",
+        "imp": "0x13d33eb0"
+      },
+      {
+        "selector": "model",
+        "types": "@16@0:8",
+        "imp": "0x13b560f8"
+      }
+    ]
+  }
+]

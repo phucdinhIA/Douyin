@@ -223,7 +223,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-network-error.png"];
 
     AWELeftSideBarFixtureView *sidebar=[[AWELeftSideBarFixtureView alloc] initWithFrame:self.window.bounds];sidebar.backgroundColor=UIColor.systemGroupedBackgroundColor;
-    title=label(sidebar,@"Sidebar fixture • 0.9.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
+    title=label(sidebar,@"Sidebar fixture • 0.10.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
     UILabel *settings=label(sidebar,@"设置",105);settings.frame=CGRectMake(285,105,32,22);settings.font=[UIFont systemFontOfSize:16];
     NSArray *sections=@[
         @[@"常用功能",@[@"观看历史",@"离线缓存",@"稍后再看",@"抖音创作者中心",@"直播广场",@"使用管理助手",@"我的二维码",@"未成年人保护"],@[@"clock",@"arrow.down.circle",@"play.rectangle",@"person.crop.circle",@"video",@"timer",@"qrcode",@"shield"]],
@@ -249,7 +249,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     AWESearchResultFixtureView *searchCanvas=[[AWESearchResultFixtureView alloc] initWithFrame:self.window.bounds];
     searchCanvas.backgroundColor=UIColor.systemBackgroundColor;
     AWESearchFilterCollectionViewCell *filters=[[AWESearchFilterCollectionViewCell alloc] initWithFrame:self.window.bounds];[searchCanvas addSubview:filters];
-    title=label(filters,@"Search controls fixture • 0.9.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(filters,@"Search controls fixture • 0.10.0",80);title.frame=CGRectMake(20,80,width-40,30);
     NSArray *searchWords=@[@"综合排序",@"视频",@"用户",@"直播",@"一周内",@"最多点赞",@"切换为单列模式",@"切换为双列模式",@"相关搜索",@"大家都在搜",@"没有搜索到相关内容",@"试试换个搜索词"];
     CGFloat rowY=140;
     for (NSUInteger i=0;i<searchWords.count;i++) {
@@ -265,14 +265,14 @@ static NSUInteger countText(UIView *view, NSString *text) {
 
     AWESettingsFixtureViewController *settingsScreen=[AWESettingsFixtureViewController new];settingsScreen.view.backgroundColor=UIColor.systemBackgroundColor;
     NSArray *settingsWords=@[@"设置",@"账号管理",@"个性化内容推荐",@"通知消息管理",@"私信和通话通知",@"字体大小",@"缓存设置",@"后台播放设置",@"小窗播放设置",@"字幕设置",@"黑名单管理",@"隐私政策及简明版"];
-    title=label(settingsScreen.view,@"Settings fixture • 0.9.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(settingsScreen.view,@"Settings fixture • 0.10.0",80);title.frame=CGRectMake(20,80,width-40,30);
     for (NSUInteger i=0;i<settingsWords.count;i++) { UILabel *item=label(settingsScreen.view,settingsWords[i],135+i*43);item.frame=CGRectMake(20,135+i*43,180,36); }
     screen=settingsScreen;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-settings.png"];
 
     AWECommentFixtureView *commentCanvas=[[AWECommentFixtureView alloc] initWithFrame:self.window.bounds];commentCanvas.backgroundColor=UIColor.systemBackgroundColor;
     AWECommentVCHeaderBarView *commentHeader=[[AWECommentVCHeaderBarView alloc] initWithFrame:CGRectMake(16,70,width-32,150)];[commentCanvas addSubview:commentHeader];
-    title=label(commentHeader,@"Comment controls fixture • 0.9.0",0);title.frame=CGRectMake(4,0,width-40,28);title.font=[UIFont boldSystemFontOfSize:17];
+    title=label(commentHeader,@"Comment controls fixture • 0.10.0",0);title.frame=CGRectMake(4,0,width-40,28);title.font=[UIFont boldSystemFontOfSize:17];
     UILabel *headerCount=label(commentHeader,@"评论 1081",45);headerCount.frame=CGRectMake(4,45,170,28);
     UILabel *collection=label(commentHeader,@"观看完整合集：示例合集",82);collection.frame=CGRectMake(4,82,width-40,30);
     UILabel *summary=label(commentHeader,@"AI 解析",118);summary.frame=CGRectMake(4,118,130,28);
@@ -295,7 +295,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-comments.png"];
 
     AWENetworkErrorFixtureView *featured=[[AWENetworkErrorFixtureView alloc] initWithFrame:self.window.bounds];featured.backgroundColor=UIColor.systemBackgroundColor;
-    title=label(featured,@"Featured narrow-label fixture • 0.9.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
+    title=label(featured,@"Featured narrow-label fixture • 0.10.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
     UILabel *featuredTitle=label(featured,@"网络错误",320);featuredTitle.frame=CGRectMake((width-60)/2,320,60,30);featuredTitle.textAlignment=NSTextAlignmentCenter;
     UILabel *errorDetail=label(featured,@"请检查网络连接后重试",365);errorDetail.frame=CGRectMake((width-120)/2,365,120,30);errorDetail.textAlignment=NSTextAlignmentCenter;
     UIButton *retryButton=[UIButton buttonWithType:UIButtonTypeSystem];retryButton.frame=CGRectMake((width-100)/2,415,100,42);[retryButton setTitle:@"重试" forState:UIControlStateNormal];[featured addSubview:retryButton];
@@ -304,7 +304,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-featured-narrow.png"];
 
     UIView *live=[[UIView alloc] initWithFrame:self.window.bounds];live.backgroundColor=UIColor.systemBackgroundColor;
-    title=label(live,@"LIVE controls fixture • 0.9.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:18];
+    title=label(live,@"LIVE controls fixture • 0.10.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:18];
     _TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView *tags=[[_TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView alloc] initWithFrame:CGRectMake(20,140,width-40,44)];[live addSubview:tags];
     NSArray *cn=@[@"明星",@"聊天",@"唱歌",@"团播",@"颜值"];
     CGFloat slot=(width-40)/5;
@@ -428,6 +428,9 @@ static NSUInteger countText(UIView *view, NSString *text) {
     UITextField *input=[[UITextField alloc] initWithFrame:CGRectMake(20,302,250,30)];
     input.placeholder=@"搜索"; input.text=@"首页"; [parent addSubview:input];
     check([input.placeholder isEqualToString:@"Search"] && [input.text isEqualToString:@"首页"],@"placeholder translates while typed search content stays intact");
+    input.placeholder=@"问AI或按住说话";input.text=@"山螃蟹怎么做好吃？";
+    check([input.placeholder isEqualToString:@"Ask AI or hold to speak"] && [input.text isEqualToString:@"山螃蟹怎么做好吃？"],
+        @"AI input placeholder translates without altering the user's question");
     UITabBarItem *tab=[[UITabBarItem alloc] initWithTitle:@"消息" image:nil tag:0];
     check([tab.title isEqualToString:@"Inbox"],@"tab title localization");
     NSData *wordsData=[NSData dataWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"translations" withExtension:@"json" subdirectory:@"DouyinGuest.bundle"]];
@@ -548,6 +551,9 @@ static NSUInteger countText(UIView *view, NSString *text) {
     DUXToastViewConfig *toast=[DUXToastViewConfig new];toast.text=@"操作失败，请稍后重试";
     check([toast.text isEqualToString:@"Action failed. Try again later"],@"toast config localization happens before toast measures its text");
     AWECommentVCHeaderBarView *realHeader=[[AWECommentVCHeaderBarView alloc] initWithFrame:CGRectMake(0,0,300,100)];[commentContainer addSubview:realHeader];
+    UILabel *aiNotice=label(realHeader,@"内容由AI生成，仅供参考",60);aiNotice.frame=CGRectMake(4,60,250,28);
+    [aiNotice layoutIfNeeded];check([aiNotice.text isEqualToString:@"AI-generated. For reference only."],
+        @"AI chrome disclaimer translates in an explicitly identified header");
     UILabel *countLabel=label(realHeader,@"评论 1081",0);countLabel.frame=CGRectMake(0,0,150,28);[countLabel layoutIfNeeded];
     check([countLabel.text isEqualToString:@"Comments 1081"] && countLabel.adjustsFontSizeToFitWidth,@"actual native comment header name supports dynamic count and fitting");
     NSMutableAttributedString *collection=[[NSMutableAttributedString alloc] initWithString:@"观看完整合集：示例合集" attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]}];

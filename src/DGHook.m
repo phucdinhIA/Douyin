@@ -103,6 +103,45 @@ static Method DGGetter(id object, NSString *name, const char *types) {
     return method && !strcmp(method_getTypeEncoding(method),types) ? method : NULL;
 }
 
+static id DGObjectGetter(id object, NSString *name) {
+    Method method=DGGetter(object,name,"@16@0:8");
+    return method ? ((id (*)(id,SEL))method_getImplementation(method))(object,NSSelectorFromString(name)) : nil;
+}
+
+static NSString *DGControllerCategory(id controller) {
+    if (!controller) return @"nil";
+    for (NSString *name in @[@"AWEDCFeedDefaultDataControllerWrapper",@"AWEDCFeedDefaultDataController",
+        @"AWEFeedDoubleColumnListDataController",@"AWESearchCachalotDCFeedDataController",@"AWESearchMidDCDataController"])
+        if ([controller isKindOfClass:NSClassFromString(name)]) return name;
+    return @"other";
+}
+
+static BOOL DGCanRecoverBackgroundNotification(id module,DGRecord record) {
+    Class moduleClass=NSClassFromString(@"AWEAwemeBackgroundPlayModule");
+    Class delegateClass=NSClassFromString(@"AWEPlayVideoViewController");
+    if (!moduleClass || ![module isKindOfClass:moduleClass]) return NO;
+    id model=DGObjectGetter(module,@"model"),delegate=DGObjectGetter(module,@"delegate");
+    if (!model || !delegateClass || ![delegate isKindOfClass:delegateClass] || DGObjectGetter(delegate,@"model")!=model) {
+        record(@"Background notification model/delegate unavailable",1);return NO;
+    }
+    NSString *boolean=[NSString stringWithFormat:@"%s16@0:8",@encode(BOOL)];
+    Method active=DGGetter(module,@"isActivePlayModule",boolean.UTF8String);
+    Method paused=DGGetter(delegate,@"pauseBySingleClick",boolean.UTF8String);
+    Method eligible=DGGetter(module,@"shouldEnterBackgroundPlayMode",boolean.UTF8String);
+    if (!active || !paused || !eligible) {record(@"Background notification gate ABI unavailable",1);return NO;}
+    if (!((BOOL (*)(id,SEL))method_getImplementation(active))(module,NSSelectorFromString(@"isActivePlayModule"))) {
+        record(@"Background notification module inactive",1);return NO;
+    }
+    if (((BOOL (*)(id,SEL))method_getImplementation(paused))(delegate,NSSelectorFromString(@"pauseBySingleClick"))) {
+        record(@"Background notification user paused",1);return NO;
+    }
+    // Preserve the original eligibility decision, including PiP/lock/model rules.
+    if (!((BOOL (*)(id,SEL))method_getImplementation(eligible))(module,NSSelectorFromString(@"shouldEnterBackgroundPlayMode"))) {
+        record(@"Background notification native eligibility denied",1);return NO;
+    }
+    return YES;
+}
+
 static NSInteger DGHTTPStatus(id response, NSString **mime) {
     if ([response isKindOfClass:NSHTTPURLResponse.class]) {
         *mime=[response MIMEType]; return [response statusCode];
@@ -190,7 +229,8 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
     NSString *boolean = [NSString stringWithUTF8String:@encode(BOOL)];
     if ([kind isEqualToString:@"false0"] || [kind isEqualToString:@"true0"] ||
         [kind isEqualToString:@"backgroundSwitch"] || [kind isEqualToString:@"observeBool0"] ||
-        [kind isEqualToString:@"preferStandardFeed"] || [kind isEqualToString:@"standardFeedFormat"]) {
+        [kind isEqualToString:@"preferStandardFeed"] || [kind isEqualToString:@"standardFeedFormat"] ||
+        [kind isEqualToString:@"backgroundNotification"]) {
         returnType = boolean; arguments = @[@"@", @":"];
     } else if ([kind isEqualToString:@"backgroundState"]) {
         returnType = @"q"; arguments = @[@"@", @":"];
@@ -217,7 +257,8 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
     } else if ([kind isEqualToString:@"translateGetter"] || [kind isEqualToString:@"translateRichGetter"] ||
                [kind isEqualToString:@"translateSurveyGetter"] || [kind isEqualToString:@"observeListGetter"]) {
         returnType = @"@"; arguments = @[@"@", @":"];
-    } else if ([kind isEqualToString:@"translateConfig1"] || [kind isEqualToString:@"observeError1"]) {
+    } else if ([kind isEqualToString:@"translateConfig1"] || [kind isEqualToString:@"observeError1"] ||
+               [kind isEqualToString:@"normalFeedBody"]) {
         returnType = @"v"; arguments = @[@"@", @":", @"@"];
     } else if ([kind isEqualToString:@"observeFeedRequest"]) {
         returnType = @"v"; arguments = @[@"@", @":", @"Q", @"@", @"@"];
@@ -281,7 +322,29 @@ static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecor
     IMP original = method_getImplementation(method);
     id block = nil;
     NSString *event = [NSString stringWithFormat:@"%@ %@", name, selectorName];
-    if ([kind isEqualToString:@"standardFeedFormat"]) {
+    if ([kind isEqualToString:@"normalFeedBody"]) {
+        block=^(id self,id body) {
+            ((void (*)(id,SEL,id))original)(self,sel,body);
+            if (!enabled()) return;
+            record(@"DC normal body builder calls",1);
+            Class native=NSClassFromString(@"AWEDCFeedDefaultDataController");
+            if (!native || ![self isKindOfClass:native] || ![body isKindOfClass:NSMutableDictionary.class]) return;
+            // This builder belongs exclusively to the normal JSON request path.
+            // Its input is a new dictionary populated from native request config.
+            if ([body[@"is_tidy"] isKindOfClass:NSString.class] && [body[@"is_tidy"] isEqualToString:@"true"]) {
+                [body removeObjectForKey:@"is_tidy"];record(@"DC normal body tidy negotiation removed",1);
+            } else record(@"DC normal body no tidy negotiation",1);
+        };
+    } else if ([kind isEqualToString:@"backgroundNotification"]) {
+        block=^BOOL(id self) {
+            BOOL native=((BOOL (*)(id,SEL))original)(self,sel);
+            if (!enabled()) return native;
+            record([event stringByAppendingString:(native ? @" original YES" : @" original NO")],1);
+            if (native) return YES;
+            if (!DGCanRecoverBackgroundNotification(self,record)) return NO;
+            record(@"Background notification recovery selected",1);return YES;
+        };
+    } else if ([kind isEqualToString:@"standardFeedFormat"]) {
         block=^BOOL(id self) {
             BOOL native=((BOOL (*)(id,SEL))original)(self,sel);
             if (!enabled()) return native;
@@ -299,6 +362,10 @@ static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecor
             BOOL native=((BOOL (*)(id,SEL))original)(self,sel);
             if (!enabled()) return native;
             record(native ? @"DC transport original chunk" : @"DC transport original standard",1);
+            id controller=DGObjectGetter(self,@"dataController");
+            record([@"DC normal controller " stringByAppendingString:DGControllerCategory(controller)],1);
+            if ([controller isKindOfClass:NSClassFromString(@"AWEDCFeedDefaultDataControllerWrapper")])
+                record([@"DC inner controller " stringByAppendingString:DGControllerCategory(DGObjectGetter(controller,@"dataController"))],1);
             if (!native) return NO;
             // Native fetch/refresh/load-more choose their existing non-chunk branch.
             // Do not reissue requests or change URLs, credentials, cursors or states.
