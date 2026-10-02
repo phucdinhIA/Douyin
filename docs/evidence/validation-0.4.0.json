@@ -1,0 +1,106 @@
+{
+  "candidate": "Douyin-40.6.0-Guest-0.4.0-iPhone15-TEST.ipa",
+  "patch_version": "0.4.0-test",
+  "app_version": "40.6.0",
+  "app_build": "406019",
+  "source_sha256": "3444d6045147b772e8f5e7e844c38a0f72464f34a4eb1af5c5df5f9433d706af",
+  "output_sha256": "b9aaec9f01039839ee92f5af25a9c076ab986ef5137d2ce04520f8bbd1e8241a",
+  "library_sha256": "d95995453bd0e54a8d27ed2a2016ed8b23302d8035376fa65e2a56708819d1d0",
+  "output_size_bytes": 704832301,
+  "compiled_commit": "930ebb35aab201df890a29324b3b88f34fe21f67",
+  "ci_runs_successful": [
+    36863785258,
+    36863160540
+  ],
+  "python_tests_passed": 14,
+  "foundation_policy_and_hook_regressions_passed": true,
+  "warnings_as_errors_build_passed": true,
+  "library_adhoc_signature_verified": true,
+  "toolchain": {
+    "xcode": "15.4",
+    "iphoneos_sdk": "17.5",
+    "minimum_ios": "15.0",
+    "architecture": "arm64"
+  },
+  "uikit_fixture": {
+    "passed": true,
+    "checks_passed": 58,
+    "device": "iPhone 15 Simulator",
+    "ios": "18.2",
+    "translation_entries_tested": 853,
+    "overflow_labels": [],
+    "scope": "UIKit fixture only; original Douyin app and network were not executed",
+    "evidence": "evidence/ui-results-0.4.0.json",
+    "visuals_reviewed": [
+      "evidence/ui-sidebar-0.4.0.png",
+      "evidence/ui-network-error-0.4.0.png",
+      "evidence/ui-search-0.4.0.png",
+      "evidence/ui-settings-0.4.0.png"
+    ]
+  },
+  "fixed_native_hooks_matching_source_metadata": 39,
+  "login_guide_hooks": 11,
+  "ad_filter_and_splash_hooks": 19,
+  "guest_search_gateways": 5,
+  "diagnostic_observers": 4,
+  "guest_search_adapter_methods": {
+    "expected_per_adapter": 2,
+    "runtime_resolved_ABI_checked": true,
+    "physical_iPhone_installation_verified": false,
+    "original_class_return_and_gate_forwarding_tested": true,
+    "incompatible_adapter_preflight_and_nil_tested": true,
+    "server_status_2483_preserved_and_redaction_tested": true
+  },
+  "translation_entries": 853,
+  "new_translation_entries": 551,
+  "translations_found_in_two_binaries": 752,
+  "localization_resource_files_reviewed": 104,
+  "custom_YYLabel_ABI_checked": true,
+  "bundled_SDK_English_fallback_tested": true,
+  "source_unchanged": true,
+  "utf8_filename_corrections": [
+    "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页11.heic",
+    "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页11 1.heic",
+    "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页 1.heic",
+    "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页.heic"
+  ],
+  "removed_thinning_allowlists": [
+    {
+      "path": "Payload/Aweme.app/Info.plist",
+      "previous": [
+        "iPhone10,1",
+        "iPhone10,4",
+        "iPhone12,8",
+        "iPhone14,6",
+        "iPhone9,1",
+        "iPhone9,3"
+      ]
+    }
+  ],
+  "runtime_tested": false,
+  "runtime_tested_scope": "Current candidate on physical iPhone",
+  "previous_candidate_0_3_installed_by_user": false,
+  "previous_candidate_0_2_user_report": {
+    "installed_and_launched": true,
+    "native_hooks_active": 30,
+    "live_and_nearby_video_playback": "user reports smooth playback",
+    "featured_and_experience": "Network error with ads/login ON and OFF"
+  },
+  "guest_search_unlimited_results_verified": false,
+  "translation_ui_coverage_verified": false,
+  "featured_tips_network_root_cause_resolved": false,
+  "featured_tips_removed_or_hidden": false,
+  "requires_resigning": true,
+  "original_ipa_safety_proven": false,
+  "status": "Combined test candidate; physical-device search/layout/feed verification required",
+  "zip_entries_read_back_and_sha256_verified": 5629,
+  "unchanged_entries_independent_crc_size_mode_comparison": 5620,
+  "unchanged_files_independent_audit_sha256_comparison": 4977,
+  "prior_audit_total_records": 5011,
+  "comparison_mismatches": 0,
+  "mismatches": [],
+  "original_core_binary_unchanged": true,
+  "executable_size_preserved": true,
+  "executable_actual_bytes_changed": 51,
+  "executable_code_after_injected_header_unchanged": true
+}

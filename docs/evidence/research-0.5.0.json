@@ -1,0 +1,29 @@
+{
+  "checked_on": "2026-10-02",
+  "latest_sources": [
+    {
+      "repo": "huami1314/DYYY",
+      "commit": "6c3dfbd911822b4d0f758f184c196566e8142291",
+      "url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/DYYY.xm",
+      "sha256": "6f005f7903bf315947662ea478136db0db6a21e7dd2d53a426491d10fc94408a",
+      "lines": 9035,
+      "exact_selectors_or_status_hits": []
+    },
+    {
+      "repo": "pxx917144686/DYYY",
+      "commit": "39561aef7fff5ac039eb2f6a202dd05beba42d89",
+      "url": "https://raw.githubusercontent.com/pxx917144686/DYYY/39561aef7fff5ac039eb2f6a202dd05beba42d89/DYYY.xm",
+      "sha256": "c31e8dab66d315e4cc395b7d377ac6a4a3c4e41c169f5fee5fa18b21abd811e3",
+      "lines": 6517,
+      "exact_selectors_or_status_hits": []
+    }
+  ],
+  "findings": "downloadUrl-to-originUrl in both files targets saving original images; no evidence it fixes delayed thumbnails. No compatible unlimited native guest search fix found in the inspected files.",
+  "not_applied": [
+    "download URL replacement for rendering",
+    "borrowed authentication cookies",
+    "fabricated server success",
+    "guest quota override"
+  ],
+  "limitations": "Read-only public source review; absence of a technique in these files does not cover all repositories or establish server behavior."
+}

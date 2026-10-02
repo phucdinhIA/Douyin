@@ -1,60 +1,31 @@
-# Douyin Guest — bản thử 0.4.0
+# Douyin Guest — bản thử 0.5.0
 
-Mã chỉnh sửa dành riêng cho mẫu Douyin **40.6.0 / 406019 / arm64**, SHA-256 nguồn:
+Dành riêng cho Douyin **40.6.0 / build 406019 / arm64**. Source SHA-256 `3444d6045147b772e8f5e7e844c38a0f72464f34a4eb1af5c5df5f9433d706af`. Repository chứa mã patch tự viết và công cụ kiểm tra; IPA/binary Douyin chỉ nằm cục bộ.
 
-`3444d6045147b772e8f5e7e844c38a0f72464f34a4eb1af5c5df5f9433d706af`
+**0.5.0 là candidate giao diện/chẩn đoán. Chưa chứng minh guest tìm kiếm không giới hạn, đọc toàn bộ bình luận, hết lỗi Featured/Tips hoặc ảnh tải chậm.** Không xóa/ẩn hai tab. [Trạng thái và hash](docs/STATUS.md).
 
-**Đây là bản thử cần kiểm tra trên iPhone, chưa phải bản hoàn chỉnh đã kiểm chứng.** Repository chứa mã do dự án viết, cấu hình, công cụ đóng gói và kiểm tra; không chứa IPA, binary hoặc mã nguồn của Douyin.
+- Giữ 11 hook nhắc đăng nhập và 19 hook quảng cáo của các đường đã đối chiếu; không fake tài khoản, success/cursor/hasMore hay quyền server.
+- 873 bản dịch control. Native comment header/bottom tips, count/reply templates, toast/empty config trước đo chữ, collection prefix giữ title/link/mixed style. UILabel/UIButton/YYLabel co chữ một dòng tối đa 65%, có compact labels; không sửa frame/constraints toàn app.
+- Evaluation config chỉ dịch key UI đã thấy trong disassembly; survey map câu hỏi/rating chính xác trong key trình bày cho phép, giữ ID/value/URL/bizParams. Nội dung comment, usernames và từ khóa vẫn giữ. Lynx/schema thật và mọi màn chưa được chứng nhận đầy đủ.
+- 50 fixed hooks và diagnostics cục bộ: DC/generic feed, status số, image SDK failures/finish và count comment list. Không log URL/token/keyword/comment/image/error description. Search gateway chỉ quan sát; bỏ ép guest/quota gates.
 
-**Bản hiện tại: 0.4.0-test**, gộp 0.3.0 và tìm kiếm khách, 551 bản dịch mới (853 tổng cộng), YYLabel và tài nguyên tiếng Anh có sẵn trong SDK. Người dùng chưa cài 0.3.0; thử trực tiếp candidate mới. Xem [tìm kiếm khách](docs/GUEST_SEARCH.md). Bản 0.2.0 đã cài/mở được trên iPhone 15/iOS 18.5 sau sửa thinning; LIVE/Nearby phát theo báo cáo của người dùng, nhưng Featured/经验 vẫn Network error kể cả khi tắt ad/login. **Lỗi này chưa được sửa**; hai mục vẫn giữ nguyên. Xem [điều tra feed](docs/FEED_NETWORK.md) và [hash/kết quả](docs/STATUS.md).
+Build macOS CI bằng Xcode SDK, kiểm Foundation và UIKit fixture trên iPhone 15 Simulator. [Vòng 36950206145](https://github.com/phucdinhIA/Douyin/actions/runs/36950206145) đạt 14 Python tests, Foundation/build và 74 UIKit checks; đã xem sáu ảnh fixture. Đây không phải Douyin chạy trên Simulator và không thay được kiểm tra iPhone 15/iOS 18.5.
 
-Các thay đổi được triển khai:
-
-- 11 hook cho bộ điều khiển nhắc đăng nhập trước khi xem, trong luồng cuộn và nút gợi ý đăng nhập. Không giả mạo trạng thái đã đăng nhập và không sửa quyền truy cập do máy chủ áp dụng.
-- 19 hook cho lọc video quảng cáo trong ba loại response và chặn các cổng hiển thị quảng cáo khởi động/splash đã xác định. Đọc `isAds` và bổ sung `checkIsAd`, `isHardAdModel`, `isHardAd` đã đối chiếu trên `AWEAwemeModel`; không làm initializer trả `nil`. Cursor, `hasMore`, retry và quyền truy cập video được giữ nguyên.
-- 853 cặp dịch khớp toàn chuỗi cho chữ điều khiển thường gặp. Xử lý UILabel, UIButton, YYLabel, nhãn điều hướng theo ngữ cảnh, tab, placeholder và lookup localization; SDK có tài nguyên en.lproj dùng bản Anh cùng key/table. Chữ một dòng được phép co trong giới hạn 65%; chuỗi attributed có nhiều kiểu giữ nguyên. Sửa fitting sau setter, giữ fallback state của button và bảo vệ tiêu đề profile. Nội dung video/caption không được gửi ra dịch vụ dịch.
-- Tìm kiếm khách qua service adapter thật của app; kiểm tra hai method BOOL trước khi bật cổng client, có công tắc riêng. Không giả tài khoản hoặc đổi kết quả máy chủ. Chưa kiểm chứng tìm kiếm thật trên iPhone.
-- Bảng tùy chọn và chẩn đoán cục bộ, hỗ trợ scene/delegate window; 39 fixed hook gồm 30 hook ad/login, 5 gateway tìm kiếm khách và 4 observer; 2 method adapter động được kiểm tra ABI và đếm riêng. Ghi category/mã NSError và thống kê list, không ghi URL, token hoặc description; callback gốc vẫn nhận nguyên argument. Không có endpoint/analytics mới.
-
-Giới hạn hiện tại: chưa bao phủ mọi màn hình, WebView/Lynx, chữ tải từ máy chủ, quảng cáo lồng trong video hay tất cả đường dữ liệu. Không bảo đảm xem mọi video hoặc không giới hạn khi máy chủ yêu cầu xác thực. Hành vi thực tế và bố cục cần kiểm tra trên thiết bị.
-
-## Build và đóng gói
-
-GitHub Actions dùng macOS với SDK từ Xcode để biên dịch thư viện. WSL không có SDK iOS chính thức được cài trong môi trường này; không cần tải toolchain hay IPA không rõ nguồn gốc để build. Runner tiêu chuẩn của repository công khai không dùng runner trả phí hay dịch vụ build ngoài.
-
-1. Workflow **Build and verify guest library** chạy kiểm tra Python, kiểm tra policy/hook với Foundation, build arm64 iOS 15.0, ký ad-hoc, xác minh thư viện và chạy UIKit fixture trên iPhone 15 Simulator. Chỉ upload thư viện khi tất cả kiểm tra đạt.
-2. Artifact `DouyinGuest-arm64` chứa thư viện, SHA-256, commit nguồn và phiên bản Xcode/SDK. Kiểm tra `SOURCE_COMMIT` khớp commit cần build.
-3. Đóng gói trên Windows/macOS/Linux với Python 3.11 trở lên:
-
-```powershell
-python scripts/ipa_patch.py "path\original.ipa" "build\DouyinGuest.dylib" "dist\Douyin-40.6.0-Guest-0.4.0-iPhone15-TEST.ipa" --library-sha256 HASH_FROM_ARTIFACT
-```
-
-Công cụ từ chối hash nguồn sai, binary mã hóa, kiến trúc sai, vùng header không trống, tên ZIP không an toàn, đường dẫn trùng, hoặc ghi đè file đã tồn tại. Nó đọc lại tất cả file output và kiểm chứng hash, đồng thời kiểm tra IPA nguồn vẫn nguyên vẹn. Báo cáo `.validation.json` đi kèm ghi chi tiết thay đổi.
-
-Ký/cài bản thử bằng Sideloadly. IPA cần ký lại toàn bộ thành phần theo công cụ của bạn; chữ ký App Store cũ không chứng thực bản đã sửa.
-
-## Bảng tùy chọn
-
-Chạm đồng thời **hai ngón tay, ba lần** trên màn hình app để mở **Douyin Guest**:
-
-- bật/tắt nhắc đăng nhập, lọc quảng cáo, tiếng Anh hoặc **Guest search**;
-- **Copy diagnostics** sao chép phiên bản, số hook đã cài/còn active và các bộ đếm; không chứa token, tài khoản hoặc URL video;
-- khởi động lại ứng dụng sau khi thay đổi. Việc tắt lọc không khôi phục mục quảng cáo đã bị lọc khỏi response cũ; cần tải lại feed.
-
-Hook chỉ bật cho build đã chọn; bundle ID gốc hoặc ID có hậu tố do ký lại được hỗ trợ. Nếu dùng Sideloadly đổi hẳn bundle ID, hook không bật. Các kiểu hàm khác cấu hình sẽ bị bỏ qua và xuất hiện trong chẩn đoán.
-
-## Tài liệu và kiểm tra
-
-Vòng [36863785258](https://github.com/phucdinhIA/Douyin/actions/runs/36863785258) đã đạt 14 Python tests, Foundation, build và **58/58 UIKit checks** trên iPhone 15 Simulator/iOS 18.2. Đã xem bốn ảnh sidebar/error/Search/Settings của fixture; đây không phải Douyin thật. IPA mới đã được đọc lại/hash toàn bộ 5.629 entry và đối chiếu 4.977 file không sửa với audit, không sai lệch. Bản 0.4.0 vẫn cần kiểm tra tìm kiếm/giao diện trên iPhone và lấy mã lỗi feed. [Trạng thái kiểm chứng](docs/STATUS.md).
-
-- [Kế hoạch triển khai và luồng xử lý](docs/PLAN.md)
-- [Nguồn nghiên cứu, lựa chọn kỹ thuật](docs/RESEARCH.md)
-- [Quy trình kiểm tra iPhone 15 / iOS 18.5](docs/DEVICE_TESTS.md)
-- [Trạng thái kiểm chứng](docs/STATUS.md)
+## Build và cài thử
 
 ```powershell
 python -m unittest discover -s tests -p "test_*.py" -v
+python scripts/ipa_patch.py "path\original.ipa" "build\DouyinGuest.dylib" "dist\Douyin-40.6.0-Guest-0.5.0-iPhone15-TEST.ipa" --library-sha256 HASH_FROM_ARTIFACT
 ```
 
-Khôi phục bằng cách cài lại IPA gốc đã giữ nguyên. Không gỡ ứng dụng nếu cần giữ dữ liệu hiện có; bản thử không cần migration dữ liệu tài khoản.
+Công cụ khóa hash/version/arm64, từ chối encrypted executable, unsafe ZIP paths, header thiếu vùng trống và ghi đè output; đọc lại/hash output và giữ IPA nguồn. Thư viện đã ký ad-hoc để kiểm tra; IPA cần ký lại bằng Sideloadly. Thinning allowlists cũ được bỏ ở app/extensions để hỗ trợ iPhone 15; capabilities giữ nguyên.
+
+Chạm **hai ngón tay ba lần** mở Douyin Guest: Hide login reminders, Filter feed / startup ads, English controls, **Search diagnostics**, Copy diagnostics, Close. Khởi động lại sau đổi tùy chọn. Mục Search diagnostics chỉ bật quan sát gateway, không mở quota tài khoản. Không đổi hẳn bundle ID; ID gốc hoặc hậu tố do ký lại được hỗ trợ.
+
+- [Kế hoạch và nghiên cứu vòng này](docs/ROUND_0.5.md)
+- [Luồng tìm kiếm và mã 2483](docs/GUEST_SEARCH.md)
+- [Lỗi Featured/Tips](docs/FEED_NETWORK.md)
+- [Các ca kiểm tra thiết bị](docs/DEVICE_TESTS.md)
+- [Trạng thái kiểm chứng](docs/STATUS.md)
+
+Candidate/IPA gốc/các bản cũ được giữ nguyên. Khôi phục bằng IPA cũ đã giữ; không cần migration tài khoản. Không gỡ app nếu cần giữ dữ liệu hiện có.
