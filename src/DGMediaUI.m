@@ -5,6 +5,7 @@
 
 static NSDictionary *DGMediaConfig,*DGMediaGemini;
 static DGTranslationStore *DGMediaCache;
+static DGTranslationStore *DGGTXCache;
 static NSURLSessionConfiguration *DGMediaConfiguration;
 static void (^DGMediaRecord)(NSString *,NSUInteger);
 static NSMutableSet *DGMediaHooks;
@@ -25,12 +26,13 @@ static NSDictionary *DGMediaResource(NSString *name) {
     NSURL *url=[NSBundle.mainBundle URLForResource:name withExtension:@"json" subdirectory:@"DouyinGuest.bundle"];
     NSData *data=url ? [NSData dataWithContentsOfURL:url] : nil;id root=data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL] : nil;return [root isKindOfClass:NSDictionary.class] ? root : @{};
 }
-static DGMediaClient *DGNewMediaClient(void) {
-    if (!DGMediaCache) {
+static DGMediaClient *DGNewMediaClient(BOOL comments) {
+    if (!DGMediaCache || !DGGTXCache) {
         NSURL *base=[NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
-        DGMediaCache=[[DGCaptionStore alloc] initWithURL:[base URLByAppendingPathComponent:@"DouyinGuest/media-vi-v1.json"]];
+        if (!DGMediaCache) DGMediaCache=[[DGCaptionStore alloc] initWithURL:[base URLByAppendingPathComponent:@"DouyinGuest/media-vi-v1.json"]];
+        if (!DGGTXCache) DGGTXCache=[[DGTranslationStore alloc] initWithURL:[base URLByAppendingPathComponent:@"DouyinGuest/gtx-vi-v1.json"]];
     }
-    DGMediaClient *client=[[DGMediaClient alloc] initWithConfig:DGMediaConfig geminiKey:DGMediaGemini[@"api_key"] store:DGMediaCache configuration:DGMediaConfiguration];
+    DGMediaClient *client=[[DGMediaClient alloc] initWithConfig:DGMediaConfig geminiKey:DGMediaGemini[@"api_key"] store:comments ? DGGTXCache : DGMediaCache configuration:DGMediaConfiguration];
     client.event=^(NSString *name) {DGMediaCount(name);};return client;
 }
 NSArray *DGMediaReadVisibleComments(UIView *root) {
@@ -55,7 +57,7 @@ NSArray *DGMediaReadVisibleComments(UIView *root) {
 @end
 @implementation DGCommentTranslations
 - (void)viewDidLoad {
-    [super viewDidLoad];self.title=@"Dịch bình luận · GTX";self.answers=[NSMutableDictionary new];self.client=DGNewMediaClient();self.tableView.accessibilityIdentifier=@"gtx-comments-table";
+    [super viewDidLoad];self.title=@"Dịch bình luận · GTX";self.answers=[NSMutableDictionary new];self.client=DGNewMediaClient(YES);self.tableView.accessibilityIdentifier=@"gtx-comments-table";
     self.tableView.rowHeight=UITableViewAutomaticDimension;self.tableView.estimatedRowHeight=100;
     self.navigationItem.rightBarButtonItem=[[UIBarButtonItem alloc] initWithTitle:@"Đóng" style:UIBarButtonItemStyleDone target:self action:@selector(close)];
     UILabel *note=[[UILabel alloc] initWithFrame:CGRectMake(0,0,320,76)];note.numberOfLines=0;note.font=[UIFont systemFontOfSize:13];note.textAlignment=NSTextAlignmentCenter;
@@ -115,7 +117,7 @@ static __weak DGCaptionEntry *DGActiveCaption;
     NSString *identifier=DGVideoID(self.owner);
     if (!identifier) {self.status.text=@"Chưa đọc được ID video đang xem.";DGMediaCount(@"Captions video ID unavailable");return;}
     if (DGActiveCaption!=self) [DGActiveCaption stop];DGActiveCaption=self;
-    self.videoID=identifier;self.showing=YES;self.running=YES;self.cues=@[];self.client=DGNewMediaClient();[self.button setTitle:@"Hủy phụ đề" forState:UIControlStateNormal];
+    self.videoID=identifier;self.showing=YES;self.running=YES;self.cues=@[];self.client=DGNewMediaClient(NO);[self.button setTitle:@"Hủy phụ đề" forState:UIControlStateNormal];
     self.timer=[NSTimer timerWithTimeInterval:0.1 repeats:YES block:^(__unused NSTimer *timer) {[DGActiveCaption tick];}];[NSRunLoop.mainRunLoop addTimer:self.timer forMode:NSRunLoopCommonModes];
     __weak DGCaptionEntry *weakSelf=self;
     self.client.update=^(NSString *stage,NSArray *cues,NSString *failure) {
@@ -186,6 +188,6 @@ void DGMediaInstall(void (^record)(NSString *,NSUInteger)) {
 }
 NSDictionary *DGMediaSnapshot(void) {return @{@"caption_configured":@([DGMediaConfig[@"apify_api_key"] length]>0 && [DGMediaConfig[@"deepgram_api_key"] length]>0 && [DGMediaGemini[@"api_key"] length]>0),@"actor":@"apple_yang/douyin-video-audio-downloader",@"asr_model":@"nova-3",@"source_language":@"zh-CN",@"target_language":@"vi",@"translation_model":@"gemini-3.5-flash-lite",@"hooks_installed":@(DGMediaHooks.count),@"caption_running":@(DGActiveCaption.running),@"caption_showing":@(DGActiveCaption.showing),@"automatic_retries":@0,@"maximum_video_seconds":@3600,@"gtx_opt_in":@YES};}
 #ifdef DG_GEMINI_FIXTURE
-void DGMediaFixtureConfiguration(NSURLSessionConfiguration *configuration,NSURL *cacheURL) {DGMediaConfiguration=configuration;DGMediaCache=[[DGCaptionStore alloc] initWithURL:cacheURL];}
+void DGMediaFixtureConfiguration(NSURLSessionConfiguration *configuration,NSURL *cacheURL) {DGMediaConfiguration=configuration;DGMediaCache=[[DGCaptionStore alloc] initWithURL:cacheURL];DGGTXCache=[[DGTranslationStore alloc] initWithURL:nil];}
 void DGMediaFixtureTick(UIViewController *owner) {[objc_getAssociatedObject(owner,&DGCaptionKey) tick];}
 #endif
