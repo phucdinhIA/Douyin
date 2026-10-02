@@ -1,0 +1,220 @@
+{
+  "scope": "Static metadata and targeted arm64 disassembly from original IPA; no physical execution",
+  "methods": [
+    {
+      "class": "AWECommentModel",
+      "selector": "content",
+      "types": "@16@0:8",
+      "imp": "0x136f7620"
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "isPlaying",
+      "types": "B16@0:8",
+      "imp": "0x13e7fcb0"
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "pause",
+      "types": "B16@0:8",
+      "imp": "0x14e2aa18"
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "currentPlaybackTime",
+      "types": "d16@0:8",
+      "imp": "0x13d13514"
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "resumePlayVideo",
+      "types": "v16@0:8",
+      "imp": "0x14e68080"
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "model",
+      "types": "@16@0:8",
+      "imp": "0x13b560f8"
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "itemID",
+      "types": "@16@0:8",
+      "imp": "0x1d3984e4"
+    },
+    {
+      "class": "AWECommentNewFeedCell",
+      "selector": "commentModel",
+      "types": "@16@0:8",
+      "imp": "0x79b9c4"
+    }
+  ],
+  "control_paths": [
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "isPlaying",
+      "size": 320,
+      "notes": [
+        "dConfig",
+        "abTestConfig",
+        "enableNewPlayer",
+        "dHandler",
+        "playerAction",
+        "isDefaultPlayer",
+        "isSimplePlayer",
+        "playerController",
+        "actionState",
+        "playState"
+      ]
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "play",
+      "size": 348,
+      "notes": [
+        "dConfig",
+        "abTestConfig",
+        "enableAudioPlayContainer",
+        "enableDelayAudioSessionObserver",
+        "addAVAudioSessionObservers",
+        "init",
+        "isInLandscapeFeedStatus",
+        "isShowingSearchViewControllerWithTabType:",
+        "_play:",
+        "call setWillPlay:",
+        "awe_play",
+        "setWillPlay:",
+        "OnWillPlayEvent",
+        "sendEvent:data:",
+        "willPlay"
+      ]
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "pause",
+      "size": 3104,
+      "notes": [
+        "dConfig",
+        "abTestConfig",
+        "enablePlayControlContainer",
+        "dHandler",
+        "playControlAction",
+        "pause",
+        "stringWithFormat:",
+        "%ld %s",
+        "formatLogWithFunc:event:extraDict:shouldReportCallStack:",
+        "pause",
+        "playState",
+        "date",
+        "timeIntervalSince1970",
+        "playStartTimestamp",
+        "interactionNewDelegate",
+        "onPlayerPause:",
+        "respondsToSelector:",
+        "playerController",
+        "_trackPlayTime",
+        "sharedMonitor",
+        "scrollingModel",
+        "setTrackPlayTimeDuration:",
+        "resetTraceSpeedTime",
+        "playerController",
+        "currPlaybackTime",
+        "videoDuration",
+        "loopTimes",
+        "adGapInteractiveDuration",
+        "model",
+        "referString",
+        "logInteractiveEvent:with:from:",
+        "sharedInstance",
+        "updatePauseStatusWithPlayer:",
+        "pause",
+        "setPlayState:",
+        "enableAudioFocusOpt",
+        "stopPlay:",
+        "pause",
+        "setRealPauseDuration:",
+        "_cancelPendingPlayTimeoutCheck",
+        "_cancelTimingForFirstFrame",
+        "_cancelTimingForStalling",
+        "p_trackFamiliarFeedFirstFrameWithShouldCancel:",
+        "timingTracker",
+        "pauseTimingForKey:",
+        "video_play_time",
+        "setPreviousPlayState:",
+        "defaultCenter",
+        "AwemeID",
+        "model",
+        "itemID",
+        "CurrentTime",
+        "call numberWithDouble:",
+        "ReactID",
+        "reactId",
+        "VideoDuration",
+        "call numberWithDouble:",
+        "LoopTimes",
+        "call numberWithLong:",
+        "dictionaryWithObjects:forKeys:count:",
+        "postNotificationName:object:userInfo:",
+        "kAWEPlayVideoViewControllerPausedNotification",
+        "isRemotePlay",
+        "copy",
+        "didOccurredInteractionVideoPausedWithAwemeModel:",
+        "enjoyFeedTogetherService",
+        "didPausedOnRemotePlayer",
+        "watchLaterInfo",
+        "isReportProgress",
+        "getPlayTime:",
+        "watchVideoLaterManager",
+        "playProgressModel",
+        "watchTimes",
+        "updateWatchLater:progress:loopCount:",
+        "init",
+        "setCurAweme:",
+        "referString",
+        "setReferString:",
+        "setCurrPlaybackTime:",
+        "logExtraDict",
+        "setLogExtra:",
+        "copy",
+        "pauseWith:",
+        "playAndMonitorManager",
+        "onPause"
+      ]
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "resumePlayVideo",
+      "size": 416,
+      "notes": [
+        "dConfig",
+        "abTestConfig",
+        "enablePlayControlContainer",
+        "dHandler",
+        "playControlAction",
+        "resumePlayVideo",
+        "model",
+        "video",
+        "playURL",
+        "URI",
+        "stringWithFormat:",
+        "%@ resumePlayVideo enter",
+        "%@",
+        "playerController",
+        "play"
+      ]
+    },
+    {
+      "class": "AWEPlayVideoViewController",
+      "selector": "itemID",
+      "size": 12,
+      "notes": []
+    },
+    {
+      "class": "AWECommentNewFeedCell",
+      "selector": "commentModel",
+      "size": 32,
+      "notes": []
+    }
+  ]
+}

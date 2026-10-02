@@ -1,0 +1,8 @@
+{
+  "scope": "Windows public GTX probe with synthetic comment; not native iPhone transport",
+  "http_status": 429,
+  "successful_translation_verified_this_turn": false,
+  "automatic_retry_performed": false,
+  "source_or_translation_logged": false,
+  "interpretation": "Local probe rate limited. Device report shows no GTX request; its confirmed failure was missing comment capture."
+}

@@ -26,7 +26,7 @@ NSURLRequest *DGGTXRequest(NSString *source) {
     if (!DGString(source,2000) || ![source stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length) return nil;
     NSURLComponents *url=[NSURLComponents componentsWithString:@"https://translate.googleapis.com/translate_a/single"];
     url.queryItems=@[[NSURLQueryItem queryItemWithName:@"client" value:@"gtx"],[NSURLQueryItem queryItemWithName:@"sl" value:@"zh-CN"],[NSURLQueryItem queryItemWithName:@"tl" value:@"vi"],[NSURLQueryItem queryItemWithName:@"dt" value:@"t"],[NSURLQueryItem queryItemWithName:@"q" value:source]];
-    return DGRequest(url.URL.absoluteString,@"GET",nil,nil,nil);
+    NSMutableURLRequest *request=[DGRequest(url.URL.absoluteString,@"GET",nil,nil,nil) mutableCopy];request.timeoutInterval=20;return request;
 }
 NSString *DGGTXAnswer(NSData *data,NSInteger status,NSString **failure) {
     if (failure) *failure=nil;
@@ -182,6 +182,11 @@ static NSString *DGCaptionDigest(NSString *source) {
         dispatch_async(dispatch_get_main_queue(),^{
             DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;owner.task=nil;
             NSInteger status=[response isKindOfClass:NSHTTPURLResponse.class] ? [(NSHTTPURLResponse *)response statusCode] : 0;
+            if (owner.event) {
+                NSString *provider=[request.URL.host isEqual:@"translate.googleapis.com"] ? @"GTX" : [request.URL.host isEqual:@"api.deepgram.com"] ? @"Captions Deepgram" : [request.URL.host isEqual:@"generativelanguage.googleapis.com"] ? @"Captions Gemini" : @"Captions Apify";
+                owner.event([NSString stringWithFormat:@"%@ HTTP %ld",provider,(long)status]);
+                if (error) owner.event([NSString stringWithFormat:@"%@ transport error %ld",provider,(long)error.code]);
+            }
             completion(data,status,error ? @"Kết nối bị gián đoạn hoặc hết thời gian. Bấm thử lại khi có mạng." : nil);
         });
     }];[self.task resume];

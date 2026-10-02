@@ -292,6 +292,7 @@ static UIView *findID(UIView *root,NSString *identifier) {
 @implementation _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel
 @end
 static atomic_int mediaRequests,commentRequests;
+static atomic_bool gtxThrottle;
 static NSData *mediaJSON(id value) {return [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];}
 static NSData *mediaBody(NSURLRequest *request) {
     if (request.HTTPBody) return request.HTTPBody;
@@ -313,7 +314,7 @@ static NSData *mediaBody(NSURLRequest *request) {
         NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSString *text=body[@"contents"][0][@"parts"][0][@"text"];NSArray *input=[NSJSONSerialization JSONObjectWithData:[text dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];
         for (NSDictionary *cue in input) [rows addObject:@{@"id":cue[@"id"],@"text":@[@"Xin chào",@"Trung Quốc",@"Cảm ơn"][[cue[@"id"] unsignedIntegerValue]]}];
         data=mediaJSON(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":[[NSString alloc] initWithData:mediaJSON(@{@"translations":rows}) encoding:NSUTF8StringEncoding]}]},@"finishReason":@"STOP"}]});
-    } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);data=mediaJSON(@[@[@[@"Video rất hay, cảm ơn bạn!",@"视频很好，谢谢！"]]]);}
+    } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);if (atomic_load(&gtxThrottle)) {status=429;data=mediaJSON(@{});}else data=mediaJSON(@[@[@[@"Video rất hay, cảm ơn bạn!",@"视频很好，谢谢！"]]]);}
     else {status=500;data=mediaJSON(@{});}
     [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
@@ -459,6 +460,17 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [native removeFromSuperview];[comments.view addSubview:native];[comments dismissViewControllerAnimated:NO completion:nil];
     DGMediaOpenComments(self.window);mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
     check([((UITableViewController *)((UINavigationController *)comments.presentedViewController).topViewController).tableView numberOfRowsInSection:0]==1,@"settings fallback opens GTX using visible semantic comment text without a native button");
+    [comments dismissViewControllerAnimated:NO completion:nil];
+    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *second=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,290,320,40)];second.text=@"新的评论";[comments.view addSubview:second];
+    atomic_store(&gtxThrottle,YES);DGMediaOpenComments(self.window);mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
+    table=(UITableViewController *)((UINavigationController *)comments.presentedViewController).topViewController;[table.view layoutIfNeeded];row=[NSIndexPath indexPathForRow:1 inSection:0];
+    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];
+    mediaWait(^BOOL{return [[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"giới hạn"];});
+    check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"giới hạn"],@"GTX HTTP 429 displays a useful rate-limit error instead of hanging");
+    int throttledRequests=atomic_load(&commentRequests);[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+    check(atomic_load(&commentRequests)==throttledRequests,@"GTX rate limit does not trigger automatic retry requests");atomic_store(&gtxThrottle,NO);
+    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];mediaWait(^BOOL{return [[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"];});
+    check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"] && atomic_load(&commentRequests)==throttledRequests+1,@"manual GTX retry succeeds after rate limit clears");
 }
 
 - (void)showVisualSamples {
