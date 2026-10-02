@@ -78,17 +78,21 @@ NSString *DGGeminiAnswer(NSData *data, NSInteger status, NSString **failure) {
 @property(nonatomic,strong) NSURLSession *session;
 @property(nonatomic,strong) NSURLSessionDataTask *task;
 @property(nonatomic) NSUInteger generation;
+@property(nonatomic,strong) NSURLSessionConfiguration *configuration;
 @end
 @implementation DGGeminiClient
 - (instancetype)initWithKey:(NSString *)key model:(NSString *)model {
-    if ((self=[super init])) {_key=[key copy];_model=[model copy];}return self;
+    return [self initWithKey:key model:model configuration:nil];
+}
+- (instancetype)initWithKey:(NSString *)key model:(NSString *)model configuration:(NSURLSessionConfiguration *)configuration {
+    if ((self=[super init])) {_key=[key copy];_model=[model copy];_configuration=configuration ? [configuration copy] : NSURLSessionConfiguration.ephemeralSessionConfiguration;}return self;
 }
 - (void)sendQuestion:(NSString *)question summary:(NSString *)summary history:(NSArray *)history completion:(void (^)(NSString *,NSString *))completion {
     [self cancel];
     NSUInteger generation=self.generation;
     NSURLRequest *request=DGGeminiRequest(self.key,self.model,question,summary,history);
     if (!request) {completion(nil,@"Enter a question of 1–4,000 characters and configure a valid Gemini key.");return;}
-    NSURLSessionConfiguration *config=NSURLSessionConfiguration.ephemeralSessionConfiguration;
+    NSURLSessionConfiguration *config=[self.configuration copy];
     config.HTTPCookieStorage=nil;config.URLCredentialStorage=nil;config.URLCache=nil;config.HTTPShouldSetCookies=NO;
     config.timeoutIntervalForRequest=45;config.timeoutIntervalForResource=60;
     self.session=[NSURLSession sessionWithConfiguration:config delegate:self delegateQueue:nil];

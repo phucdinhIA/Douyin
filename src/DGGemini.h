@@ -10,6 +10,8 @@ FOUNDATION_EXPORT NSString *DGGeminiAnswer(NSData *data, NSInteger status, NSStr
 // One request per Send. No automatic replay, account cookies, persistent history or raw error logging.
 @interface DGGeminiClient : NSObject <NSURLSessionTaskDelegate>
 - (instancetype)initWithKey:(NSString *)key model:(NSString *)model;
+// Dependency injection for tests; destination, headers and cookie isolation remain fixed.
+- (instancetype)initWithKey:(NSString *)key model:(NSString *)model configuration:(NSURLSessionConfiguration *)configuration;
 - (void)sendQuestion:(NSString *)question summary:(NSString *)summary history:(NSArray *)history
           completion:(void (^)(NSString *answer, NSString *failure))completion;
 - (void)cancel;

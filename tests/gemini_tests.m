@@ -55,7 +55,9 @@ int main(void) {@autoreleasepool {
     check(!DGGeminiAnswer([NSMutableData dataWithLength:2*1024*1024+1],200,&failure),@"oversized response rejected");
     check([DGGeminiAnswer(json(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":@"partial"}]},@"finishReason":@"MAX_TOKENS"}]}),200,&failure) containsString:@"length limit"],@"truncated answer is identified");
     [NSURLProtocol registerClass:GeminiMockProtocol.class];
-    DGGeminiClient *client=[[DGGeminiClient alloc] initWithKey:key model:DGGeminiQualityModel];
+    NSURLSessionConfiguration *mockConfiguration=NSURLSessionConfiguration.ephemeralSessionConfiguration;
+    mockConfiguration.protocolClasses=@[GeminiMockProtocol.class];
+    DGGeminiClient *client=[[DGGeminiClient alloc] initWithKey:key model:DGGeminiQualityModel configuration:mockConfiguration];
     __block BOOL finished=NO;
     [client sendQuestion:@"mock question" summary:@"mock context" history:@[] completion:^(NSString *text,NSString *error) {
         check(NSThread.isMainThread && [text isEqualToString:@"Mock answer"] && !error,@"async client completes on main thread");finished=YES;
