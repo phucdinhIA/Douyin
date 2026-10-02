@@ -1,17 +1,13 @@
-# Douyin — bản thử cá nhân 0.14.0
+# Douyin — bản thử cá nhân 0.15
 
-Douyin **40.6.0/build406019/arm64**, tên hiển thị **Douyin**. Ký/cài IPA riêng bằng Sideloadly.
+Douyin 40.6.0/build 406019/arm64, tên hiển thị **Douyin**. Ký/cài IPA riêng bằng Sideloadly.
 
-- Trên video, bấm **Phụ đề Việt** để lấy lời nói tiếng Trung qua Apify → Deepgram Nova-3 → Gemini và hiện phụ đề tiếng Việt theo thời gian player. Chỉ chạy sau khi bấm; đổi video/chuyển nền hủy. Nhóm đầu 8 cue, sau đó 16 cue, ưu tiên đoạn đang xem và dùng cache. Tối ưu cho video dưới 10 phút, giới hạn tối đa 60 phút.
-- Trong bình luận, bấm **Dịch bình luận**, rồi chạm một dòng để dịch miễn phí bằng Google Translate GTX. Bình luận gốc giữ nguyên; cache GTX tách riêng để không đẩy transcript trả phí ra khỏi cache.
-- Tự dịch tab phân tích AI và hỏi đáp Gemini của 0.13 được giữ; người dùng đã xác nhận dịch AI hoạt động.
+- **Chạm nhanh 4 lần bằng một ngón vào vùng video** để bật phụ đề Việt, kể cả khi nút không hiện. Video tạm dừng trước Apify → Deepgram Nova-3 tiếng Trung → Gemini tiếng Việt, và chỉ phát lại khi track đã hoàn tất/cache. Chạm 4 lần khi đang chạy không hủy hoặc gửi thêm yêu cầu. Có lỗi: video vẫn dừng; **Bỏ qua · phát video** cho xem tiếp. Sau khi bỏ qua, chạm 4 lần để thử lại thủ công. Nút **Hủy phụ đề** hủy và cho phát tiếp.
+- Trong bình luận, bấm **Dịch bình luận**, chọn dòng để dịch GTX. Nếu thiếu nút: hai ngón chạm 3 lần → **Dịch bình luận · GTX**. Nguồn đọc từ label/model ô bình luận đang thấy, giữ nguyên bản gốc. GTX không dùng key trả phí.
+- Dịch phân tích AI/Gemini giữ như bản người dùng đã xác nhận hoạt động. Cache phụ đề/bình luận riêng, không tự retry API trả phí. Ưu tiên video dưới 10 phút; prerecorded toàn clip, lần đầu cần chờ API. Chi tiết dịch vụ ở [nghiên cứu 0.14](docs/MEDIA-0.14.md).
 
-Mẫu 67,8 giây: trích link 8,82 giây, Nova-3 31,53 giây, nhóm dịch đầu 2,34 giây; các chặng cộng khoảng 43 giây tới phụ đề đầu trong thử nghiệm dịch vụ, chưa phải tốc độ đo trên iPhone. Cache giúp các lần xem lại không cần API. Đây là nhận dạng prerecorded cả clip, không phải phụ đề trực tiếp tức thời.
+0.14 đã bị người dùng báo lỗi trên iPhone: GTX không đọc được nguồn và phụ đề chưa bắt đầu request. 0.15 sửa routing, lớp phủ nút, phạm vi đọc và điều khiển pause. Đã đạt 21 Python, 29 Gemini, 36 dịch AI, 49 media và 184 UIKit checks trên iPhone 15 Simulator/iOS 18.2; build arm64 warnings-as-errors. Đây là mock/lớp giả, chưa nghiệm thu Douyin thật trên iPhone. GTX probe Windows lần này trả HTTP 429; app báo giới hạn và chỉ thử lại khi chọn dòng, không hứa endpoint miễn phí luôn sẵn sàng.
 
-Đã đạt 21 Python, 29 Gemini, 36 dịch AI, 49 media và 161 UIKit checks, cùng build arm64 với warnings-as-errors. API thật đã trả phụ đề hợp lệ trên mẫu ngắn và link 45 phút người dùng cung cấp. Kiểm tra 5,631 mục IPA, 0 mismatch, core gốc giữ nguyên. Cần nghiệm thu phụ đề/bình luận trên iPhone thật; simulator dùng lớp giả và mock.
+IPA: `dist/Douyin-40.6.0-0.15.0-iPhone15-FOUR-TAPS-PRIVATE-TEST.ipa`. SHA-256: `0291eecc939c0b0fd47aa5cc88a25c81cdaa70451d8a0cfc3b09f1b08ea8ab5a`. Đã đối chiếu 5,631 mục, 0 mismatch; core gốc giữ nguyên. Key cá nhân chỉ trong IPA riêng, không ở Git/CI.
 
-IPA: `dist/Douyin-40.6.0-0.14.0-iPhone15-SUBTITLES-PRIVATE-TEST.ipa`. SHA-256: `b09c82dbfe1a244d3680141145f80558944973e6a41787e03333f04f4b538a35`.
-
-IPA nhúng key cá nhân theo yêu cầu, giữ riêng; Git/CI chỉ key giả. Apify/Deepgram/Gemini có chi phí; không tự retry yêu cầu trả phí, nhà cung cấp có thể tính phí yêu cầu đã nhận trước khi hủy. GTX là endpoint công khai, có thể giới hạn lượt hoặc thay đổi.
-
-[Kế hoạch](docs/PLAN-0.14.md) · [Tài liệu/đo API](docs/MEDIA-0.14.md) · [Test iPhone](docs/DEVICE_TESTS.md) · [Trạng thái](docs/STATUS.md) · [Validation](docs/VALIDATION.json) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37005881752) · [UI phụ đề](docs/evidence/ui-captions-0.14.0.png) · [UI bình luận](docs/evidence/ui-gtx-comments-0.14.0.png).
+[Kế hoạch](docs/PLAN-0.15.md) · [Test iPhone](docs/DEVICE_TESTS.md) · [Trạng thái](docs/STATUS.md) · [Validation](docs/VALIDATION.json) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37011642974).

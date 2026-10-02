@@ -1,15 +1,15 @@
-# Nghiệm thu 0.14 — iPhone 15/iOS18.5
+# Nghiệm thu 0.15 — iPhone/iOS 18.5
 
-Ký/cài IPA cá nhân mới bằng Sideloadly với cùng định danh, giữ dữ liệu. Restart app; tên app Douyin, Copy diagnostics phải ghi 0.14.0-test. Không gửi lại key.
+Ký/cài IPA riêng bằng Sideloadly, khởi động lại app. Copy diagnostics phải ghi **0.15.0-test**. Không gửi key.
 
-1. Vuốt qua video trước khi bấm phụ đề: counters `Captions Apify request`, `Captions Deepgram sent`, `Captions Gemini batch sent` không tăng. Không có phụ đề của video trước.
-2. Chọn video tiếng Trung rõ, dài khoảng 30–90 giây. Bấm **Phụ đề Việt**: thấy tiến trình Apify/Nova-3/Gemini; có từng nhóm chữ Việt. So sánh lời nói/tên/số, chú ý API có thể mất hàng chục giây lần đầu. Chưa mở nút không phát sinh yêu cầu phụ đề.
-3. Dừng/tua trước/tua sau/lặp video: phụ đề theo player, khoảng lặng ẩn câu cũ. Thử khi đang chờ nhận dạng/dịch; nhóm tiếp theo ưu tiên đoạn vừa tua tới. Thử thêm video 5–9 phút.
-4. Tắt/hiện phụ đề, mở lại video và restart: track đã hoàn tất dùng cache, counters provider không tăng nếu cache còn. Cache có giới hạn, có thể bị loại mục cũ.
-5. Bấm hủy hoặc đổi video/chuyển nền khi đang làm: dừng, overlay cũ không hiện trên video mới, không tự retry. Yêu cầu đã gửi vẫn có thể bị tính phí. Mất mạng/quota phải báo lỗi, không vòng lặp. Thử lại sau lỗi dịch không tăng Apify/Deepgram nếu ASR còn trong cache.
-6. Bình luận → **Dịch bình luận**: danh sách chỉ chữ bình luận đang hiện, không tên/AI/view ẩn. Chạm dòng: có chữ Việt cạnh nguồn, nguồn native giữ nguyên. Chạm lại cùng dòng không tăng `GTX sent`. Cuộn native đến bình luận khác rồi đóng/mở lại để lấy danh sách mới.
-7. GTX mất mạng/rate-limit: báo lỗi; đóng sheet/chuyển nền hủy, callback cũ không thay nội dung mới. GTX không dùng Apify/Deepgram/Gemini.
-8. Hồi quy tab phân tích AI: vẫn dịch Việt như 0.13; chuyển Bản gốc/Việt và mở lại cache không tính phí thêm. Ask Gemini tiếp tục dùng phân tích gốc làm ngữ cảnh.
-9. Kiểm tra bố trí nút/phụ đề với video dọc/ngang trên máy. Nếu thiếu nút/capture rỗng/lệch chữ, ghi video ID và Copy diagnostics sau thao tác; không gửi media URL ký tạm, API key hoặc nội dung riêng tư. Ghi riêng Featured/Tips/phát nền/xoay/search nếu còn lỗi.
+1. Trước khi bật phụ đề, vuốt 3 video: không có yêu cầu Apify/Nova-3/Gemini cho phụ đề. Chạm 1–3 lần không chạy pipeline. Kiểm tra pause/double-tap gốc vẫn hoạt động.
+2. Chọn clip có lời tiếng Trung, dài 30–90 giây. Một ngón chạm nhanh 4 lần ở vùng video, tránh nút/tên/comment/tab: video dừng, thấy tiến trình, `Captions four taps recognized`/`Captions opt-in` tăng. Thử cả video thiếu nút. Chạm thêm 4 lần lúc chờ không hủy/thêm yêu cầu.
+3. Track hoàn tất: video chạy tiếp, phụ đề Việt theo tiếng nói. Tạm dừng/tua/lặp: chữ theo thời gian player; khoảng lặng không giữ câu cũ. Thử thêm clip 5–9 phút. Lần đầu API có thể mất hàng chục giây hoặc hơn.
+4. Tắt/hiện phụ đề, mở lại video và restart app: cache còn thì không tăng counter provider. Bấm Hủy lúc đang làm cho video chạy tiếp; vuốt sang video khác/chuyển nền hủy mà không tự phát lại video cũ hoặc hiện chữ cũ.
+5. Mất mạng/quota/lỗi: thấy thông báo; video vẫn dừng cho đến khi bấm **Bỏ qua · phát video**. Bỏ qua rồi chạm 4 lần để retry thủ công; ASR còn cache thì không nhận dạng/lấy nguồn lại. Không tự lặp request trả phí.
+6. Mở bình luận thông thường, bấm **Dịch bình luận**. Nếu thiếu nút, mở menu hai ngón/chạm 3 lần rồi chọn **Dịch bình luận · GTX**. Danh sách có chữ bình luận gốc đang thấy, không tên/AI/view ẩn. Chọn một dòng: chữ Việt hiện cạnh bản gốc; GTX sent/HTTP tăng, không tăng provider trả phí. Chọn lại dùng cache.
+7. Cuộn đến bình luận khác rồi đóng/mở sheet để lấy danh sách mới. GTX 429 phải hiện giới hạn, không tự retry; sau khi dịch vụ sẵn sàng chọn dòng để thử lại. Lỗi mạng sau tối đa thời gian chờ phải báo; đóng sheet/chuyển nền hủy callback.
+8. Bốn chạm trên nút, ô nhập, comment/AI và modal không được bật phụ đề phía sau. Mở lại tab phân tích AI để kiểm tra bản dịch đã hoạt động trước đây vẫn đúng; thử Ask Gemini.
+9. Nếu còn lỗi, Copy diagnostics ngay sau thao tác. Chú ý `media.caption_shortcut_taps`, `four_tap_windows`, `caption_waiting`, `Captions shortcut player unavailable`, `Captions video ID unavailable`, `Captions playback clock unavailable`, `Captions pause unavailable`, `GTX fallback comments unavailable`, provider HTTP/transport counters. Chỉ gửi diagnostics và video ID công khai; không gửi key/media URL ký tạm.
 
-Fixture và API probe đã đạt nhưng không chạy Douyin gốc trên iPhone. Không thể xác nhận nghiệm thu máy thật chỉ bằng kiểm tra ZIP hay simulator. IPA có key riêng, giữ cho cá nhân.
+CI chạy lớp giả và mock, chưa chạy Douyin gốc trên iPhone. Bản 0.14 đã thất bại trên máy người dùng; 0.15 cần xác nhận qua các bước trên, không thể nghiệm thu máy thật bằng ZIP/Simulator.

@@ -1,20 +1,20 @@
 {
-  "candidate": "Douyin-40.6.0-0.15.0-iPhone15-FOUR-TAPS-PRIVATE-TEST.ipa",
-  "patch_version": "0.15.0-test",
+  "candidate": "Douyin-40.6.0-0.14.0-iPhone15-SUBTITLES-PRIVATE-TEST.ipa",
+  "patch_version": "0.14.0-test",
   "app_version": "40.6.0",
   "app_build": "406019",
   "source_sha256": "3444d6045147b772e8f5e7e844c38a0f72464f34a4eb1af5c5df5f9433d706af",
-  "output_sha256": "0291eecc939c0b0fd47aa5cc88a25c81cdaa70451d8a0cfc3b09f1b08ea8ab5a",
-  "library_sha256": "06cc5205dddd246ef1faf504b1d84095128629b6788d41fee8f7a407c43e98c7",
-  "output_size_bytes": 704944764,
-  "compiled_commit": "ab44048ab94a964d33d2aec435e9edf3dd548eda",
+  "output_sha256": "b09c82dbfe1a244d3680141145f80558944973e6a41787e03333f04f4b538a35",
+  "library_sha256": "e5fdd7814f4e6c331deed34b8f7af9d267cfa5f1ad5ad50a31d590fa879529f7",
+  "output_size_bytes": 704937925,
+  "compiled_commit": "93997c6986d6290ec1ceef45ad6d216cc3f0f635",
   "ci_runs_successful": [
-    37010499240,
-    37011642974
+    37004423924,
+    37005881752
   ],
   "ci_runs_failed": [
-    37011015768,
-    37011265223
+    37003782620,
+    37003893920
   ],
   "python_tests_passed": 21,
   "foundation_policy_and_hook_regressions_passed": true,
@@ -23,33 +23,35 @@
   "toolchain_text": "Xcode 15.4\nBuild version 15F31d\n17.5",
   "uikit_fixture": {
     "passed": true,
-    "checks_passed": 184,
+    "checks_passed": 161,
     "device": "iPhone 15 Simulator",
     "ios": "18.2",
     "translation_entries_tested": 898,
     "overflow_labels": [],
     "scope": "UIKit fixture only; original Douyin app and network were not executed",
-    "evidence": "evidence/ui-results-0.15.0.json",
+    "evidence": "evidence/ui-results-0.14.0.json",
     "visuals_generated": [
-      "evidence/ui-sidebar-0.15.0.png",
-      "evidence/ui-network-error-0.15.0.png",
-      "evidence/ui-search-0.15.0.png",
-      "evidence/ui-settings-0.15.0.png",
-      "evidence/ui-comments-0.15.0.png",
-      "evidence/ui-featured-narrow-0.15.0.png",
-      "evidence/ui-live-0.15.0.png",
-      "evidence/ui-public-finder-0.15.0.png",
-      "evidence/ui-public-profile-0.15.0.png",
-      "evidence/ui-feed-compat-0.15.0.png",
-      "evidence/ui-gemini-0.15.0.png",
-      "evidence/ui-gemini-context-0.15.0.png",
-      "evidence/ui-gemini-translation-0.15.0.png",
-      "evidence/ui-captions-0.15.0.png",
-      "evidence/ui-gtx-comments-0.15.0.png"
+      "evidence/ui-sidebar-0.14.0.png",
+      "evidence/ui-network-error-0.14.0.png",
+      "evidence/ui-search-0.14.0.png",
+      "evidence/ui-settings-0.14.0.png",
+      "evidence/ui-comments-0.14.0.png",
+      "evidence/ui-featured-narrow-0.14.0.png",
+      "evidence/ui-live-0.14.0.png",
+      "evidence/ui-public-finder-0.14.0.png",
+      "evidence/ui-public-profile-0.14.0.png",
+      "evidence/ui-feed-compat-0.14.0.png",
+      "evidence/ui-gemini-0.14.0.png",
+      "evidence/ui-gemini-context-0.14.0.png",
+      "evidence/ui-gemini-translation-0.14.0.png",
+      "evidence/ui-captions-0.14.0.png",
+      "evidence/ui-gtx-comments-0.14.0.png"
     ],
     "visuals_reviewed": [
-      "evidence/ui-captions-0.15.0.png",
-      "evidence/ui-gtx-comments-0.15.0.png"
+      "evidence/ui-feed-compat-0.14.0.png",
+      "evidence/ui-gemini-translation-0.14.0.png",
+      "evidence/ui-captions-0.14.0.png",
+      "evidence/ui-gtx-comments-0.14.0.png"
     ]
   },
   "fixed_native_hooks": 79,
@@ -90,7 +92,7 @@
     "repair_or_server_status_rewrite": false
   },
   "runtime_tested": false,
-  "runtime_tested_scope": "0.15 compiled for arm64 and passed controlled UIKit/mock service tests. 0.14 failed on user iPhone; 0.15 original Douyin UI on physical iPhone not yet executed.",
+  "runtime_tested_scope": "0.14 native compilation and controlled UIKit/mock tests passed; real service probes ran on Windows. Actual Douyin subtitle/comment UI on iPhone awaits acceptance.",
   "featured_tips_network_root_cause_resolved": false,
   "featured_tips_pagination_verified_on_device": false,
   "background_screen_lock_audio_verified_on_device": false,
@@ -122,7 +124,7 @@
     "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页 1.heic",
     "Payload/Aweme.app/FlowCommon.bundle/diversion_banner.imageset/设置页.heic"
   ],
-  "status": "Private 0.15 TEST IPA packaged; four-tap routing, paused playback gate and GTX capture corrected; physical-device acceptance pending",
+  "status": "Private TEST IPA packaged; opt-in subtitles and GTX tested by stage and mock integration; physical-device acceptance pending",
   "zip_entries_read_back_and_sha256_verified": 5631,
   "unchanged_entries_independent_crc_size_mode_comparison": 5620,
   "unchanged_files_independent_audit_sha256_comparison": 4977,
@@ -208,15 +210,9 @@
     "tested_version": "0.12.0-test"
   },
   "latest_user_report": {
-    "version": "0.14.0-test",
-    "ios": "18.5",
-    "subtitle_button": "intermittent; no action on press",
-    "gtx_visible_comments_unavailable": 4,
-    "media_hooks_installed": 7,
-    "caption_configured": true,
-    "caption_opt_in_or_provider_request_counters_present": false,
-    "requested_behavior": "Four taps; pause until Vietnamese subtitles are ready",
-    "physical_ai_analysis_translation": "User confirmed working previously"
+    "version": "0.13.0-test",
+    "automatic_ai_translation": "User confirmed working; preserve existing feature",
+    "new_task": "GTX comments and opt-in Vietnamese subtitles, especially videos under 10 minutes"
   },
   "renderer_capture": {
     "v2": "LynxMarkdownViewV2._markdownView typed Objective-C ivar -> ServalMarkdownView.getContent",
@@ -249,24 +245,6 @@
     "provider_probes": "evidence/0.14-service-probes.json",
     "abi": "evidence/0.14-media-abi.json",
     "gtx_probe": "evidence/0.14-gtx-probe.json",
-    "physical_device_subtitles_verified": false,
-    "shortcut_taps": 4,
-    "shortcut_fingers": 1,
-    "shortcut_idempotent": true,
-    "caption_ui_surface": "key window above native video overlays",
-    "pause_before_requests": true,
-    "resume_only_complete_or_user_cancel_skip": true,
-    "provider_failure_keeps_video_paused": true,
-    "comment_sources": "Visible audited label and commentModel.content in native cells, window scope, clipping-aware",
-    "gtx_settings_fallback": true,
-    "gtx_request_timeout_seconds": 20,
-    "provider_http_status_counters": true,
-    "gtx_probe_this_turn": {
-      "status": 429,
-      "scope": "Windows synthetic probe; device reported capture missing and no request",
-      "evidence": "evidence/0.15-gtx-probe.json"
-    },
-    "physical_device_verified": false,
-    "static_abi_evidence": "evidence/0.15-media-abi.json"
+    "physical_device_subtitles_verified": false
   }
 }
