@@ -69,6 +69,8 @@ int main(void) {@autoreleasepool {
     check(DGCaptionValidCues(@[cues[1],cues[2]]) && !DGCaptionTextAt(@[cues[1],cues[2]],0.5),@"sparse partial cache supports prioritized later video segments");
     request=DGCaptionTranslationRequest(@"fixture-gemini",cues);NSDictionary *body=[NSJSONSerialization JSONObjectWithData:request.HTTPBody options:0 error:NULL];
     check([body[@"generationConfig"][@"responseMimeType"] isEqual:@"application/json"] && body[@"generationConfig"][@"responseSchema"],@"Gemini uses structured output schema");
+    NSDictionary *translationSchema=body[@"generationConfig"][@"responseSchema"][@"properties"][@"translations"];
+    check([translationSchema[@"minItems"] isEqual:@3] && [translationSchema[@"maxItems"] isEqual:@3] && [translationSchema[@"items"][@"properties"][@"text"][@"minLength"] isEqual:@1],@"provider schema requires every cue and a nonempty translation");
     NSString *source=body[@"contents"][0][@"parts"][0][@"text"];check(![source containsString:@"start"] && ![source containsString:@"end"] && ![source containsString:@"fixture-gemini"],@"Gemini receives only cue IDs and untrusted text not timestamps or credentials");
     NSArray *rows=@[@{@"id":@0,@"text":@"Xin chào"},@{@"id":@1,@"text":@"Trung Quốc"},@{@"id":@2,@"text":@"Cảm ơn"}];NSArray *vi=DGCaptionTranslationAnswer(translated(rows,@"STOP"),200,cues,&error);
     check(vi.count==3 && [vi[2][@"start"] isEqual:cues[2][@"start"]] && [vi[2][@"end"] isEqual:cues[2][@"end"]],@"Vietnamese changes text only and retains authoritative timestamps");
@@ -76,7 +78,7 @@ int main(void) {@autoreleasepool {
     check(!DGCaptionTranslationAnswer(translated(@[rows[0],rows[0],rows[2]],@"STOP"),200,cues,&error),@"duplicate IDs rejected");
     check(!DGCaptionTranslationAnswer(translated(@[rows[1],rows[0],rows[2]],@"STOP"),200,cues,&error),@"reordered or changed IDs rejected");
     check(!DGCaptionTranslationAnswer(translated(rows,@"MAX_TOKENS"),200,cues,&error),@"truncated paid output not saved as success");
-    check(!DGCaptionTranslationRequest(@"bad\nkey",cues) && !DGCaptionTranslationRequest(@"fixture",@[@1]),@"header injection and malformed cue request blocked");
+    check(!DGCaptionTranslationRequest(@"bad\nkey",cues) && !DGCaptionTranslationRequest(@"fixture",(id)@[@1]),@"header injection and malformed cue request blocked");
     NSURL *cacheURL=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString]];DGCaptionStore *large=[[DGCaptionStore alloc] initWithURL:cacheURL];NSString *longText=[@"x" stringByPaddingToLength:40000 withString:@"x" startingAtIndex:0];[large saveTranslation:longText source:@"long-video"];
     DGCaptionStore *reopened=[[DGCaptionStore alloc] initWithURL:cacheURL];check([[reopened translationForSource:@"long-video"] isEqual:longText],@"long transcript beyond old 32k cache limit persists");[NSFileManager.defaultManager removeItemAtURL:cacheURL error:NULL];
     NSURLSessionConfiguration *config=NSURLSessionConfiguration.ephemeralSessionConfiguration;config.protocolClasses=@[MediaMock.class];DGCaptionStore *store=[[DGCaptionStore alloc] initWithURL:nil];NSDictionary *keys=@{@"apify_api_key":@"fixture-apify",@"deepgram_api_key":@"fixture-deepgram",@"apify_actor":@"apple_yang~douyin-video-audio-downloader"};

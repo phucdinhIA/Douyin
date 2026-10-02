@@ -9,4 +9,5 @@ __pycache__/
 .DS_Store
 local-validation.json
 gemini-private.json
+media-private.json
 private/
