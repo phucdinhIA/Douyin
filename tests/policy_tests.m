@@ -728,7 +728,7 @@ int main(void) {
         Class badDelegate=objc_allocateClassPair(AWEPlayVideoViewController.class,"TestBackgroundWrongPauseABI",0);
         class_addMethod(badDelegate,@selector(pauseBySingleClick),class_getMethodImplementation(AWEPlayVideoViewController.class,@selector(pauseBySingleClick)),"q16@0:8");
         objc_registerClassPair(badDelegate);
-        AWEPlayVideoViewController *bad=[badDelegate new];bad.model=video;module.delegate=bad;module.active=YES;module.nativeResponse=NO;
+        AWEPlayVideoViewController *driftedDelegate=[badDelegate new];driftedDelegate.model=video;module.delegate=driftedDelegate;module.active=YES;module.nativeResponse=NO;
         check(!module.shouldResponseNotification && module.eligibilityCalls==decisions,@"pause ABI drift rejects recovery before invoking incompatible getter");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
