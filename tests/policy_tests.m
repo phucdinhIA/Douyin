@@ -3,6 +3,28 @@
 #import "DGPolicy.h"
 #import "DGHook.h"
 
+@interface TestBackground : NSObject
+@property NSUInteger calls;
+@property NSInteger state;
+@property BOOL allowed;
+- (BOOL)localSwitch;
+- (NSInteger)localState;
+- (BOOL)decision;
+- (void)enter;
+@end
+@implementation TestBackground
+- (BOOL)localSwitch { self.calls++; return self.allowed; }
+- (NSInteger)localState { self.calls++; return self.state; }
+- (BOOL)decision { self.calls++; return self.allowed; }
+- (void)enter { self.calls++; }
+@end
+@interface TestCyclicError : NSError
+@property (strong) NSError *next;
+@end
+@implementation TestCyclicError
+- (NSDictionary *)userInfo { return self.next ? @{NSUnderlyingErrorKey:self.next} : @{}; }
+@end
+
 @interface TestModel : NSObject
 @property BOOL isAds;
 @end
@@ -368,6 +390,35 @@ int main(void) {
         Method listMethod=class_getInstanceMethod(TestPresentation.class,@selector(list));
         check(DGInstallHook(@{@"class":@"TestPresentation",@"selector":@"list",@"operation":@"observeListGetter",@"types":[NSString stringWithUTF8String:method_getTypeEncoding(listMethod)]},^BOOL{return YES;},recordNew),@"comment list observation installs");
         presentation.raw=input;check(presentation.list==input,@"comment list identity, content and pagination are untouched");
+        __block BOOL background=YES;
+        for (NSArray *op in @[@[@"localSwitch",@"backgroundSwitch"],@[@"localState",@"backgroundState"],
+                              @[@"decision",@"observeBool0"],@[@"enter",@"observeVoid0"]]) {
+            Method method=class_getInstanceMethod(TestBackground.class,NSSelectorFromString(op[0]));
+            check(DGInstallHook(@{@"class":@"TestBackground",@"selector":op[0],@"operation":op[1],@"types":[NSString stringWithUTF8String:method_getTypeEncoding(method)]},^BOOL{return background;},recordNew),@"native audio preference/observer ABI installs");
+        }
+        TestBackground *bg=[TestBackground new];bg.state=2;bg.allowed=NO;
+        check(bg.localSwitch && bg.calls==1 && !bg.allowed,@"audio ON overlays preference but calls original once without mutating it");
+        check(bg.localState==1 && bg.calls==2 && bg.state==2,@"audio state overlay is NSInteger and does not overwrite stored state");
+        check(!bg.decision && bg.calls==3,@"native eligibility denial remains false with background preference ON");
+        [bg enter];check(bg.calls==4,@"background lifecycle observer forwards once");
+        background=NO;before=[newEvents copy];
+        check(!bg.localSwitch && bg.localState==2 && !bg.decision,@"audio OFF restores original preference and player decision");
+        [bg enter];check(bg.calls==8 && [newEvents isEqual:before],@"audio OFF keeps native lifecycle without collecting events");
+        bg.state=NSIntegerMin;check(bg.localState==NSIntegerMin,@"OFF preserves full signed native state");
+        localize=YES;
+        NSError *under=[NSError errorWithDomain:NSURLErrorDomain code:-1001 userInfo:@{NSLocalizedDescriptionKey:@"PRIVATE-description"}];
+        NSError *outer=[NSError errorWithDomain:@"BDWebImageErrorDomain" code:900014 userInfo:@{NSUnderlyingErrorKey:under,@"PRIVATE-key":@"PRIVATE-value"}];
+        [imageFeed failed:outer];
+        check(imageFeed.arguments[0]==outer && [newEvents[@"TestImageFeed failed: error BDImage 900014"] unsignedIntegerValue]==1 &&
+              [newEvents[@"TestImageFeed failed: underlying 1 error URL -1001"] unsignedIntegerValue]==1,@"image domain and underlying URL are distinguished without changing native error/retry");
+        NSError *unknown=[NSError errorWithDomain:@"PRIVATE-domain" code:-1001 userInfo:nil];[imageFeed failed:unknown];
+        check([newEvents[@"TestImageFeed failed: error App -1001"] unsignedIntegerValue]==1 &&
+              [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,@"unknown-domain code is not mislabeled as URL and private fields never enter diagnostics");
+        TestCyclicError *cycle=[[TestCyclicError alloc] initWithDomain:@"kAWEDCFeedErrorDomain" code:-4 userInfo:nil];cycle.next=cycle;
+        [imageFeed failed:cycle];cycle.next=nil;
+        check([newEvents[@"TestImageFeed failed: underlying error cycle"] unsignedIntegerValue]==1,@"NSError cycle ends without recursion");
+        NSError *chain=under;for (NSUInteger i=0;i<6;i++) chain=[NSError errorWithDomain:@"BDWebImageErrorDomain" code:1 userInfo:@{NSUnderlyingErrorKey:chain}];
+        [imageFeed failed:chain];check([newEvents[@"TestImageFeed failed: underlying error depth capped"] unsignedIntegerValue]==1,@"underlying-error walk is bounded");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
     return 0;

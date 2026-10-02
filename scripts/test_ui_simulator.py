@@ -48,7 +48,7 @@ try:
     while not result.exists() and time.monotonic()<deadline:time.sleep(1)
     if not result.exists():raise RuntimeError('UIKit fixture did not finish; it may have crashed')
     shutil.copy2(result,OUT/'ui-results.json')
-    for name in ['ui-sidebar.png','ui-network-error.png','ui-search.png','ui-settings.png','ui-comments.png','ui-featured-narrow.png']:
+    for name in ['ui-sidebar.png','ui-network-error.png','ui-search.png','ui-settings.png','ui-comments.png','ui-featured-narrow.png','ui-live.png']:
         visual=container/'Documents'/name
         if not visual.exists():raise RuntimeError('Visual fixture output missing: '+name)
         shutil.copy2(visual,OUT/name)

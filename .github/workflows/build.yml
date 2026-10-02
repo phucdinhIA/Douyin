@@ -52,5 +52,6 @@ jobs:
             build/ui-fixture/ui-settings.png
             build/ui-fixture/ui-comments.png
             build/ui-fixture/ui-featured-narrow.png
+            build/ui-fixture/ui-live.png
           if-no-files-found: warn
           retention-days: 14

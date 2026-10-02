@@ -5,6 +5,36 @@
 #import "DGPolicy.h"
 #import "DGHook.h"
 
+@interface _TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView : UIView
+@end
+@implementation _TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView
+@end
+@interface HTSLiveToolbarFixtureView : UIView
+@end
+@implementation HTSLiveToolbarFixtureView
+@end
+@interface HTSLiveRoomTitleFixtureView : UIView
+@end
+@implementation HTSLiveRoomTitleFixtureView
+@end
+@interface HTSLiveChatFixtureView : UIView
+@end
+@implementation HTSLiveChatFixtureView
+@end
+@interface AWEAwemeBackgroundPlayStoreService : NSObject
+@property BOOL originalSwitch;
+@property NSInteger originalAudio;
+@property NSInteger originalScene;
+- (BOOL)switchState;
+- (NSInteger)audioSwitchState;
+- (NSInteger)audioSceneState;
+@end
+@implementation AWEAwemeBackgroundPlayStoreService
+- (BOOL)switchState { return self.originalSwitch; }
+- (NSInteger)audioSwitchState { return self.originalAudio; }
+- (NSInteger)audioSceneState { return self.originalScene; }
+@end
+
 @interface AWESettingsFixtureViewController : UIViewController
 @end
 @implementation AWESettingsFixtureViewController
@@ -192,7 +222,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-network-error.png"];
 
     AWELeftSideBarFixtureView *sidebar=[[AWELeftSideBarFixtureView alloc] initWithFrame:self.window.bounds];sidebar.backgroundColor=UIColor.systemGroupedBackgroundColor;
-    title=label(sidebar,@"Sidebar fixture • 0.5.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
+    title=label(sidebar,@"Sidebar fixture • 0.6.0",65);title.frame=CGRectMake(20,65,width-40,28);title.font=[UIFont boldSystemFontOfSize:18];
     UILabel *settings=label(sidebar,@"设置",105);settings.frame=CGRectMake(285,105,32,22);settings.font=[UIFont systemFontOfSize:16];
     NSArray *sections=@[
         @[@"常用功能",@[@"观看历史",@"离线缓存",@"稍后再看",@"抖音创作者中心",@"直播广场",@"使用管理助手",@"我的二维码",@"未成年人保护"],@[@"clock",@"arrow.down.circle",@"play.rectangle",@"person.crop.circle",@"video",@"timer",@"qrcode",@"shield"]],
@@ -218,7 +248,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     AWESearchResultFixtureView *searchCanvas=[[AWESearchResultFixtureView alloc] initWithFrame:self.window.bounds];
     searchCanvas.backgroundColor=UIColor.systemBackgroundColor;
     AWESearchFilterCollectionViewCell *filters=[[AWESearchFilterCollectionViewCell alloc] initWithFrame:self.window.bounds];[searchCanvas addSubview:filters];
-    title=label(filters,@"Search controls fixture • 0.5.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(filters,@"Search controls fixture • 0.6.0",80);title.frame=CGRectMake(20,80,width-40,30);
     NSArray *searchWords=@[@"综合排序",@"视频",@"用户",@"直播",@"一周内",@"最多点赞",@"切换为单列模式",@"切换为双列模式",@"相关搜索",@"大家都在搜",@"没有搜索到相关内容",@"试试换个搜索词"];
     CGFloat rowY=140;
     for (NSUInteger i=0;i<searchWords.count;i++) {
@@ -234,14 +264,14 @@ static NSUInteger countText(UIView *view, NSString *text) {
 
     AWESettingsFixtureViewController *settingsScreen=[AWESettingsFixtureViewController new];settingsScreen.view.backgroundColor=UIColor.systemBackgroundColor;
     NSArray *settingsWords=@[@"设置",@"账号管理",@"个性化内容推荐",@"通知消息管理",@"私信和通话通知",@"字体大小",@"缓存设置",@"后台播放设置",@"小窗播放设置",@"字幕设置",@"黑名单管理",@"隐私政策及简明版"];
-    title=label(settingsScreen.view,@"Settings fixture • 0.5.0",80);title.frame=CGRectMake(20,80,width-40,30);
+    title=label(settingsScreen.view,@"Settings fixture • 0.6.0",80);title.frame=CGRectMake(20,80,width-40,30);
     for (NSUInteger i=0;i<settingsWords.count;i++) { UILabel *item=label(settingsScreen.view,settingsWords[i],135+i*43);item.frame=CGRectMake(20,135+i*43,180,36); }
     screen=settingsScreen;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-settings.png"];
 
     AWECommentFixtureView *commentCanvas=[[AWECommentFixtureView alloc] initWithFrame:self.window.bounds];commentCanvas.backgroundColor=UIColor.systemBackgroundColor;
     AWECommentVCHeaderBarView *commentHeader=[[AWECommentVCHeaderBarView alloc] initWithFrame:CGRectMake(16,70,width-32,150)];[commentCanvas addSubview:commentHeader];
-    title=label(commentHeader,@"Comment controls fixture • 0.5.0",0);title.frame=CGRectMake(4,0,width-40,28);title.font=[UIFont boldSystemFontOfSize:17];
+    title=label(commentHeader,@"Comment controls fixture • 0.6.0",0);title.frame=CGRectMake(4,0,width-40,28);title.font=[UIFont boldSystemFontOfSize:17];
     UILabel *headerCount=label(commentHeader,@"评论 1081",45);headerCount.frame=CGRectMake(4,45,170,28);
     UILabel *collection=label(commentHeader,@"观看完整合集：示例合集",82);collection.frame=CGRectMake(4,82,width-40,30);
     UILabel *summary=label(commentHeader,@"AI 解析",118);summary.frame=CGRectMake(4,118,130,28);
@@ -264,13 +294,34 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [self saveWindowImage:@"ui-comments.png"];
 
     AWENetworkErrorFixtureView *featured=[[AWENetworkErrorFixtureView alloc] initWithFrame:self.window.bounds];featured.backgroundColor=UIColor.systemBackgroundColor;
-    title=label(featured,@"Featured narrow-label fixture • 0.5.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
+    title=label(featured,@"Featured narrow-label fixture • 0.6.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
     UILabel *featuredTitle=label(featured,@"网络错误",320);featuredTitle.frame=CGRectMake((width-60)/2,320,60,30);featuredTitle.textAlignment=NSTextAlignmentCenter;
     UILabel *errorDetail=label(featured,@"请检查网络连接后重试",365);errorDetail.frame=CGRectMake((width-120)/2,365,120,30);errorDetail.textAlignment=NSTextAlignmentCenter;
     UIButton *retryButton=[UIButton buttonWithType:UIButtonTypeSystem];retryButton.frame=CGRectMake((width-100)/2,415,100,42);[retryButton setTitle:@"重试" forState:UIControlStateNormal];[featured addSubview:retryButton];
     UILabel *notice=label(featured,@"操作失败，请稍后重试",485);notice.frame=CGRectMake(20,485,width-40,40);notice.textAlignment=NSTextAlignmentCenter;
     screen=[UIViewController new];screen.view=featured;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-featured-narrow.png"];
+
+    UIView *live=[[UIView alloc] initWithFrame:self.window.bounds];live.backgroundColor=UIColor.systemBackgroundColor;
+    title=label(live,@"LIVE controls fixture • 0.6.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:18];
+    _TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView *tags=[[_TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView alloc] initWithFrame:CGRectMake(20,140,width-40,44)];[live addSubview:tags];
+    NSArray *cn=@[@"明星",@"聊天",@"唱歌",@"团播",@"颜值"];
+    CGFloat slot=(width-40)/5;
+    for (NSUInteger i=0;i<cn.count;i++) {
+        UILabel *tab=label(tags,cn[i],0);tab.frame=CGRectMake(i*slot,0,slot-7,32);tab.textAlignment=NSTextAlignmentCenter;tab.font=[UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
+    }
+    HTSLiveToolbarFixtureView *tools=[[HTSLiveToolbarFixtureView alloc] initWithFrame:CGRectMake(20,230,width-40,190)];[live addSubview:tools];
+    for (NSUInteger i=0;i<3;i++) {
+        UILabel *item=label(tools,(@[@"后台播放音频",@"清晰度",@"更多功能"])[i],i*54);item.frame=CGRectMake(0,i*54,170,36);
+    }
+    HTSLiveRoomTitleFixtureView *room=[[HTSLiveRoomTitleFixtureView alloc] initWithFrame:CGRectMake(20,470,width-40,55)];[live addSubview:room];
+    UILabel *roomName=label(room,@"明星",0);roomName.frame=CGRectMake(0,0,170,36);
+    HTSLiveChatFixtureView *chat=[[HTSLiveChatFixtureView alloc] initWithFrame:CGRectMake(20,530,width-40,55)];[live addSubview:chat];
+    UILabel *chatMessage=label(chat,@"聊天",0);chatMessage.frame=CGRectMake(0,0,170,36);
+    UILabel *note=label(live,@"Chinese below the tools is sample room/chat content and remains unchanged.",620);note.frame=CGRectMake(20,620,width-40,66);note.numberOfLines=3;note.font=[UIFont systemFontOfSize:14];
+    screen=[UIViewController new];screen.view=live;self.window.rootViewController=screen;[self.window layoutIfNeeded];
+    check([roomName.text isEqual:@"明星"] && [chatMessage.text isEqual:@"聊天"],@"LIVE visual sample protects room titles and chat content");
+    [self saveWindowImage:@"ui-live.png"];
 }
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {
     (void)application; (void)options;
@@ -286,6 +337,22 @@ static NSUInteger countText(UIView *view, NSString *text) {
 }
 - (void)runCases {
     UIView *parent=self.host.view;
+    AWEAwemeBackgroundPlayStoreService *store=[AWEAwemeBackgroundPlayStoreService new];store.originalAudio=2;store.originalScene=2;
+    check(store.switchState && store.audioSwitchState==1 && store.audioSceneState==1 && !store.originalSwitch && store.originalAudio==2 && store.originalScene==2,@"default Background audio applies only native preference getters without overwriting original values");
+    _TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView *liveTabs=[[_TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView alloc] initWithFrame:CGRectMake(10,600,360,40)];[parent addSubview:liveTabs];
+    NSArray *liveCN=@[@"明星",@"聊天",@"唱歌",@"团播",@"颜值"], *liveEN=@[@"Stars",@"Chat",@"Singing",@"Groups",@"Beauty"];
+    for (NSUInteger i=0;i<liveCN.count;i++) {
+        UILabel *tab=label(liveTabs,liveCN[i],0);tab.frame=CGRectMake(i*70,0,63,32);[tab layoutIfNeeded];
+        CGFloat needed=[tab.text sizeWithAttributes:@{NSFontAttributeName:tab.font}].width;
+        check([tab.text isEqual:liveEN[i]] && needed*tab.minimumScaleFactor<=tab.bounds.size.width,@"LIVE category translates and fits narrow label");
+    }
+    HTSLiveRoomTitleFixtureView *liveRoom=[[HTSLiveRoomTitleFixtureView alloc] initWithFrame:CGRectMake(0,0,180,35)];[parent addSubview:liveRoom];
+    HTSLiveChatFixtureView *liveChat=[[HTSLiveChatFixtureView alloc] initWithFrame:CGRectMake(0,0,180,35)];[parent addSubview:liveChat];
+    UILabel *protectedRoom=label(liveRoom,@"明星",0), *protectedChat=label(liveChat,@"聊天",0);
+    [parent layoutIfNeeded];check([protectedRoom.text isEqual:@"明星"] && [protectedChat.text isEqual:@"聊天"],@"exact LIVE category words are preserved in user room/chat content");
+    UILabel *reused=liveTabs.subviews.firstObject;[reused removeFromSuperview];[liveChat addSubview:reused];reused.text=@"唱歌";[reused layoutIfNeeded];
+    check([reused.text isEqual:@"唱歌"] && !reused.adjustsFontSizeToFitWidth,@"LIVE label reuse into chat restores original text fitting");
+    [liveTabs removeFromSuperview];[liveRoom removeFromSuperview];[liveChat removeFromSuperview];
     check([NSBundle.mainBundle objectForInfoDictionaryKey:@"UIApplicationSceneManifest"]==nil,@"fixture uses delegate lifecycle without a Scene Manifest");
     [[DGSettings shared] attachWindows];
     [[DGSettings shared] attachWindows];
@@ -535,7 +602,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
         UIAlertController *sheet=(UIAlertController *)self.host.presentedViewController;
         if (![sheet isKindOfClass:UIAlertController.class]) sheet=(UIAlertController *)self.navigation.presentedViewController;
         check([sheet isKindOfClass:UIAlertController.class] && [sheet.title isEqualToString:@"Douyin Guest"],@"diagnostics sheet can actually be presented on legacy window");
-        check(sheet.actions.count==6,@"diagnostics sheet exposes four switches, copy and close");
+        check(sheet.actions.count==7,@"diagnostics sheet exposes five switches, copy and close");
         [sheet dismissViewControllerAnimated:NO completion:nil];
         [self showVisualSamples];
         BOOL success=YES; for (NSDictionary *item in checks) if (![item[@"passed"] boolValue]) success=NO;

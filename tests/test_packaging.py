@@ -72,10 +72,15 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(entry.compress_type,zipfile.ZIP_STORED)
     def test_resources_validate_and_no_identity_hooks(self):
         hooks,words=patch.validate_resources(ROOT/'resources')
-        self.assertEqual(len(hooks),50)
+        self.assertEqual(len(hooks),63)
         self.assertEqual(words['首页'],'Home')
         self.assertFalse(any(x['selector'] in ['isLogin','isLoggedIn','hasMore','isAds'] for x in hooks))
         self.assertEqual(sum(x['feature']=='search' for x in hooks),5)
+        self.assertEqual({x['selector'] for x in hooks if x['feature']=='background'},
+                         {'switchState','audioSwitchState','audioSceneState'})
+        self.assertFalse(any(x['selector'] in ['listenVideoStatus','setListenVideoStatus:',
+            'isVIPSubscribeContentAllowedListenWithAwemeModel:','shouldEnterBackgroundPlayMode']
+            and x['operation'] not in ('observeBool0',) for x in hooks))
         self.assertFalse(any(x['selector'] in ['needsLogin','shouldLoginLimit','checkHitLimitWithStatusCode:andStatusMsg:']
                              and x['feature']!='diagnostics' for x in hooks))
     def test_hash_streaming(self):
@@ -86,7 +91,8 @@ class PackagingTests(unittest.TestCase):
     def test_build_removes_device_thinning_without_weakening_capabilities(self):
         main = {'CFBundleIdentifier':'com.ss.iphone.ugc.Aweme', 'CFBundleShortVersionString':'40.6.0',
                 'CFBundleVersion':'406019', 'UISupportedDevices':['iPhone9,1'],
-                'UIDeviceFamily':[1,2], 'UIRequiredDeviceCapabilities':['arm64'], 'MinimumOSVersion':'15.0'}
+                'UIDeviceFamily':[1,2], 'UIRequiredDeviceCapabilities':['arm64'], 'MinimumOSVersion':'15.0',
+                'UIBackgroundModes':['audio','fetch','voip','remote-notification']}
         extension = {'CFBundleIdentifier':'fixture.extension', 'UISupportedDevices':['iPhone9,1'],
                      'UIDeviceFamily':[1], 'UIRequiredDeviceCapabilities':{'arm64':True}, 'MinimumOSVersion':'15.0'}
         main_path=patch.APP+'Info.plist'
@@ -112,6 +118,7 @@ class PackagingTests(unittest.TestCase):
                     self.assertNotIn('UISupportedDevices',actual)
                     for key in ['UIDeviceFamily','UIRequiredDeviceCapabilities','MinimumOSVersion']:
                         self.assertEqual(actual[key],expected[key])
+                    if path==main_path:self.assertEqual(actual['UIBackgroundModes'],expected['UIBackgroundModes'])
                 self.assertEqual(result.read(untouched_path),untouched)
             self.assertEqual({x['path'] for x in report['removed_thinning_allowlists']},{main_path,extension_path})
             self.assertNotIn(untouched_path,report['modified'])

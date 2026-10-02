@@ -8,7 +8,7 @@
 #import "DGPolicy.h"
 #import "DGHook.h"
 
-static atomic_bool guestEnabled, adsEnabled, englishEnabled, searchEnabled;
+static atomic_bool guestEnabled, adsEnabled, englishEnabled, searchEnabled, backgroundEnabled;
 static NSDictionary<NSString *, NSString *> *translations;
 static NSSet<NSString *> *translatedValues;
 static NSDictionary<NSString *, NSString *> *compactLabels;
@@ -45,7 +45,8 @@ static BOOL DGIsContentClass(NSString *name) {
                              @"Nickname", @"UserName", @"AwemeDesc", @"VideoTitle",
                              @"SearchResult", @"SearchInput", @"Chat", @"MessageCell",
                              @"AuthorName", @"AuthorInfo", @"UserNick", @"Danmaku", @"Barrage", @"UserText",
-                             @"RecentVisitUser", @"RevisitUser", @"UserCard"]) {
+                             @"RecentVisitUser", @"RevisitUser", @"UserCard", @"LiveRoomTitle",
+                             @"RoomName", @"RoomTitle", @"GiftMessage", @"FansMessage"]) {
         if ([name rangeOfString:part options:NSCaseInsensitiveSearch].location != NSNotFound)
             return YES;
     }
@@ -61,9 +62,11 @@ static BOOL DGIsControlIsland(NSString *name) {
                              @"CommentBottomTips", @"CommentAnchorSurveyHostView", @"CommentSurveyCell",
                              @"CommentEvaluationLynxView", @"CommentReplyButton", @"CommentExpandReplyButton",
                              @"ProfileTab", @"PersonalTab", @"ProfileMenu", @"ProfileActionButton",
-                             @"SubtitleSetting", @"DanmakuSetting", @"BarrageSetting"]) {
+                             @"SubtitleSetting", @"DanmakuSetting", @"BarrageSetting",
+                             @"LiveMoreToolsSettingItemView", @"LiveMoreToolsSettingItemHeaderView"]) {
         if ([name containsString:part]) return YES;
     }
+    if ([name isEqualToString:@"_TtC16AWELiveSwiftImpl21AWEFeedLiveTabTagView"]) return YES;
     return NO;
 }
 
@@ -95,7 +98,8 @@ static BOOL DGIsChrome(UIView *view) {
             }
         }
         if ([name hasPrefix:@"AWE"] || [name hasPrefix:@"DUI"] || [name hasPrefix:@"DUX"] ||
-            [name hasPrefix:@"IES"] || ([name hasPrefix:@"_Tt"] && [name containsString:@"AWE"])) {
+            [name hasPrefix:@"IES"] || [name hasPrefix:@"HTSLive"] ||
+            ([name hasPrefix:@"_Tt"] && [name containsString:@"AWE"])) {
             for (NSString *part in @[@"Navigation", @"TabBar", @"TabButton", @"Menu", @"Setting",
                                      @"Toolbar", @"ToolBar", @"Control", @"ActionButton", @"Channel",
                                      @"Login", @"SearchBar", @"SearchButton", @"PageTitle", @"HeaderTitle",
@@ -470,6 +474,7 @@ static void DGInstallNative(void) {
             if ([feature isEqualToString:@"diagnostics"]) return YES;
             if ([feature isEqualToString:@"search"]) return atomic_load(&searchEnabled);
             if ([feature isEqualToString:@"english"]) return atomic_load(&englishEnabled);
+            if ([feature isEqualToString:@"background"]) return atomic_load(&backgroundEnabled);
             return [feature isEqualToString:@"guest"] ? atomic_load(&guestEnabled) : atomic_load(&adsEnabled);
         };
         DGRecord record = ^(NSString *event, NSUInteger count) { DGCount(event, count); };
@@ -521,9 +526,9 @@ static void DGInstallNative(void) {
     if (!presenter || [presenter isKindOfClass:UIAlertController.class]) return;
     NSString *message = [NSString stringWithFormat:@"Test build • 40.6.0 (406019)\nNative hooks: %lu/%lu active\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)DGActiveHookCount(), (unsigned long)hookSpecs.count];
     UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Douyin Guest" message:message preferredStyle:UIAlertControllerStyleAlert];
-    NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls", @"Search diagnostics"];
-    NSArray *keys = @[@"DGGuestEnabled", @"DGAdsEnabled", @"DGEnglishEnabled", @"DGSearchEnabled"];
-    BOOL flags[] = {atomic_load(&guestEnabled), atomic_load(&adsEnabled), atomic_load(&englishEnabled), atomic_load(&searchEnabled)};
+    NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls", @"Search diagnostics", @"Background audio"];
+    NSArray *keys = @[@"DGGuestEnabled", @"DGAdsEnabled", @"DGEnglishEnabled", @"DGSearchEnabled", @"DGBackgroundEnabled"];
+    BOOL flags[] = {atomic_load(&guestEnabled), atomic_load(&adsEnabled), atomic_load(&englishEnabled), atomic_load(&searchEnabled), atomic_load(&backgroundEnabled)};
     for (NSUInteger i = 0; i < names.count; ++i) {
         BOOL next = !flags[i];
         NSString *title = [NSString stringWithFormat:@"%@: %@", names[i], flags[i] ? @"ON" : @"OFF"];
@@ -533,11 +538,12 @@ static void DGInstallNative(void) {
             if (i == 1) atomic_store(&adsEnabled, next);
             if (i == 2) atomic_store(&englishEnabled, next);
             if (i == 3) atomic_store(&searchEnabled, next);
+            if (i == 4) atomic_store(&backgroundEnabled, next);
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.5.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
-        report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled))};
+        NSMutableDictionary *report = [@{@"patch_version": @"0.6.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled)), @"background_audio": @(atomic_load(&backgroundEnabled))};
         report[@"search_adapter_hooks"] = DGSearchAdapterSnapshot();
         report[@"native_hooks_active"] = @(DGActiveHookCount());
         NSData *data = [NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:NULL];
@@ -579,11 +585,12 @@ __attribute__((constructor)) static void DGStart(void) {
                           @"Selected videos deleted":@"Videos deleted", @"Settings failed to load":@"Settings unavailable",
                           @"Log in for more results":@"Log in for more", @"Offline; check connection":@"Check connection"};
         counters = [NSMutableDictionary new]; installed = [NSMutableDictionary new]; overwritten = [NSMutableSet new];
-        [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES, @"DGSearchEnabled":@YES}];
+        [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES, @"DGSearchEnabled":@YES, @"DGBackgroundEnabled":@YES}];
         atomic_init(&guestEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGGuestEnabled"]);
         atomic_init(&adsEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGAdsEnabled"]);
         atomic_init(&englishEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGEnglishEnabled"]);
         atomic_init(&searchEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGSearchEnabled"]);
+        atomic_init(&backgroundEnabled, [NSUserDefaults.standardUserDefaults boolForKey:@"DGBackgroundEnabled"]);
         DGInstallNative(); DGInstallEnglish(); DGInstallCustomEnglish();
         NSNotificationCenter *notifications = NSNotificationCenter.defaultCenter;
         for (NSString *name in @[UIApplicationDidFinishLaunchingNotification, UIApplicationDidBecomeActiveNotification, UIWindowDidBecomeKeyNotification]) {

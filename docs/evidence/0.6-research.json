@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-02",
+  "resources": [
+    {
+      "name": "apple-background",
+      "url": "https://developer.apple.com/tutorials/data/documentation/bundleresources/information-property-list/uibackgroundmodes.json",
+      "bytes": 12381,
+      "sha256": "6f7295e2e73dd7213d353fea71677faf7f15147620e70b0d0d8b8b9bc3f5c22d",
+      "ok": true
+    },
+    {
+      "name": "apple-playback",
+      "url": "https://developer.apple.com/tutorials/data/documentation/avfaudio/avaudiosession/category-swift.struct/playback.json",
+      "bytes": 23499,
+      "sha256": "71fd93f023ff58f33eb2b887397e70a47fe5255aac8dd928daec717bd5ee1a5e",
+      "ok": true
+    },
+    {
+      "name": "apple-interruptions",
+      "url": "https://developer.apple.com/tutorials/data/documentation/avfaudio/handling-audio-interruptions.json",
+      "bytes": 52515,
+      "sha256": "4d4ea7c2a91950692b3d8dc12311686cd205182df67af55de28df92938d2fdc6",
+      "ok": true
+    },
+    {
+      "name": "apple-audio",
+      "url": "https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/MediaPlaybackGuide/Contents/Resources/en.lproj/ConfiguringAudioSettings/ConfiguringAudioSettings.html",
+      "bytes": 17710,
+      "sha256": "41ee6ee554f4677fd05d13a7fe99a265c4d232ba7248b1101952d3204978a5a0",
+      "ok": true
+    },
+    {
+      "name": "dyyy-background",
+      "url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/DYYY.xm",
+      "bytes": 293000,
+      "sha256": "6f005f7903bf315947662ea478136db0db6a21e7dd2d53a426491d10fc94408a",
+      "ok": true
+    },
+    {
+      "name": "dyyy-license",
+      "url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/LICENSE",
+      "bytes": 1063,
+      "sha256": "04f4f92380bd3533da8f2a852b6623a27871900cc2b66af704e46bae8377b47c",
+      "ok": true
+    }
+  ]
+}

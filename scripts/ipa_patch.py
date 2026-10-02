@@ -27,6 +27,8 @@ OPERATIONS = {
     'translateSurveyGetter': '@16@0:8', 'translateConfig1': 'v24@0:8@16',
     'observeFeedRequest': 'v40@0:8Q16@24@32', 'observeError1': 'v24@0:8@16',
     'observeImageFinish': 'v56@0:8@16@24@32@40q48', 'observeListGetter': '@16@0:8',
+    'backgroundSwitch': 'B16@0:8', 'backgroundState': 'q16@0:8',
+    'observeBool0': 'B16@0:8', 'observeVoid0': 'v16@0:8',
 }
 
 def sha256(path: pathlib.Path) -> str:
@@ -174,6 +176,8 @@ def validate_resources(resource_dir: pathlib.Path):
         key = (spec['class'], spec['selector'], spec['class_method'])
         sdk_hooks = {
             ('DUXToastViewConfig','text',False):('translateGetter','english'),
+            **{('IESLiveMoreToolsSettingItem',selector,False):('translateGetter','english')
+               for selector in ['title','buttonTitle','sectionTitle','toolbarItemTitle']},
             ('BDWebImageRequest','failedWithError:',False):('observeError1','diagnostics'),
             ('BDWebImageRequest','finishWithImage:data:savePath:url:from:',False):('observeImageFinish','diagnostics'),
         }
@@ -181,9 +185,13 @@ def validate_resources(resource_dir: pathlib.Path):
                            sdk_hooks.get(key) != (spec['operation'],spec['feature'])):
             raise ValueError('Duplicate or out-of-scope hook')
         seen.add(key)
-        if spec['feature'] not in ('guest', 'ads', 'diagnostics', 'search', 'english') or spec['types'] != OPERATIONS.get(spec['operation']):
+        if spec['feature'] not in ('guest', 'ads', 'diagnostics', 'search', 'english', 'background') or spec['types'] != OPERATIONS.get(spec['operation']):
             raise ValueError('Invalid hook operation/type')
         if not isinstance(spec['class_method'], bool): raise ValueError('Invalid method kind')
+        if spec['operation'] in ('backgroundSwitch','backgroundState'):
+            expected={'switchState':'backgroundSwitch','audioSwitchState':'backgroundState','audioSceneState':'backgroundState'}
+            if spec['class']!='AWEAwemeBackgroundPlayStoreService' or spec['class_method'] or spec['feature']!='background' or expected.get(spec['selector'])!=spec['operation']:
+                raise ValueError('Background preference hook outside verified local store')
     for key, value in translations.items():
         if not isinstance(key, str) or not isinstance(value, str) or not key or not value:
             raise ValueError('Invalid translation')

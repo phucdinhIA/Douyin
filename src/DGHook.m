@@ -36,6 +36,38 @@ static void DGRecordResponseStatus(NSString *event,id response,DGRecord record) 
         record([NSString stringWithFormat:@"%@ response status code %lld",event,[value longLongValue]],1);
 }
 
+static NSString *DGErrorCategory(NSError *error) {
+    NSString *domain = error.domain;
+    if ([domain isEqualToString:NSURLErrorDomain]) return @"URL";
+    if ([domain isEqualToString:NSPOSIXErrorDomain]) return @"POSIX";
+    if ([domain isEqualToString:NSCocoaErrorDomain]) return @"Cocoa";
+    if ([domain isEqualToString:@"kCFErrorDomainCFNetwork"]) return @"CFNetwork";
+    // Fixed strings verified in build 406019. Unknown domains never leave the app.
+    NSDictionary *known = @{@"BDWebImageErrorDomain":@"BDImage",
+        @"BDWebImageHeifDecoderErrorDomain":@"BDHeif", @"BDWebImageVvicDecoderErrorDomain":@"BDVvic",
+        @"kTTNetworkErrorDomain":@"TTNetwork", @"kAWEDCFeedErrorDomain":@"DCFeed",
+        @"AWEDataLayerNetworkErrorDomain":@"DataNetwork", @"AWEDataLayerBaseErrorDomain":@"DataLayer",
+        @"kAWEDCFeedAISearchSecurityErrorDomain":@"DCSearchSecurity", @"AWEDCFeedAISearchErrorDomain":@"DCSearch"};
+    return known[domain] ?: @"App";
+}
+
+static void DGRecordError(NSString *event, NSError *error, DGRecord record) {
+    NSMutableArray<NSError *> *visited = [NSMutableArray arrayWithObject:error];
+    NSError *current = error;
+    for (NSUInteger depth=0; depth<4; ++depth) {
+        NSString *part = depth ? [NSString stringWithFormat:@" underlying %lu",(unsigned long)depth] : @"";
+        record([NSString stringWithFormat:@"%@%@ error %@ %ld",event,part,DGErrorCategory(current),(long)current.code],1);
+        // Inspect only the standard underlying-error slot; never serialize userInfo.
+        id next = current.userInfo[NSUnderlyingErrorKey];
+        if (![next isKindOfClass:NSError.class]) break;
+        if ([visited indexOfObjectIdenticalTo:next] != NSNotFound) {
+            record([event stringByAppendingString:@" underlying error cycle"],1); break;
+        }
+        if (depth==3) { record([event stringByAppendingString:@" underlying error depth capped"],1); break; }
+        [visited addObject:next]; current = next;
+    }
+}
+
 static void DGRecordFeedCompletion(NSString *event, id result, id error, DGRecord record) {
     record([event stringByAppendingString:@" callbacks"], 1);
     DGRecordResponseStatus(event,result,record);
@@ -47,14 +79,7 @@ static void DGRecordFeedCompletion(NSString *event, id result, id error, DGRecor
     if (![error isKindOfClass:NSError.class]) {
         record([event stringByAppendingString:@" non-NSError failure"], 1); return;
     }
-    NSError *value = error;
-    NSString *category = @"App";
-    if ([value.domain isEqualToString:NSURLErrorDomain]) category = @"URL";
-    else if ([value.domain isEqualToString:NSPOSIXErrorDomain]) category = @"POSIX";
-    else if ([value.domain isEqualToString:NSCocoaErrorDomain]) category = @"Cocoa";
-    else if ([value.domain isEqualToString:@"kCFErrorDomainCFNetwork"]) category = @"CFNetwork";
-    // Numeric codes and a fixed category only: no description, URL, userInfo, or tokens.
-    record([NSString stringWithFormat:@"%@ error %@ %ld", event, category, (long)value.code], 1);
+    DGRecordError(event,error,record);
 }
 
 static void DGRecordFeedList(NSString *event, id items, NSUInteger removed, DGRecord record) {
@@ -70,8 +95,11 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
     NSString *returnType;
     NSArray<NSString *> *arguments;
     NSString *boolean = [NSString stringWithUTF8String:@encode(BOOL)];
-    if ([kind isEqualToString:@"false0"] || [kind isEqualToString:@"true0"]) {
+    if ([kind isEqualToString:@"false0"] || [kind isEqualToString:@"true0"] ||
+        [kind isEqualToString:@"backgroundSwitch"] || [kind isEqualToString:@"observeBool0"]) {
         returnType = boolean; arguments = @[@"@", @":"];
+    } else if ([kind isEqualToString:@"backgroundState"]) {
+        returnType = @"q"; arguments = @[@"@", @":"];
     } else if ([kind isEqualToString:@"falseObject1"]) {
         returnType = boolean; arguments = @[@"@", @":", @"@"];
     } else if ([kind isEqualToString:@"falseObject2"]) {
@@ -80,7 +108,7 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
         returnType = boolean; arguments = @[@"@", @":", boolean];
     } else if ([kind isEqualToString:@"falseBool2"]) {
         returnType = boolean; arguments = @[@"@", @":", boolean, boolean];
-    } else if ([kind isEqualToString:@"noop0"]) {
+    } else if ([kind isEqualToString:@"noop0"] || [kind isEqualToString:@"observeVoid0"]) {
         returnType = @"v"; arguments = @[@"@", @":"];
     } else if ([kind isEqualToString:@"filterGetter"]) {
         returnType = @"@"; arguments = @[@"@", @":"];
@@ -157,7 +185,29 @@ static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecor
     IMP original = method_getImplementation(method);
     id block = nil;
     NSString *event = [NSString stringWithFormat:@"%@ %@", name, selectorName];
-    if ([kind isEqualToString:@"false0"] || [kind isEqualToString:@"true0"]) {
+    if ([kind isEqualToString:@"backgroundSwitch"] || [kind isEqualToString:@"observeBool0"]) {
+        block = ^BOOL(id self) {
+            BOOL value = ((BOOL (*)(id,SEL))original)(self,sel);
+            if (!enabled()) return value;
+            record([event stringByAppendingString:(value ? @" original YES" : @" original NO")],1);
+            if ([kind isEqualToString:@"backgroundSwitch"]) { record([event stringByAppendingString:@" preference ON"],1); return YES; }
+            return value;
+        };
+    } else if ([kind isEqualToString:@"backgroundState"]) {
+        block = ^NSInteger(id self) {
+            NSInteger value = ((NSInteger (*)(id,SEL))original)(self,sel);
+            if (!enabled()) return value;
+            record([event stringByAppendingString:@" preference ON"],1);
+            // State 1 = audio on / all scenes in the native preference store.
+            // Content eligibility, interruption and player decisions stay native.
+            return 1;
+        };
+    } else if ([kind isEqualToString:@"observeVoid0"]) {
+        block = ^(id self) {
+            ((void (*)(id,SEL))original)(self,sel);
+            if (enabled()) record([event stringByAppendingString:@" calls"],1);
+        };
+    } else if ([kind isEqualToString:@"false0"] || [kind isEqualToString:@"true0"]) {
         BOOL value = [kind isEqualToString:@"true0"];
         block = ^BOOL(id self) {
             if (!enabled()) return ((BOOL (*)(id, SEL))original)(self, sel);

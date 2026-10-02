@@ -448,5 +448,122 @@
     "operation": "observeListGetter",
     "feature": "diagnostics",
     "evidence_imp": "0xeca2c08"
+  },
+  {
+    "class": "AWEAwemeBackgroundPlayStoreService",
+    "selector": "switchState",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "backgroundSwitch",
+    "feature": "background",
+    "evidence_imp": "0x12ea5984"
+  },
+  {
+    "class": "AWEAwemeBackgroundPlayStoreService",
+    "selector": "audioSwitchState",
+    "types": "q16@0:8",
+    "class_method": false,
+    "operation": "backgroundState",
+    "feature": "background",
+    "evidence_imp": "0x14a02638"
+  },
+  {
+    "class": "AWEAwemeBackgroundPlayStoreService",
+    "selector": "audioSceneState",
+    "types": "q16@0:8",
+    "class_method": false,
+    "operation": "backgroundState",
+    "feature": "background",
+    "evidence_imp": "0x10901554"
+  },
+  {
+    "class": "AWEAwemeBackgroundPlayModule",
+    "selector": "shouldEnterBackgroundPlayMode",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "observeBool0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d0cc810"
+  },
+  {
+    "class": "AWEAwemeBackgroundPlayModule",
+    "selector": "backgroundIsPlaying",
+    "types": "B16@0:8",
+    "class_method": false,
+    "operation": "observeBool0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d0cd320"
+  },
+  {
+    "class": "AWEAwemeBackgroundPlayModule",
+    "selector": "doEnterBackgroundPlayMode",
+    "types": "v16@0:8",
+    "class_method": false,
+    "operation": "observeVoid0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d0ccc30"
+  },
+  {
+    "class": "AWEAwemeBackgroundPlayModule",
+    "selector": "doExitBackgroundPlayMode",
+    "types": "v16@0:8",
+    "class_method": false,
+    "operation": "observeVoid0",
+    "feature": "diagnostics",
+    "evidence_imp": "0x1d0cd0c4"
+  },
+  {
+    "class": "IESLiveMoreToolsSettingItem",
+    "selector": "title",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0x21e0fa10"
+  },
+  {
+    "class": "IESLiveMoreToolsSettingItem",
+    "selector": "buttonTitle",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0x21e0fa50"
+  },
+  {
+    "class": "IESLiveMoreToolsSettingItem",
+    "selector": "sectionTitle",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0x21e0fa80"
+  },
+  {
+    "class": "IESLiveMoreToolsSettingItem",
+    "selector": "toolbarItemTitle",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0x21e0fa98"
+  },
+  {
+    "class": "AWEBackgroundPlaySettingsCellModel",
+    "selector": "content",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0x10a35d14"
+  },
+  {
+    "class": "AWEBackgroundPlaySettingsCellModel",
+    "selector": "contentForBigFont",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0x10a35d24"
   }
 ]
