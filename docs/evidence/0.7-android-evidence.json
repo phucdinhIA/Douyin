@@ -1,0 +1,259 @@
+[
+  {
+    "repo": "twyora/DouyinEnhancer",
+    "commit": "2f41dbde5f1043ab7b93cc54552586c06f4d3eb9",
+    "files": [
+      {
+        "path": "README.md",
+        "bytes": 2254,
+        "sha256": "8d09fb701bd768da88cf5fcb527558ad5416acaceb362f645994f2964bc6ef03"
+      },
+      {
+        "path": "README_zh_CN.md",
+        "bytes": 1955,
+        "sha256": "9752e7e8975c43774f5a7d3bb427471d8bed499017542abdce5f217495caba0b"
+      },
+      {
+        "path": "annotation/src/main/java/io/github/twyora/douyinenhancer/hook/HookOnMainProcess.kt",
+        "bytes": 152,
+        "sha256": "58b890f9ff9ef3d960f2b28996bc400f765c14a410afaa034f47009c69663820"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/config/provider/FeedConfigProvider.kt",
+        "bytes": 1195,
+        "sha256": "e2231fb677770d25426cb8a202066a0d11f35fd4429fa36026df25b0782284b1"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/config/provider/RecommendedFeedFilterConfigProvider.kt",
+        "bytes": 4533,
+        "sha256": "3d4fcb179155de4fe7d0f92f739bf92c6c929e10531d998b5f63bc12422f5bdb"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/constant/HookInfoFiles.kt",
+        "bytes": 213,
+        "sha256": "8400727c57443bfeb1b45918eced84f5f25959a1cfffd7e10739143f72bb66d6"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/DouyinPackage.kt",
+        "bytes": 179448,
+        "sha256": "1a083f34345cfd683a2ec45f950b965077d02dc9ac8f472fd1d8ad3d3a44acff"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/HookEntry.kt",
+        "bytes": 1688,
+        "sha256": "24279e3ffff0e9b294cf50408b554f03ed8be50fa3e1b9ebf4969049c8822a6a"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/comment/CommentAudioHooker.kt",
+        "bytes": 13390,
+        "sha256": "11047b0fae04ebffce4e6e52d9e1596a41eb894360aec613a57df418ef470556"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/comment/CommentEmojiHooker.kt",
+        "bytes": 21956,
+        "sha256": "7cc63acc0061aa8e662ebaab60e6eb223f8a1c2501f40a52d11ece14b8eac023"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/comment/CommentImageHooker.kt",
+        "bytes": 1935,
+        "sha256": "9c7bd92a2b351300138bb4adbd8c3eafc72a66a14a50ae333650bc7f1350c0a7"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/feed/FeedDoubleTapDiggHooker.kt",
+        "bytes": 1625,
+        "sha256": "987a3104cadf30f5583fb3cb85f73bca0d98ac2dfa2e59e3c6ff80c3eac20a72"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/feed/FeedDoubleTapOpenCommentHooker.kt",
+        "bytes": 2885,
+        "sha256": "8a30c392115d5cd5e4a957a027e17cec47392329356bb2b808b5d1ad1119c182"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/feed/FeedDownloadHooker.kt",
+        "bytes": 7061,
+        "sha256": "010a7f2817ad1df05e0a459f8a6c24129ff693fc1260d2790f132b1e6113b9c3"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/feed/FeedMultiImageHooker.kt",
+        "bytes": 16144,
+        "sha256": "fd1f0af204cea8be304f13f2161f81f25f2cb7e436c188425a74cc0ae620fa27"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/feed/FeedReplayHooker.kt",
+        "bytes": 2695,
+        "sha256": "e4cc8d6e923c3499623e5a4defe8f00f98e78a46420fd086b3d7d4ed0047f888"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/feed/FeedResumeHooker.kt",
+        "bytes": 2734,
+        "sha256": "b1f02b02d5f979bda43a295cda7053e87f69e670f5f741b053b7efe2a1bb30e5"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/feed/FeedVideoHooker.kt",
+        "bytes": 2077,
+        "sha256": "994967f8590f306387fd593331136f5714de1ab8132bf5fa0b9b58f0cf92d676"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/feed/ListenAwemeFilterHooker.kt",
+        "bytes": 2176,
+        "sha256": "62b01c994eb7084b2e21ff5fb31f47bd40f02563f40e6ff5417c6147671efd92"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/feed/RecommendedFeedHooker.kt",
+        "bytes": 12632,
+        "sha256": "c38092939b58e07f80c6f0b801100b84d49c37670b85ae45eb4139ac141e9365"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/ui/BottomTabHooker.kt",
+        "bytes": 3129,
+        "sha256": "f5ff3dc0c079653eeb306fe6bfc5e1704563209a1c2fe9e07f7ebbcecb4547c1"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/ui/DanmakuViewHooker.kt",
+        "bytes": 5692,
+        "sha256": "2eca59ffbfbb9a03d850466207d939d21663723001b3e48ef31a1e4741c07a3c"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/ui/FeedComponentHooker.kt",
+        "bytes": 7797,
+        "sha256": "1f4862f765a443e6c4e54ed008588c4da81a3960a6827f2d9399131cafa6a8f5"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/ui/SettingsEntryHooker.kt",
+        "bytes": 9976,
+        "sha256": "0605a29efb53f2e0402e781364fcfec4313ac7e879ef9f7831c66757155b730e"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/hook/ui/VerifyDialogHooker.kt",
+        "bytes": 1962,
+        "sha256": "80f0d3b5757b23bd8a71a120e1eea493a424a1a73ca151eccbfbc2c2079e943f"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/ui/RecommendedFeedFilterDialog.kt",
+        "bytes": 13145,
+        "sha256": "d262c69e4636f7dbdb06f27c67edb78b5b44605d99776548234bff8f453018e6"
+      },
+      {
+        "path": "app/src/main/java/io/github/twyora/douyinenhancer/utils/HookTransaction.kt",
+        "bytes": 1952,
+        "sha256": "745df2a8d5d1b7c293b51309943cc8aabe5e8a51d6f75fee41debd7456001aac"
+      },
+      {
+        "path": "processor/src/main/java/io/github/twyora/douyinenhancer/hook/HookOnMainProcessProcessor.kt",
+        "bytes": 2183,
+        "sha256": "0cdc16ef80ba3692085c930f192a833d1befe1c2ed979a45221ff82b6dea289a"
+      },
+      {
+        "path": "processor/src/main/java/io/github/twyora/douyinenhancer/hook/HookOnMainProcessProcessorProvider.kt",
+        "bytes": 537,
+        "sha256": "e52824f0e885db1b780ad043616e7db74a92522bf0f5465052fad4af1c73a89c"
+      }
+    ]
+  },
+  {
+    "repo": "1zzzzzlll/douyim",
+    "commit": "1f662082493f909dcf121a9681aac1574a97421a",
+    "files": [
+      {
+        "path": "README.md",
+        "bytes": 8154,
+        "sha256": "e01641080c7d9078d036b2f0596b788f9db0f7f45f9c43030e79f1c7f7bba6d1"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/AudioTranscoder.java",
+        "bytes": 5823,
+        "sha256": "8cc7708cfe574a5557406f304825a978e9985d3f1a5076489009a0c57c42a385"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/DanmakuViewClassifier.java",
+        "bytes": 364,
+        "sha256": "6de374cd96c007e797768be7e17f3fabedf1e151816aad3164865184141cf055"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/DoubleTapGuard.java",
+        "bytes": 4666,
+        "sha256": "ec1b8027fc6c0dcad17524f90095fc5d4197adc7ccadf8263bf72e96fa6bfca1"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/DouyinModule.java",
+        "bytes": 7705,
+        "sha256": "9afbd1cc9461e5d3c4fdc8de41c09a4e5ea5b31e6df9ddaa11d7d6362fd4c8a0"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/FeedContentTracker.java",
+        "bytes": 21133,
+        "sha256": "ff6e8c5a9895bea46fa908ecab8c4e076e61e7e777f573c18598ab21fa297515"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/ImmersiveTouchGuard.java",
+        "bytes": 7021,
+        "sha256": "6f176be093d8cdd7e9af9287f6824740765cac0de45e0604cc49881d0b0f682c"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/ImmersiveTouchPolicy.java",
+        "bytes": 718,
+        "sha256": "9acf4e671eeda0978e7d8d06c8f0e9d14d871d83ff2d0387331234063389d77d"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/ImmersiveTransitionPolicy.java",
+        "bytes": 320,
+        "sha256": "df5c3af174185aac0ff5411951d3a35c154aa0423e2634bd2b9d9427005e895d"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/ImmersiveUi.java",
+        "bytes": 60035,
+        "sha256": "02feb92338f4428ddfe730d200bad07f35cfb0f63e1765ef6c42a520733e5a7a"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/Mp3Encoder.java",
+        "bytes": 4616,
+        "sha256": "3435e41a2a3cded938d34ec62cc5d6c77b851a1f15f94715fcfd6af99bc3c8e7"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/PlaybackState.java",
+        "bytes": 20654,
+        "sha256": "78d622acc13899fa839ec2a4064f2121a9e80c3ae1d6c6b4fc71a14562ddff5b"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/PlayerHooks.java",
+        "bytes": 8731,
+        "sha256": "7148fd07498c7aea90ecf9d1b1cc760483f58e8a829728f92f2b2a2388207153"
+      },
+      {
+        "path": "app/src/main/java/com/zz/douyin/hook/VideoDownloader.java",
+        "bytes": 19525,
+        "sha256": "1a6bc51136abc65dc31353a883d622e75fe36a09f387a550e07caf359bef21e9"
+      },
+      {
+        "path": "app/src/test/java/com/zz/douyin/hook/DanmakuViewClassifierTest.java",
+        "bytes": 1004,
+        "sha256": "d07c0c42606f81387a3b6660a0b51204a9280760aa9fe19b136d76d75bdca578"
+      },
+      {
+        "path": "app/src/test/java/com/zz/douyin/hook/FeedContentTrackerTest.java",
+        "bytes": 10288,
+        "sha256": "a720fc21b2445e0aa13afabd7d5cc4d7e92e241c52fd13854a39b7e73e1e0618"
+      },
+      {
+        "path": "app/src/test/java/com/zz/douyin/hook/ImmersiveTouchPolicyTest.java",
+        "bytes": 1908,
+        "sha256": "a319d4ef3a6909df3101cd33abcf27f0505e745861cdcd5a4b84514cb602a0c6"
+      },
+      {
+        "path": "app/src/test/java/com/zz/douyin/hook/ImmersiveTransitionPolicyTest.java",
+        "bytes": 801,
+        "sha256": "dd56aa5ac2dd093a5976b4b6b577464c34c58400906f11bc4f057049271375a4"
+      },
+      {
+        "path": "app/src/test/java/com/zz/douyin/hook/Mp3EncoderTest.java",
+        "bytes": 3091,
+        "sha256": "109ee1a484cb8a809264c7fa79f8888370b64200ff453b55a1cd3625506331f7"
+      },
+      {
+        "path": "app/src/test/java/com/zz/douyin/hook/PlaybackStateTest.java",
+        "bytes": 3251,
+        "sha256": "d18dbf19e1f13ab2e5afd7f21c66a2ebc543be121ffb8cac552f72940f89e13d"
+      }
+    ]
+  }
+]

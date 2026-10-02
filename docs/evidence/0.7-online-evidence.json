@@ -1,0 +1,38 @@
+[
+  {
+    "name": "apple-orientations",
+    "url": "https://developer.apple.com/tutorials/data/documentation/bundleresources/information-property-list/uisupportedinterfaceorientations.json",
+    "final_url": "https://developer.apple.com/tutorials/data/documentation/bundleresources/information-property-list/uisupportedinterfaceorientations.json",
+    "status": 200,
+    "bytes": 12469,
+    "sha256": "429b4020a97dd0436510480b338a979c8df1af50322859a3e75edc36b369dd3c",
+    "public_profiles": []
+  },
+  {
+    "name": "apple-orientation-controller",
+    "url": "https://developer.apple.com/tutorials/data/documentation/uikit/uiviewcontroller/supportedinterfaceorientations.json",
+    "final_url": "https://developer.apple.com/tutorials/data/documentation/uikit/uiviewcontroller/supportedinterfaceorientations.json",
+    "status": 200,
+    "bytes": 28772,
+    "sha256": "48dbc42b915a985186b8deba184c867b10b648fb6a7e01bed88d38d944f96d08",
+    "public_profiles": []
+  },
+  {
+    "name": "bing-public-profile",
+    "url": "https://www.bing.com/search?q=site%3Adouyin.com%2Fuser%2F+%E5%88%98%E5%BE%B7%E5%8D%8E",
+    "final_url": "https://www.bing.com/search?q=site%3Adouyin.com%2Fuser%2F+%E5%88%98%E5%BE%B7%E5%8D%8E",
+    "status": 200,
+    "bytes": 121064,
+    "sha256": "0d3b78e82a15eb28534868b3a6783bfe5a661aadd939338fd0b1826eb0e8d0af",
+    "public_profiles": []
+  },
+  {
+    "name": "dyyy-pinned",
+    "url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/DYYY.xm",
+    "final_url": "https://raw.githubusercontent.com/huami1314/DYYY/6c3dfbd911822b4d0f758f184c196566e8142291/DYYY.xm",
+    "status": 200,
+    "bytes": 293000,
+    "sha256": "6f005f7903bf315947662ea478136db0db6a21e7dd2d53a426491d10fc94408a",
+    "public_profiles": []
+  }
+]
