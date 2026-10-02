@@ -21,11 +21,14 @@ static char fontStateKey, gestureKey, labelSourceKey, labelUpdateKey, labelRichK
 static char customSourceKey, customFontKey, customLastFontKey, customBusyKey, customRichKey;
 
 static BOOL DGKnownEnglish(NSString *text) {
-    return text && [translatedValues containsObject:[text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet]];
+    return text && ([translatedValues containsObject:[text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet]] ||
+        [text hasPrefix:@"Comments "] || [text hasPrefix:@"Collection: "] ||
+        ([text hasPrefix:@"View "] && ([text hasSuffix:@" reply"] || [text hasSuffix:@" replies"])));
 }
 
 static void DGCount(NSString *event, NSUInteger amount) {
     os_unfair_lock_lock(&counterLock);
+    if (!counters[event] && counters.count >= 512) event = @"Additional diagnostic event types omitted";
     counters[event] = @([counters[event] unsignedLongLongValue] + amount);
     os_unfair_lock_unlock(&counterLock);
 }
@@ -54,6 +57,9 @@ static BOOL DGIsControlIsland(NSString *name) {
                              @"SearchFullPageTitleBar", @"SearchFullPageVerticalTitleBar",
                              @"SearchHistoryHeader", @"SearchSugHeader", @"SearchHotSearchHeader",
                              @"CommentHeader", @"CommentToolbar", @"CommentSendButton",
+                             @"CommentVCHeaderBar", @"CommentVCHeaderCloseBar", @"CommentPanelHeaderCount",
+                             @"CommentBottomTips", @"CommentAnchorSurveyHostView", @"CommentSurveyCell",
+                             @"CommentEvaluationLynxView", @"CommentReplyButton", @"CommentExpandReplyButton",
                              @"ProfileTab", @"PersonalTab", @"ProfileMenu", @"ProfileActionButton",
                              @"SubtitleSetting", @"DanmakuSetting", @"BarrageSetting"]) {
         if ([name containsString:part]) return YES;
@@ -74,8 +80,9 @@ static BOOL DGIsChrome(UIView *view) {
             // A result/comment controller can own filters or a toolbar as well
             // as user content. Only an explicitly named control below it is exempt.
             BOOL container = [name containsString:@"SearchResult"] || [name containsString:@"Comment"];
-            if (!island || !container || [name containsString:@"CommentCell"] ||
-                [name containsString:@"CommentText"] || [name containsString:@"SearchResultCell"]) return NO;
+            if (!island || !container || [name containsString:@"CommentText"] ||
+                [name containsString:@"UserName"] || [name containsString:@"Nickname"] ||
+                [name containsString:@"SearchResultCell"]) return NO;
         }
         if ([node isKindOfClass:UINavigationBar.class] || [node isKindOfClass:UITabBar.class])
             chrome = YES;
@@ -95,7 +102,7 @@ static BOOL DGIsChrome(UIView *view) {
                                      @"TopTitle", @"Progress", @"Quality", @"Speed", @"SideBar", @"Sidebar",
                                      @"NetworkError", @"NetError", @"EmptyPage", @"EmptyView", @"EmptyContainer",
                                      @"ErrorView", @"PrivacySetting", @"Preference", @"SharePanel", @"ShareSheet",
-                                     @"ActionSheet", @"PopupMenu", @"Playback", @"PlayerMenu", @"TitleBar"]) {
+                                     @"ActionSheet", @"PopupMenu", @"Playback", @"PlayerMenu", @"TitleBar", @"Toast"]) {
                 if ([name containsString:part]) { chrome = YES; break; }
             }
         }
@@ -168,10 +175,10 @@ static void DGTranslateLabel(UILabel *label) {
     // UILabel can synthesize attributedText for plain text. Track which public
     // setter the app used so that attachment does not freeze its original font.
     if ([objc_getAssociatedObject(label, &labelRichKey) boolValue] && label.attributedText.length) {
-        NSAttributedString *value = DGTranslateAttributed(label.attributedText, translations);
+        NSAttributedString *value = DGTranslateControlAttributed(label.attributedText, translations);
         if (value != label.attributedText || [translatedValues containsObject:value.string]) { label.attributedText = value; }
     } else if (label.text.length) {
-        NSString *value = DGTranslate(label.text, translations);
+        NSString *value = DGTranslateControl(label.text, translations);
         if (![value isEqualToString:label.text] || [translatedValues containsObject:value]) { label.text = value; }
     }
     DGApplyLabelLayout(label);
@@ -209,7 +216,7 @@ static void DGLayoutCustomLabel(UIView *view) {
     CGFloat width = view.bounds.size.width;
     BOOL fit = lines == 1 && width > 0;
     NSString *display = full, *shorter = compactLabels[full];
-    CGFloat measured = [full sizeWithAttributes:@{NSFontAttributeName:base}].width;
+    CGFloat measured = rich ? [source size].width : [full sizeWithAttributes:@{NSFontAttributeName:base}].width;
     if (fit && measured * 0.65 > width && shorter.length &&
         [shorter sizeWithAttributes:@{NSFontAttributeName:base}].width * 0.65 <= width) {
         display = shorter; measured = [shorter sizeWithAttributes:@{NSFontAttributeName:base}].width;
@@ -219,9 +226,14 @@ static void DGLayoutCustomLabel(UIView *view) {
     objc_setAssociatedObject(view, &customBusyKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     @try {
         if (rich) {
-            NSMutableDictionary *style = [attributes mutableCopy] ?: [NSMutableDictionary new];
-            style[NSFontAttributeName] = fitted;
-            NSAttributedString *value = [[NSAttributedString alloc] initWithString:display attributes:style];
+            NSAttributedString *selected = [display isEqualToString:full] ? source : DGTranslateAttributed(source,@{full:display});
+            NSMutableAttributedString *value = [selected mutableCopy];
+            [selected enumerateAttribute:NSFontAttributeName inRange:NSMakeRange(0,selected.length) options:0
+                usingBlock:^(id originalFont, NSRange range, BOOL *stop) {
+                    (void)stop;
+                    UIFont *font = [originalFont isKindOfClass:UIFont.class] ? originalFont : base;
+                    [value addAttribute:NSFontAttributeName value:[font fontWithSize:font.pointSize*factor] range:range];
+                }];
             if (![DGCustomRead(view, @"attributedText") isEqualToAttributedString:value]) DGCustomWrite(view, @"setAttributedText:", value);
         } else if (![DGCustomRead(view, @"text") isEqualToString:display]) DGCustomWrite(view, @"setText:", display);
         if (![current isEqual:fitted]) DGCustomWrite(view, @"setFont:", fitted);
@@ -249,7 +261,7 @@ static void DGInstallCustomEnglish(void) {
                     ((void (*)(id, SEL, id))original)(view, selector, text); return;
                 }
                 id value = text;
-                if (text && DGIsChrome(view)) value = rich ? DGTranslateAttributed(text, translations) : DGTranslate(text, translations);
+                if (text && DGIsChrome(view)) value = rich ? DGTranslateControlAttributed(text, translations) : DGTranslateControl(text, translations);
                 NSString *string = rich ? [value string] : value;
                 BOOL translated = text && value != text;
                 // Mixed attributed styles are user/link content, even if their
@@ -311,7 +323,7 @@ static void DGInstallEnglish(void) {
             if ([objc_getAssociatedObject(label, &labelUpdateKey) boolValue]) {
                 ((void (*)(id, SEL, id))original)(label, @selector(setText:), text); return;
             }
-            NSString *value = text && DGIsChrome(label) ? DGTranslate(text, translations) : text;
+            NSString *value = text && DGIsChrome(label) ? DGTranslateControl(text, translations) : text;
             objc_setAssociatedObject(label, &labelRichKey, @NO, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             BOOL changed = text && ![value isEqualToString:text];
             BOOL chrome = value && DGIsChrome(label) && (changed || DGKnownEnglish(value));
@@ -329,7 +341,7 @@ static void DGInstallEnglish(void) {
             if ([objc_getAssociatedObject(label, &labelUpdateKey) boolValue]) {
                 ((void (*)(id, SEL, id))original)(label, @selector(setAttributedText:), text); return;
             }
-            NSAttributedString *value = text && DGIsChrome(label) ? DGTranslateAttributed(text, translations) : text;
+            NSAttributedString *value = text && DGIsChrome(label) ? DGTranslateControlAttributed(text, translations) : text;
             objc_setAssociatedObject(label, &labelRichKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             BOOL chrome = value && DGIsChrome(label) && (value != text || DGKnownEnglish(value.string));
             objc_setAssociatedObject(label, &labelSourceKey, chrome ? value : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -356,14 +368,14 @@ static void DGInstallEnglish(void) {
     });
     DGSwizzle(UIButton.class, @selector(setTitle:forState:), ^id(IMP original) {
         return ^(UIButton *button, NSString *title, UIControlState state) {
-            NSString *value = title && DGIsChrome(button) ? DGTranslate(title, translations) : title;
+            NSString *value = title && DGIsChrome(button) ? DGTranslateControl(title, translations) : title;
             ((void (*)(id, SEL, id, UIControlState))original)(button, @selector(setTitle:forState:), value, state);
             if (title && ![value isEqualToString:title]) DGCount(@"Button titles translated", 1);
         };
     });
     DGSwizzle(UIButton.class, @selector(setAttributedTitle:forState:), ^id(IMP original) {
         return ^(UIButton *button, NSAttributedString *title, UIControlState state) {
-            NSAttributedString *value = title && DGIsChrome(button) ? DGTranslateAttributed(title, translations) : title;
+            NSAttributedString *value = title && DGIsChrome(button) ? DGTranslateControlAttributed(title, translations) : title;
             ((void (*)(id, SEL, id, UIControlState))original)(button, @selector(setAttributedTitle:forState:), value, state);
         };
     });
@@ -457,9 +469,12 @@ static void DGInstallNative(void) {
         DGEnabled enabled = ^BOOL {
             if ([feature isEqualToString:@"diagnostics"]) return YES;
             if ([feature isEqualToString:@"search"]) return atomic_load(&searchEnabled);
+            if ([feature isEqualToString:@"english"]) return atomic_load(&englishEnabled);
             return [feature isEqualToString:@"guest"] ? atomic_load(&guestEnabled) : atomic_load(&adsEnabled);
         };
-        if (DGInstallHook(spec, enabled, ^(NSString *event, NSUInteger count) { DGCount(event, count); }))
+        DGRecord record = ^(NSString *event, NSUInteger count) { DGCount(event, count); };
+        BOOL success = [feature isEqualToString:@"english"] ? DGInstallLocalizedHook(spec,enabled,record,translations) : DGInstallHook(spec,enabled,record);
+        if (success)
             installed[key] = [NSValue valueWithPointer:(const void *)method_getImplementation(DGHookMethod(spec))];
     }
 }
@@ -506,7 +521,7 @@ static void DGInstallNative(void) {
     if (!presenter || [presenter isKindOfClass:UIAlertController.class]) return;
     NSString *message = [NSString stringWithFormat:@"Test build • 40.6.0 (406019)\nNative hooks: %lu/%lu active\nChanges are local. Server restrictions still apply.\nRestart after changing options.", (unsigned long)DGActiveHookCount(), (unsigned long)hookSpecs.count];
     UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Douyin Guest" message:message preferredStyle:UIAlertControllerStyleAlert];
-    NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls", @"Guest search"];
+    NSArray *names = @[@"Hide login reminders", @"Filter feed / startup ads", @"English controls", @"Search diagnostics"];
     NSArray *keys = @[@"DGGuestEnabled", @"DGAdsEnabled", @"DGEnglishEnabled", @"DGSearchEnabled"];
     BOOL flags[] = {atomic_load(&guestEnabled), atomic_load(&adsEnabled), atomic_load(&englishEnabled), atomic_load(&searchEnabled)};
     for (NSUInteger i = 0; i < names.count; ++i) {
@@ -521,7 +536,7 @@ static void DGInstallNative(void) {
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.4.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        NSMutableDictionary *report = [@{@"patch_version": @"0.5.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled))};
         report[@"search_adapter_hooks"] = DGSearchAdapterSnapshot();
         report[@"native_hooks_active"] = @(DGActiveHookCount());
@@ -553,6 +568,10 @@ __attribute__((constructor)) static void DGStart(void) {
         compactLabels = @{@"Settings":@"Setup", @"Watch history":@"History", @"Creator tools":@"Creators",
                           @"Live cache":@"Live saves", @"My QR code":@"QR code", @"Screen time":@"Usage",
                           @"Check your connection and retry":@"Check connection",
+                          @"Network error":@"Load error", @"Action failed. Try again later":@"Failed; retry later",
+                          @"Log in to see more comments":@"Log in for more",
+                          @"How do you feel about these comments?":@"Rate these comments",
+                          @"Very dissatisfied":@"Very unhappy", @"Very satisfied":@"Very happy",
                           @"Check connection; refresh":@"Check connection", @"Messages from strangers":@"Message requests",
                           @"Content personalization":@"Personalization", @"Microphone permission":@"Microphone",
                           @"Bluetooth permission":@"Bluetooth", @"System permissions":@"Permissions",

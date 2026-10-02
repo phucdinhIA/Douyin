@@ -49,6 +49,51 @@
 @end
 @implementation AWECommentHeaderFixtureView
 @end
+@interface AWECommentVCHeaderBarView : UIView
+@property (copy) NSAttributedString *attrTips;
+@end
+@implementation AWECommentVCHeaderBarView
+@end
+@interface AWECommentBottomTipsView : UIView
+@end
+@implementation AWECommentBottomTipsView
+@end
+@interface AWECommentReplyButton : UIButton
+@end
+@implementation AWECommentReplyButton
+@end
+@interface CommentCellFixtureView : UIView
+@end
+@implementation CommentCellFixtureView
+@end
+@interface AWECommentSurveyCell : UIView
+@end
+@implementation AWECommentSurveyCell
+@end
+@interface AWEUIKitViewControllerEmptyPageConfig : NSObject
+@property (copy) NSString *titleText;
+@property (copy) NSString *informativeText;
+@property (copy) NSString *primaryButtonTitle;
+@end
+@implementation AWEUIKitViewControllerEmptyPageConfig
+@end
+@interface DUXToastViewConfig : NSObject
+@property (copy) NSString *text;
+@end
+@implementation DUXToastViewConfig
+@end
+@interface AWECommentSurveyConfigModel : NSObject
+@property (strong) id surveyDetail;
+@end
+@implementation AWECommentSurveyConfigModel
+@end
+@interface AWECommentEvaluationConfig : NSObject
+@property (strong) id receivedConfig;
+- (void)configWithDict:(id)config;
+@end
+@implementation AWECommentEvaluationConfig
+- (void)configWithDict:(id)config { self.receivedConfig=config; }
+@end
 @interface _TtC18AWESearchSwiftImpl17SearchSettingView : UIView
 @end
 @implementation _TtC18AWESearchSwiftImpl17SearchSettingView
@@ -192,6 +237,39 @@ static NSUInteger countText(UIView *view, NSString *text) {
     for (NSUInteger i=0;i<settingsWords.count;i++) { UILabel *item=label(settingsScreen.view,settingsWords[i],135+i*43);item.frame=CGRectMake(20,135+i*43,180,36); }
     screen=settingsScreen;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-settings.png"];
+
+    AWECommentFixtureView *commentCanvas=[[AWECommentFixtureView alloc] initWithFrame:self.window.bounds];commentCanvas.backgroundColor=UIColor.systemBackgroundColor;
+    AWECommentVCHeaderBarView *commentHeader=[[AWECommentVCHeaderBarView alloc] initWithFrame:CGRectMake(16,70,width-32,150)];[commentCanvas addSubview:commentHeader];
+    title=label(commentHeader,@"Comment controls fixture • 0.5.0",0);title.frame=CGRectMake(4,0,width-40,28);title.font=[UIFont boldSystemFontOfSize:17];
+    UILabel *headerCount=label(commentHeader,@"评论 1081",45);headerCount.frame=CGRectMake(4,45,170,28);
+    UILabel *collection=label(commentHeader,@"观看完整合集：示例合集",82);collection.frame=CGRectMake(4,82,width-40,30);
+    UILabel *summary=label(commentHeader,@"AI 解析",118);summary.frame=CGRectMake(4,118,130,28);
+    AWECommentSurveyCell *survey=[[AWECommentSurveyCell alloc] initWithFrame:CGRectMake(16,245,width-32,155)];[commentCanvas addSubview:survey];
+    survey.backgroundColor=UIColor.secondarySystemGroupedBackgroundColor;survey.layer.cornerRadius=12;
+    UILabel *question=label(survey,@"你对该视频下的评论氛围是否满意?",12);question.frame=CGRectMake(10,12,width-52,50);question.numberOfLines=2;
+    NSArray *ratings=@[@"非常不满意",@"不满意",@"一般",@"满意",@"非常满意"];
+    CGFloat optionWidth=(width-52)/5;
+    for (NSUInteger i=0;i<ratings.count;i++) {
+        UILabel *rating=label(survey,ratings[i],76);rating.frame=CGRectMake(10+i*optionWidth,76,optionWidth-4,54);
+        rating.font=[UIFont systemFontOfSize:12];rating.numberOfLines=2;rating.textAlignment=NSTextAlignmentCenter;
+    }
+    CommentCellFixtureView *body=[[CommentCellFixtureView alloc] initWithFrame:CGRectMake(16,425,width-32,160)];[commentCanvas addSubview:body];
+    UILabel *content=label(body,@"示例评论：一般，满意，回复。",0);content.frame=CGRectMake(4,0,width-40,45);content.numberOfLines=2;
+    AWECommentReplyButton *reply=[[AWECommentReplyButton alloc] initWithFrame:CGRectMake(4,55,150,30)];[body addSubview:reply];[reply setTitle:@"展开1条回复" forState:UIControlStateNormal];[reply setTitleColor:UIColor.secondaryLabelColor forState:UIControlStateNormal];
+    UILabel *explanation=label(body,@"Chinese above is preserved sample comment content.",105);explanation.frame=CGRectMake(4,105,width-40,45);explanation.numberOfLines=2;explanation.font=[UIFont systemFontOfSize:13];
+    AWECommentBottomTipsView *bottom=[[AWECommentBottomTipsView alloc] initWithFrame:CGRectMake(16,625,width-32,60)];[commentCanvas addSubview:bottom];
+    UILabel *login=label(bottom,@"登录看更多精彩评论",0);login.frame=CGRectMake(4,0,width-40,40);login.textColor=UIColor.systemRedColor;login.textAlignment=NSTextAlignmentCenter;
+    screen=[UIViewController new];screen.view=commentCanvas;self.window.rootViewController=screen;[self.window layoutIfNeeded];
+    [self saveWindowImage:@"ui-comments.png"];
+
+    AWENetworkErrorFixtureView *featured=[[AWENetworkErrorFixtureView alloc] initWithFrame:self.window.bounds];featured.backgroundColor=UIColor.systemBackgroundColor;
+    title=label(featured,@"Featured narrow-label fixture • 0.5.0",80);title.frame=CGRectMake(20,80,width-40,30);title.font=[UIFont boldSystemFontOfSize:17];
+    UILabel *errorTitle=label(featured,@"网络错误",320);errorTitle.frame=CGRectMake((width-60)/2,320,60,30);errorTitle.textAlignment=NSTextAlignmentCenter;
+    UILabel *errorDetail=label(featured,@"请检查网络连接后重试",365);errorDetail.frame=CGRectMake((width-120)/2,365,120,30);errorDetail.textAlignment=NSTextAlignmentCenter;
+    UIButton *retryButton=[UIButton buttonWithType:UIButtonTypeSystem];retryButton.frame=CGRectMake((width-100)/2,415,100,42);[retryButton setTitle:@"重试" forState:UIControlStateNormal];[featured addSubview:retryButton];
+    UILabel *notice=label(featured,@"操作失败，请稍后重试",485);notice.frame=CGRectMake(20,485,width-40,40);notice.textAlignment=NSTextAlignmentCenter;
+    screen=[UIViewController new];screen.view=featured;self.window.rootViewController=screen;[self.window layoutIfNeeded];
+    [self saveWindowImage:@"ui-featured-narrow.png"];
 }
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {
     (void)application; (void)options;
@@ -374,8 +452,55 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([customContent.text isEqualToString:@"首页"] && fabs(customContent.font.pointSize-16)<1e-6,@"custom result content is not translated or shrunk");
     custom.text=nil;custom.attributedText=nil;
     check(custom.text==nil && custom.attributedText==nil,@"custom nil/reused labels clear without a crash");
-    check([AWESearchBaseUtility aAWESearchModuleServiceDOUYINSSAdaperClass]==FixtureGuestAdapter.class && [FixtureGuestAdapter enableGuestSearch] && [FixtureGuestAdapter hasRemainingGuestSearchCount],@"configured search gateway installs actual runtime adapter methods in fixture");
-    check([DGSearchAdapterSnapshot()[@"installed"] unsignedIntegerValue]==2 && [DGSearchAdapterSnapshot()[@"active"] unsignedIntegerValue]==2,@"search adapter diagnostics distinguish dynamic methods from fixed native hooks");
+    check([AWESearchBaseUtility aAWESearchModuleServiceDOUYINSSAdaperClass]==FixtureGuestAdapter.class && ![FixtureGuestAdapter enableGuestSearch] && ![FixtureGuestAdapter hasRemainingGuestSearchCount],@"search gateway observation preserves native guest policy and quota in fixture");
+    check([DGSearchAdapterSnapshot()[@"installed"] unsignedIntegerValue]==0 && [DGSearchAdapterSnapshot()[@"active"] unsignedIntegerValue]==0 && [DGSearchAdapterSnapshot()[@"adapter_classes"] unsignedIntegerValue]==1,@"search diagnostics distinguish an observed adapter from installed modifications");
+    AWEUIKitViewControllerEmptyPageConfig *emptyConfig=[AWEUIKitViewControllerEmptyPageConfig new];
+    emptyConfig.titleText=@"网络错误";emptyConfig.informativeText=@"请检查网络连接后重试";emptyConfig.primaryButtonTitle=@"重试";
+    check([emptyConfig.titleText isEqualToString:@"Network error"] && [emptyConfig.informativeText isEqualToString:@"Check your connection and retry"] && [emptyConfig.primaryButtonTitle isEqualToString:@"Retry"],@"native empty config fields translate before any view/window or text measurement exists");
+    CGFloat configWidth=[emptyConfig.titleText sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]}].width;
+    check(configWidth>[@"网络错误" sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]}].width,@"renderer measuring its config receives the English width");
+    AWENetworkErrorFixtureView *narrowError=[[AWENetworkErrorFixtureView alloc] initWithFrame:CGRectMake(0,0,300,100)];[parent addSubview:narrowError];
+    UILabel *narrowTitle=label(narrowError,@"网络错误",0);narrowTitle.frame=CGRectMake(0,0,60,28);
+    UILabel *narrowDetail=label(narrowError,@"请检查网络连接后重试",30);narrowDetail.frame=CGRectMake(0,30,120,28);
+    narrowTitle.adjustsFontSizeToFitWidth=NO;narrowDetail.adjustsFontSizeToFitWidth=NO;
+    [narrowTitle setNeedsLayout];[narrowDetail setNeedsLayout];[narrowError layoutIfNeeded];
+    check([narrowTitle.text isEqualToString:@"Load error"] && [narrowDetail.text isEqualToString:@"Check connection"] &&
+        [narrowTitle.text sizeWithAttributes:@{NSFontAttributeName:narrowTitle.font}].width*narrowTitle.minimumScaleFactor<=60 &&
+        [narrowDetail.text sizeWithAttributes:@{NSFontAttributeName:narrowDetail.font}].width*narrowDetail.minimumScaleFactor<=120,
+        @"Featured-sized narrow error labels remain complete after app resets fitting");
+    DUXToastViewConfig *toast=[DUXToastViewConfig new];toast.text=@"操作失败，请稍后重试";
+    check([toast.text isEqualToString:@"Action failed. Try again later"],@"toast config localization happens before toast measures its text");
+    AWECommentVCHeaderBarView *realHeader=[[AWECommentVCHeaderBarView alloc] initWithFrame:CGRectMake(0,0,300,100)];[commentContainer addSubview:realHeader];
+    UILabel *countLabel=label(realHeader,@"评论 1081",0);countLabel.frame=CGRectMake(0,0,150,28);[countLabel layoutIfNeeded];
+    check([countLabel.text isEqualToString:@"Comments 1081"] && countLabel.adjustsFontSizeToFitWidth,@"actual native comment header name supports dynamic count and fitting");
+    NSMutableAttributedString *collection=[[NSMutableAttributedString alloc] initWithString:@"观看完整合集：示例合集" attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]}];
+    [collection addAttributes:@{NSForegroundColorAttributeName:UIColor.systemBlueColor,NSLinkAttributeName:@"https://example.invalid/fixture"} range:NSMakeRange(7,4)];
+    realHeader.attrTips=collection;
+    NSAttributedString *translatedTips=realHeader.attrTips;
+    UILabel *collectionLabel=label(realHeader,nil,30);collectionLabel.frame=CGRectMake(0,30,300,30);collectionLabel.attributedText=translatedTips;
+    check([collectionLabel.attributedText.string isEqualToString:@"Collection: 示例合集"] &&
+        [[collectionLabel.attributedText attribute:NSLinkAttributeName atIndex:12 effectiveRange:NULL] isEqual:@"https://example.invalid/fixture"],
+        @"mixed collection link style and original title survive native header and UILabel localization");
+    YYLabel *customCollection=[[YYLabel alloc] initWithFrame:CGRectMake(0,60,160,30)];[realHeader addSubview:customCollection];customCollection.attributedText=collection;[customCollection layoutIfNeeded];
+    check([customCollection.attributedText.string isEqualToString:@"Collection: 示例合集"] &&
+        [[customCollection.attributedText attribute:NSLinkAttributeName atIndex:12 effectiveRange:NULL] isEqual:@"https://example.invalid/fixture"],
+        @"YYLabel fitting preserves mixed collection link spans instead of flattening them");
+    CommentCellFixtureView *contentCell=[[CommentCellFixtureView alloc] initWithFrame:CGRectMake(0,100,300,60)];[commentContainer addSubview:contentCell];
+    UILabel *originalBody=label(contentCell,@"一般",0);UILabel *originalReply=label(contentCell,@"展开1条回复",28);
+    check([originalBody.text isEqualToString:@"一般"] && [originalReply.text isEqualToString:@"展开1条回复"],@"comment content resembling a rating or reply control remains unchanged outside an explicit control island");
+    AWECommentReplyButton *reply=[[AWECommentReplyButton alloc] initWithFrame:CGRectMake(0,0,150,30)];[contentCell addSubview:reply];[reply setTitle:@"展开1条回复" forState:UIControlStateNormal];
+    check([reply.currentTitle isEqualToString:@"View 1 reply"],@"explicit reply button translates inside a protected comment cell");
+    AWECommentBottomTipsView *bottom=[[AWECommentBottomTipsView alloc] initWithFrame:CGRectMake(0,160,300,35)];[commentContainer addSubview:bottom];
+    check([label(bottom,@"登录看更多精彩评论",0).text isEqualToString:@"Log in to see more comments"],@"comment login notice is readable and still reports the actual account requirement");
+    AWECommentSurveyConfigModel *surveyModel=[AWECommentSurveyConfigModel new];
+    surveyModel.surveyDetail=@{@"title":@"你对该视频下的评论氛围是否满意?",@"options":@[@"非常不满意",@"不满意",@"一般",@"满意",@"非常满意"],@"id":@42};
+    check([surveyModel.surveyDetail[@"title"] isEqualToString:@"How do you feel about these comments?"] &&
+        [surveyModel.surveyDetail[@"options"][2] isEqualToString:@"Neutral"] && [surveyModel.surveyDetail[@"id"] isEqual:@42],@"survey-specific getter translates exact question/options before Lynx consumption and preserves IDs");
+    AWECommentEvaluationConfig *evaluation=[AWECommentEvaluationConfig new];
+    [evaluation configWithDict:@{@"ratingPointDes":@"非常不满意,不满意,一般,满意,非常满意",@"bizParams":@{@"text":@"一般"}}];
+    check([evaluation.receivedConfig[@"ratingPointDes"] isEqualToString:@"Very dissatisfied,Dissatisfied,Neutral,Satisfied,Very satisfied"] &&
+        [evaluation.receivedConfig[@"bizParams"][@"text"] isEqualToString:@"一般"],@"Lynx evaluation config translates proven rating fields while arbitrary nested payload stays original");
+    [narrowError removeFromSuperview];
     NSBundle *sdkCatalog=[NSBundle bundleWithPath:[NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:@"AWEFixtureSDK.bundle/zh.lproj"]];
     check([[sdkCatalog localizedStringForKey:@"known" value:nil table:@"Fixture"] isEqualToString:@"SDK fixture label"],@"SDK lookup selects the bundled English value for the original key");
     check([[sdkCatalog localizedStringForKey:@"missing" value:nil table:@"Fixture"] isEqualToString:@"未找到英文测试文字"],@"missing SDK English entry preserves original text rather than exposing a key");

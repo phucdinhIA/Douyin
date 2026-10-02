@@ -72,7 +72,7 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(entry.compress_type,zipfile.ZIP_STORED)
     def test_resources_validate_and_no_identity_hooks(self):
         hooks,words=patch.validate_resources(ROOT/'resources')
-        self.assertEqual(len(hooks),39)
+        self.assertEqual(len(hooks),50)
         self.assertEqual(words['首页'],'Home')
         self.assertFalse(any(x['selector'] in ['isLogin','isLoggedIn','hasMore','isAds'] for x in hooks))
         self.assertEqual(sum(x['feature']=='search' for x in hooks),5)

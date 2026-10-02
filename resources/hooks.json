@@ -302,7 +302,7 @@
     "types": "#16@0:8",
     "class_method": true,
     "feature": "search",
-    "operation": "guestSearchAdapter",
+    "operation": "observeSearchAdapter",
     "evidence_imp": "0xcd20ac"
   },
   {
@@ -311,7 +311,7 @@
     "types": "#16@0:8",
     "class_method": true,
     "feature": "search",
-    "operation": "guestSearchAdapter",
+    "operation": "observeSearchAdapter",
     "evidence_imp": "0xbf1544"
   },
   {
@@ -320,7 +320,7 @@
     "types": "#16@0:8",
     "class_method": true,
     "feature": "search",
-    "operation": "guestSearchAdapter",
+    "operation": "observeSearchAdapter",
     "evidence_imp": "0xc556f0"
   },
   {
@@ -329,7 +329,7 @@
     "types": "#16@0:8",
     "class_method": true,
     "feature": "search",
-    "operation": "guestSearchAdapter",
+    "operation": "observeSearchAdapter",
     "evidence_imp": "0x185f7ab8"
   },
   {
@@ -338,7 +338,7 @@
     "types": "#16@0:8",
     "class_method": true,
     "feature": "search",
-    "operation": "guestSearchAdapter",
+    "operation": "observeSearchAdapter",
     "evidence_imp": "0x185bfd68"
   },
   {
@@ -349,5 +349,104 @@
     "feature": "diagnostics",
     "operation": "observeSearchStatus",
     "evidence_imp": "0x18561894"
+  },
+  {
+    "class": "AWEUIKitViewControllerEmptyPageConfig",
+    "selector": "titleText",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0xede6004"
+  },
+  {
+    "class": "AWEUIKitViewControllerEmptyPageConfig",
+    "selector": "informativeText",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0xede6014"
+  },
+  {
+    "class": "AWEUIKitViewControllerEmptyPageConfig",
+    "selector": "primaryButtonTitle",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0xede6040"
+  },
+  {
+    "class": "DUXToastViewConfig",
+    "selector": "text",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateGetter",
+    "feature": "english",
+    "evidence_imp": "0x1520e094"
+  },
+  {
+    "class": "AWECommentVCHeaderBarView",
+    "selector": "attrTips",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateRichGetter",
+    "feature": "english",
+    "evidence_imp": "0x10a5a038"
+  },
+  {
+    "class": "AWECommentEvaluationConfig",
+    "selector": "configWithDict:",
+    "types": "v24@0:8@16",
+    "class_method": false,
+    "operation": "translateConfig1",
+    "feature": "english",
+    "evidence_imp": "0xef973bc"
+  },
+  {
+    "class": "AWECommentSurveyConfigModel",
+    "selector": "surveyDetail",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "translateSurveyGetter",
+    "feature": "english",
+    "evidence_imp": "0xeca1480"
+  },
+  {
+    "class": "AWEDCFeedListViewModel",
+    "selector": "updateDataStateWithRequestType:response:error:",
+    "types": "v40@0:8Q16@24@32",
+    "class_method": false,
+    "operation": "observeFeedRequest",
+    "feature": "diagnostics",
+    "evidence_imp": "0x14aa4734"
+  },
+  {
+    "class": "BDWebImageRequest",
+    "selector": "failedWithError:",
+    "types": "v24@0:8@16",
+    "class_method": false,
+    "operation": "observeError1",
+    "feature": "diagnostics",
+    "evidence_imp": "0x13697374"
+  },
+  {
+    "class": "BDWebImageRequest",
+    "selector": "finishWithImage:data:savePath:url:from:",
+    "types": "v56@0:8@16@24@32@40q48",
+    "class_method": false,
+    "operation": "observeImageFinish",
+    "feature": "diagnostics",
+    "evidence_imp": "0x13053ed4"
+  },
+  {
+    "class": "AWECommentResponseModel",
+    "selector": "commentArray",
+    "types": "@16@0:8",
+    "class_method": false,
+    "operation": "observeListGetter",
+    "feature": "diagnostics",
+    "evidence_imp": "0xeca2c08"
   }
 ]

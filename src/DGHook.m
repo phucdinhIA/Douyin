@@ -19,22 +19,26 @@ static void DGPrepareSearchRegistry(void) {
 NSDictionary *DGSearchAdapterSnapshot(void) {
     DGPrepareSearchRegistry();
     @synchronized (searchLock) {
-        NSUInteger active = 0;
-        NSMutableSet *classes = [NSMutableSet new];
-        for (NSDictionary *entry in searchHooks.allValues) {
-            NSDictionary *spec = entry[@"spec"];
-            Class cls = NSClassFromString(spec[@"class"]);
-            [classes addObject:spec[@"class"]];
-            Method method = class_getClassMethod(cls, NSSelectorFromString(spec[@"selector"]));
-            if (method && method_getImplementation(method) == (IMP)[entry[@"imp"] pointerValue]) ++active;
-        }
-        return @{@"installed":@(searchHooks.count), @"active":@(active),
-                 @"adapter_classes":@(classes.count), @"methods_per_adapter":@2};
+        return @{@"installed":@0, @"active":@0, @"adapter_classes":@(searchHooks.count),
+                 @"methods_per_adapter":@2, @"mode":@"observe original guest policy"};
     }
+}
+
+static void DGRecordResponseStatus(NSString *event,id response,DGRecord record) {
+    Class base=NSClassFromString(@"AWEBaseApiModel");
+    if (!base || ![response isKindOfClass:base]) return;
+    SEL selector=NSSelectorFromString(@"statusCode");
+    Method method=class_getInstanceMethod(object_getClass(response),selector);
+    if (!method || strcmp(method_getTypeEncoding(method),"@16@0:8")) return;
+    // AWEBaseApiModel statusCode is an object getter in this exact build.
+    id value=((id (*)(id,SEL))method_getImplementation(method))(response,selector);
+    if ([value isKindOfClass:NSNumber.class])
+        record([NSString stringWithFormat:@"%@ response status code %lld",event,[value longLongValue]],1);
 }
 
 static void DGRecordFeedCompletion(NSString *event, id result, id error, DGRecord record) {
     record([event stringByAppendingString:@" callbacks"], 1);
+    DGRecordResponseStatus(event,result,record);
     if (!error) {
         record([event stringByAppendingString:@" success"], 1);
         if ([result isKindOfClass:NSArray.class]) record([event stringByAppendingString:@" direct-array items"], [result count]);
@@ -86,8 +90,17 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
         returnType = @"v"; arguments = @[@"@", @":", @"@", @"@"];
     } else if ([kind isEqualToString:@"observeFeedCompletion2Bool"]) {
         returnType = @"v"; arguments = @[@"@", @":", @"@", @"@", boolean];
-    } else if ([kind isEqualToString:@"guestSearchAdapter"]) {
+    } else if ([kind isEqualToString:@"observeSearchAdapter"]) {
         returnType = @"#"; arguments = @[@"@", @":"];
+    } else if ([kind isEqualToString:@"translateGetter"] || [kind isEqualToString:@"translateRichGetter"] ||
+               [kind isEqualToString:@"translateSurveyGetter"] || [kind isEqualToString:@"observeListGetter"]) {
+        returnType = @"@"; arguments = @[@"@", @":"];
+    } else if ([kind isEqualToString:@"translateConfig1"] || [kind isEqualToString:@"observeError1"]) {
+        returnType = @"v"; arguments = @[@"@", @":", @"@"];
+    } else if ([kind isEqualToString:@"observeFeedRequest"]) {
+        returnType = @"v"; arguments = @[@"@", @":", @"Q", @"@", @"@"];
+    } else if ([kind isEqualToString:@"observeImageFinish"]) {
+        returnType = @"v"; arguments = @[@"@", @":", @"@", @"@", @"@", @"@", @"q"];
     } else if ([kind isEqualToString:@"observeSearchStatus"]) {
         returnType = boolean; arguments = @[@"@", @":", @"@", @"@"];
     } else return NO;
@@ -101,40 +114,30 @@ static BOOL DGOperationMatchesMethod(NSString *kind, Method method) {
     return YES;
 }
 
-static void DGConfigureSearchAdapter(Class adapter, DGEnabled enabled, DGRecord record) {
-    // Resolve the actual service through the app's own class getter. No invented
-    // class or method is added if the guest-search API is missing or incompatible.
-    if (!adapter || !class_isMetaClass(object_getClass(adapter))) return;
+static void DGObserveSearchAdapter(Class adapter, DGRecord record) {
+    if (!adapter) { record(@"Search gateway returned nil",1); return; }
+    if (!class_isMetaClass(object_getClass(adapter))) { record(@"Search gateway returned non-class",1); return; }
     DGPrepareSearchRegistry();
     @synchronized (searchLock) {
         NSString *name = NSStringFromClass(adapter);
         NSArray *selectors = @[@"enableGuestSearch", @"hasRemainingGuestSearchCount"];
+        if (searchHooks[name] || [searchFailures containsObject:name]) return;
         for (NSString *selector in selectors) {
-            // Allow the app's normal lazy method resolution, but never install
-            // a replacement for a selector implemented only by forwarding.
-            [adapter respondsToSelector:NSSelectorFromString(selector)];
             Method method = class_getClassMethod(adapter, NSSelectorFromString(selector));
             if (!method || strcmp(method_getTypeEncoding(method), "B16@0:8") || !DGOperationMatchesMethod(@"true0", method)) {
                 if (![searchFailures containsObject:name]) {
                     [searchFailures addObject:name]; record(@"Search adapter unavailable or incompatible", 1);
                 }
-                return; // Preflight both methods before changing either.
+                return;
             }
         }
-        for (NSString *selector in selectors) {
-            NSString *key = [name stringByAppendingFormat:@"|%@", selector];
-            if (searchHooks[key]) continue; // Never stack over a later replacement.
-            NSDictionary *spec = @{@"class":name, @"selector":selector, @"class_method":@YES,
-                                    @"types":@"B16@0:8", @"operation":@"true0"};
-            if (DGInstallHook(spec, enabled, record)) {
-                IMP imp = method_getImplementation(class_getClassMethod(adapter, NSSelectorFromString(selector)));
-                searchHooks[key] = @{@"spec":spec, @"imp":[NSValue valueWithPointer:(const void *)imp]};
-            }
-        }
+        searchHooks[name] = @{@"compatible":@YES};
+        record(@"Search compatible adapter observed",1);
     }
 }
 
-BOOL DGInstallHook(NSDictionary *spec, DGEnabled enabled, DGRecord record) {
+static BOOL DGInstallHookInternal(NSDictionary *spec, DGEnabled enabled, DGRecord record,
+                                 NSDictionary<NSString *,NSString *> *words) {
     if (![spec isKindOfClass:NSDictionary.class] || !enabled || !record) return NO;
     NSString *name = spec[@"class"], *selectorName = spec[@"selector"];
     NSString *kind = spec[@"operation"], *types = spec[@"types"];
@@ -212,11 +215,57 @@ BOOL DGInstallHook(NSDictionary *spec, DGEnabled enabled, DGRecord record) {
             ((void (*)(id, SEL, id, id, BOOL))original)(self, sel, result, error, flag);
             if (enabled()) DGRecordFeedCompletion(event, result, error, record);
         };
-    } else if ([kind isEqualToString:@"guestSearchAdapter"]) {
+    } else if ([kind isEqualToString:@"observeSearchAdapter"]) {
         block = ^Class(id self) {
             Class adapter = ((Class (*)(id, SEL))original)(self, sel);
-            if (enabled()) DGConfigureSearchAdapter(adapter, enabled, record);
+            if (enabled()) { record(@"Search gateway invocations",1); DGObserveSearchAdapter(adapter,record); }
             return adapter;
+        };
+    } else if ([kind isEqualToString:@"translateGetter"] || [kind isEqualToString:@"translateRichGetter"] ||
+               [kind isEqualToString:@"translateSurveyGetter"]) {
+        if (!words) return NO;
+        block = ^id(id self) {
+            id value = ((id (*)(id,SEL))original)(self,sel), translated = value;
+            if (value && enabled()) {
+                record([event stringByAppendingString:@" reads"],1);
+                if ([kind isEqualToString:@"translateSurveyGetter"]) translated = DGTranslateSurvey(value);
+                else if ([kind isEqualToString:@"translateRichGetter"] && [value isKindOfClass:NSAttributedString.class])
+                    translated = DGTranslateControlAttributed(value,words);
+                else if ([value isKindOfClass:NSString.class]) translated = DGTranslateControl(value,words);
+                if (![translated isEqual:value]) record([event stringByAppendingString:@" translated"],1);
+            }
+            return translated;
+        };
+    } else if ([kind isEqualToString:@"translateConfig1"]) {
+        if (!words) return NO;
+        block = ^(id self,id config) {
+            id translated = enabled() ? DGTranslateEvaluationConfig(config,words) : config;
+            if (translated != config) record([event stringByAppendingString:@" translated"],1);
+            ((void (*)(id,SEL,id))original)(self,sel,translated);
+        };
+    } else if ([kind isEqualToString:@"observeFeedRequest"]) {
+        block = ^(id self,NSUInteger requestType,id response,id error) {
+            ((void (*)(id,SEL,NSUInteger,id,id))original)(self,sel,requestType,response,error);
+            if (enabled()) DGRecordFeedCompletion(event,response,error,record);
+        };
+    } else if ([kind isEqualToString:@"observeError1"]) {
+        block = ^(id self,id error) {
+            ((void (*)(id,SEL,id))original)(self,sel,error);
+            if (enabled()) {
+                if (error) DGRecordFeedCompletion(event,nil,error,record);
+                else record([event stringByAppendingString:@" failure without error"],1);
+            }
+        };
+    } else if ([kind isEqualToString:@"observeImageFinish"]) {
+        block = ^(id self,id image,id data,id path,id url,NSInteger source) {
+            ((void (*)(id,SEL,id,id,id,id,NSInteger))original)(self,sel,image,data,path,url,source);
+            if (enabled()) { record(@"Image SDK finish callbacks",1); record(image ? @"Image SDK finish with image" : @"Image SDK finish without image",1); }
+        };
+    } else if ([kind isEqualToString:@"observeListGetter"]) {
+        block = ^id(id self) {
+            id result = ((id (*)(id,SEL))original)(self,sel);
+            if (enabled()) { DGRecordFeedList(event,result,0,record); DGRecordResponseStatus(event,self,record); }
+            return result;
         };
     } else if ([kind isEqualToString:@"observeSearchStatus"]) {
         block = ^BOOL(id self, id code, id message) {
@@ -237,4 +286,13 @@ BOOL DGInstallHook(NSDictionary *spec, DGEnabled enabled, DGRecord record) {
     }
     record([@"Installed: " stringByAppendingString:event], 1);
     return YES;
+}
+
+BOOL DGInstallHook(NSDictionary *spec, DGEnabled enabled, DGRecord record) {
+    return DGInstallHookInternal(spec,enabled,record,nil);
+}
+
+BOOL DGInstallLocalizedHook(NSDictionary *spec, DGEnabled enabled, DGRecord record,
+                            NSDictionary<NSString *,NSString *> *translations) {
+    return DGInstallHookInternal(spec,enabled,record,translations);
 }

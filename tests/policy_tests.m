@@ -106,6 +106,45 @@ static Class fixtureSearchAdapter;
 }
 @end
 
+@interface TestPresentation : NSObject
+@property (strong) id raw;
+- (id)displayText;
+- (id)displayRich;
+- (id)survey;
+- (id)list;
+- (void)configure:(id)config;
+@end
+@implementation TestPresentation
+- (id)displayText { return self.raw; }
+- (id)displayRich { return self.raw; }
+- (id)survey { return self.raw; }
+- (id)list { return self.raw; }
+- (void)configure:(id)config { self.raw=config; }
+@end
+
+@interface AWEBaseApiModel : NSObject
+@property (strong) id statusCode;
+@end
+@implementation AWEBaseApiModel
+@end
+
+@interface TestImageFeed : NSObject
+@property NSUInteger calls;
+@property NSUInteger requestType;
+@property NSInteger source;
+@property (strong) NSArray *arguments;
+- (void)feed:(NSUInteger)kind response:(id)response error:(id)error;
+- (void)failed:(id)error;
+- (void)finish:(id)image data:(id)data path:(id)path url:(id)url source:(NSInteger)source;
+@end
+@implementation TestImageFeed
+- (void)feed:(NSUInteger)kind response:(id)response error:(id)error { self.calls++; self.requestType=kind; self.arguments=@[response ?: NSNull.null,error ?: NSNull.null]; }
+- (void)failed:(id)error { self.calls++; self.arguments=@[error ?: NSNull.null]; }
+- (void)finish:(id)image data:(id)data path:(id)path url:(id)url source:(NSInteger)source {
+    self.calls++; self.source=source; self.arguments=@[image ?: NSNull.null,data ?: NSNull.null,path ?: NSNull.null,url ?: NSNull.null];
+}
+@end
+
 int main(void) {
     @autoreleasepool {
         TestModel *video = [TestModel new], *ad = [TestModel new]; ad.isAds = YES;
@@ -215,17 +254,18 @@ int main(void) {
         TestSearchResolver.adapter = TestSearchChildAdapter.class;
         Method resolver = class_getClassMethod(TestSearchResolver.class, @selector(resolvedAdapter));
         check(DGInstallHook(@{@"class":@"TestSearchResolver",@"selector":@"resolvedAdapter",@"class_method":@YES,
-              @"types":[NSString stringWithUTF8String:method_getTypeEncoding(resolver)],@"operation":@"guestSearchAdapter"},
+              @"types":[NSString stringWithUTF8String:method_getTypeEncoding(resolver)],@"operation":@"observeSearchAdapter"},
               ^BOOL{return search;},recordSearch),@"search resolver installs with Class return ABI");
         check([TestSearchResolver resolvedAdapter] == TestSearchChildAdapter.class && ![TestSearchChildAdapter enableGuestSearch],
               @"disabled search resolver preserves class and original flags");
         search = YES;
-        check([TestSearchResolver resolvedAdapter] == TestSearchChildAdapter.class && [TestSearchChildAdapter enableGuestSearch] &&
-              [TestSearchChildAdapter hasRemainingGuestSearchCount] && ![TestSearchAdapter enableGuestSearch],
-              @"resolved guest gates enabled locally without changing the superclass or return class");
+        check([TestSearchResolver resolvedAdapter] == TestSearchChildAdapter.class && ![TestSearchChildAdapter enableGuestSearch] &&
+              ![TestSearchChildAdapter hasRemainingGuestSearchCount] && ![TestSearchAdapter enableGuestSearch],
+              @"guest policy and quota remain original on child and superclass");
         [TestSearchResolver resolvedAdapter];
-        check([DGSearchAdapterSnapshot()[@"installed"] unsignedIntegerValue] == 2 && [DGSearchAdapterSnapshot()[@"active"] unsignedIntegerValue] == 2,
-              @"search adapter installation is idempotent and active count is separate");
+        check([DGSearchAdapterSnapshot()[@"installed"] unsignedIntegerValue] == 0 && [DGSearchAdapterSnapshot()[@"active"] unsignedIntegerValue] == 0 &&
+              [DGSearchAdapterSnapshot()[@"adapter_classes"] unsignedIntegerValue] == 1,
+              @"search adapter is observed once without modifying its methods");
         search = NO;
         check(![TestSearchChildAdapter enableGuestSearch] && ![TestSearchChildAdapter hasRemainingGuestSearchCount],
               @"switching search off forwards both original guest gates");
@@ -235,6 +275,9 @@ int main(void) {
               @"both adapter methods preflight before any partial incompatible modification");
         TestSearchResolver.adapter = Nil;
         check([TestSearchResolver resolvedAdapter] == Nil,@"nil adapter remains nil");
+        check([searchEvents[@"Search gateway returned nil"] unsignedIntegerValue]==1 &&
+              [searchEvents[@"Search compatible adapter observed"] unsignedIntegerValue]==1,
+              @"gateway nil and compatible results are separately counted");
         Method status = class_getInstanceMethod(TestSearchResolver.class,@selector(statusCode:message:));
         check(DGInstallHook(@{@"class":@"TestSearchResolver",@"selector":@"statusCode:message:",@"operation":@"observeSearchStatus",
                             @"types":[NSString stringWithUTF8String:method_getTypeEncoding(status)]},^BOOL{return YES;},recordSearch),
@@ -246,6 +289,79 @@ int main(void) {
         check([searchEvents[@"Search status code 2483"] unsignedIntegerValue] == 1 &&
               [searchEvents.description rangeOfString:@"PRIVATE"].location == NSNotFound,
               @"search diagnostics log numeric status without message or query");
+        NSDictionary *controlWords=@{@"回复":@"Reply",@"网络错误":@"Network error",@"满意":@"Satisfied",@"一般":@"Neutral"};
+        check([DGTranslateControl(@"评论 1081",controlWords) isEqual:@"Comments 1081"] &&
+              [DGTranslateControl(@"展开1条回复",controlWords) isEqual:@"View 1 reply"] &&
+              [DGTranslateControl(@"展开 12 条回复",controlWords) isEqual:@"View 12 replies"],@"anchored comment controls preserve counts and pluralization");
+        check([DGTranslateControl(@"他说展开1条回复就能看到",controlWords) isEqual:@"他说展开1条回复就能看到"] &&
+              [DGTranslateControl(@"展开1条回复\n",controlWords) isEqual:@"展开1条回复\n"],@"control templates do not match embedded sentences or a trailing newline");
+        NSMutableAttributedString *collection=[[NSMutableAttributedString alloc] initWithString:@"观看完整合集：测试合集" attributes:@{@"role":@"prefix"}];
+        [collection addAttributes:@{@"role":@"title",@"link":@"PRIVATE-collection-id"} range:NSMakeRange(7,4)];
+        NSAttributedString *localizedCollection=DGTranslateControlAttributed(collection,controlWords);
+        check([localizedCollection.string isEqual:@"Collection: 测试合集"] &&
+              [[localizedCollection attribute:@"link" atIndex:12 effectiveRange:NULL] isEqual:@"PRIVATE-collection-id"] &&
+              [[localizedCollection attribute:@"role" atIndex:12 effectiveRange:NULL] isEqual:@"title"],@"collection prefix translation preserves mixed title content and link attributes");
+        NSDictionary *configuration=@{@"ratingPointDes":@"一般,满意",@"textPlaceholder":@"回复",@"bizParams":@{@"text":@"满意"},@"postedText":@"满意",@"minCount":@1};
+        NSDictionary *localizedConfig=DGTranslateEvaluationConfig(configuration,controlWords);
+        check([localizedConfig[@"ratingPointDes"] isEqual:@"Neutral,Satisfied"] &&
+              [localizedConfig[@"textPlaceholder"] isEqual:@"Reply"] &&
+              localizedConfig[@"bizParams"]==configuration[@"bizParams"] && [localizedConfig[@"postedText"] isEqual:@"满意"] &&
+              [configuration[@"textPlaceholder"] isEqual:@"回复"],@"verified evaluation config keys translate without mutation or translating posted text");
+        NSDictionary *survey=@{@"question":@"你对该视频下的评论氛围是否满意?",@"options":@[@{@"id":@1,@"label":@"一般",@"value":@"一般"},@{@"id":@2,@"label":@"满意"}],@"uri":@"PRIVATE-uri",@"bizParams":@{@"text":@"满意"}};
+        NSDictionary *englishSurvey=DGTranslateSurvey(survey);
+        check([englishSurvey[@"options"][0][@"label"] isEqual:@"Neutral"] &&
+              [englishSurvey[@"options"][1][@"id"] isEqual:@2] && englishSurvey[@"uri"]==survey[@"uri"] &&
+              [englishSurvey[@"options"][0][@"value"] isEqual:@"一般"] && englishSurvey[@"bizParams"]==survey[@"bizParams"],@"survey exact chrome translates while IDs, option values, unknown branches and schema values stay intact");
+        NSString *surveyJSON=@"{\"label\":\"一般\",\"id\":42}";
+        id parsed=[NSJSONSerialization JSONObjectWithData:[DGTranslateSurvey(surveyJSON) dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
+        check([parsed[@"label"] isEqual:@"Neutral"] && [parsed[@"id"] isEqual:@42],@"survey JSON preserves string container and numeric IDs");
+        NSString *invalidJSON=@"PRIVATE malformed JSON";
+        check(DGTranslateSurvey(invalidJSON)==invalidJSON,@"malformed survey JSON preserves original object");
+        id deep=@"满意"; for (NSUInteger i=0;i<14;i++) deep=@[deep];
+        check(DGTranslateSurvey(deep)==deep,@"overdeep survey returns original without partial translation");
+        NSMutableArray *large=[NSMutableArray new];for (NSUInteger i=0;i<2050;i++) [large addObject:@"满意"];
+        check(DGTranslateSurvey(large)==large,@"survey traversal has bounded work and rejects oversized payload atomically");
+        NSMutableDictionary *newEvents=[NSMutableDictionary new];
+        DGRecord recordNew=^(NSString *event,NSUInteger n){newEvents[event]=@([newEvents[event] unsignedIntegerValue]+n);};
+        __block BOOL localize=YES;
+        for (NSArray *op in @[@[@"displayText",@"translateGetter"],@[@"displayRich",@"translateRichGetter"],
+                              @[@"survey",@"translateSurveyGetter"],@[@"configure:",@"translateConfig1"]]) {
+            Method method=class_getInstanceMethod(TestPresentation.class,NSSelectorFromString(op[0]));
+            NSDictionary *s=@{@"class":@"TestPresentation",@"selector":op[0],@"operation":op[1],@"types":[NSString stringWithUTF8String:method_getTypeEncoding(method)]};
+            check(DGInstallLocalizedHook(s,^BOOL{return localize;},recordNew,controlWords),@"presentation hook exact ABI installs");
+        }
+        TestPresentation *presentation=[TestPresentation new];presentation.raw=@"网络错误";
+        check([presentation.displayText isEqual:@"Network error"] && [presentation.raw isEqual:@"网络错误"],@"premeasurement getter translates without changing stored value");
+        localize=NO;check(presentation.displayText==presentation.raw,@"English OFF forwards original getter object");
+        [presentation configure:configuration];check(presentation.raw==configuration,@"English OFF forwards original config object");
+        localize=YES;[presentation configure:configuration];check([presentation.raw isEqual:localizedConfig],@"config hook maps before the renderer consumes it");
+        presentation.raw=collection;check([presentation.displayRich isEqualToAttributedString:localizedCollection],@"rich presentation hook preserves title links");
+        presentation.raw=survey;check([presentation.survey isEqual:englishSurvey],@"survey getter hook uses bounded exact chrome mapping");
+        presentation.raw=@42;check(presentation.displayText==presentation.raw,@"unknown getter value type stays original");
+        for (NSArray *op in @[@[@"feed:response:error:",@"observeFeedRequest"],@[@"failed:",@"observeError1"],
+                              @[@"finish:data:path:url:source:",@"observeImageFinish"]]) {
+            Method method=class_getInstanceMethod(TestImageFeed.class,NSSelectorFromString(op[0]));
+            check(DGInstallHook(@{@"class":@"TestImageFeed",@"selector":op[0],@"operation":op[1],@"types":[NSString stringWithUTF8String:method_getTypeEncoding(method)]},^BOOL{return localize;},recordNew),@"image/feed observers install with verified argument types");
+        }
+        TestImageFeed *imageFeed=[TestImageFeed new];
+        [imageFeed feed:NSUIntegerMax response:input error:networkError];
+        check(imageFeed.calls==1 && imageFeed.requestType==NSUIntegerMax && imageFeed.arguments[0]==input && imageFeed.arguments[1]==networkError,@"DC feed observer preserves request type, response, error and exactly one callback");
+        AWEBaseApiModel *serverResponse=[AWEBaseApiModel new];serverResponse.statusCode=@2483;
+        [imageFeed feed:2 response:serverResponse error:nil];
+        check(imageFeed.arguments[0]==serverResponse && [serverResponse.statusCode isEqual:@2483] &&
+              [newEvents[@"TestImageFeed feed:response:error: response status code 2483"] unsignedIntegerValue]==1,
+              @"typed response status is observed independently from a nil NSError and is not rewritten");
+        imageFeed.calls=1;
+        [imageFeed failed:networkError];check(imageFeed.calls==2 && imageFeed.arguments[0]==networkError,@"image failure observer leaves native retry/error handling intact");
+        [imageFeed finish:video data:input path:@"PRIVATE-path" url:@"PRIVATE-url" source:-1];
+        check(imageFeed.calls==3 && imageFeed.source==-1 && imageFeed.arguments[0]==video && [imageFeed.arguments[3] isEqual:@"PRIVATE-url"],@"image finish observer forwards all arguments and negative source unchanged");
+        check([newEvents[@"Image SDK finish with image"] unsignedIntegerValue]==1 &&
+              [newEvents.description rangeOfString:@"PRIVATE"].location==NSNotFound,@"new image/feed diagnostics omit URLs, paths, image data and error descriptions");
+        localize=NO;NSDictionary *before=[newEvents copy];[imageFeed failed:networkError];
+        check(imageFeed.calls==4 && [newEvents isEqual:before],@"observer OFF still forwards callback once without collecting events");
+        Method listMethod=class_getInstanceMethod(TestPresentation.class,@selector(list));
+        check(DGInstallHook(@{@"class":@"TestPresentation",@"selector":@"list",@"operation":@"observeListGetter",@"types":[NSString stringWithUTF8String:method_getTypeEncoding(listMethod)]},^BOOL{return YES;},recordNew),@"comment list observation installs");
+        presentation.raw=input;check(presentation.list==input,@"comment list identity, content and pagination are untouched");
         NSLog(@"PASS: policy and runtime-hook regressions");
     }
     return 0;

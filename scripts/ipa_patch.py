@@ -22,7 +22,11 @@ OPERATIONS = {
     'falseBool1': 'B20@0:8B16', 'falseBool2': 'B24@0:8B16B20',
     'noop0': 'v16@0:8', 'filterGetter': '@16@0:8', 'filterSetter': 'v24@0:8@16',
     'observeFeedCompletion2': 'v32@0:8@16@24', 'observeFeedCompletion2Bool': 'v36@0:8@16@24B32',
-    'guestSearchAdapter': '#16@0:8', 'observeSearchStatus': 'B32@0:8@16@24',
+    'observeSearchAdapter': '#16@0:8', 'observeSearchStatus': 'B32@0:8@16@24',
+    'translateGetter': '@16@0:8', 'translateRichGetter': '@16@0:8',
+    'translateSurveyGetter': '@16@0:8', 'translateConfig1': 'v24@0:8@16',
+    'observeFeedRequest': 'v40@0:8Q16@24@32', 'observeError1': 'v24@0:8@16',
+    'observeImageFinish': 'v56@0:8@16@24@32@40q48', 'observeListGetter': '@16@0:8',
 }
 
 def sha256(path: pathlib.Path) -> str:
@@ -168,10 +172,16 @@ def validate_resources(resource_dir: pathlib.Path):
     seen = set()
     for spec in hooks:
         key = (spec['class'], spec['selector'], spec['class_method'])
-        if key in seen or not spec['class'].startswith('AWE'):
+        sdk_hooks = {
+            ('DUXToastViewConfig','text',False):('translateGetter','english'),
+            ('BDWebImageRequest','failedWithError:',False):('observeError1','diagnostics'),
+            ('BDWebImageRequest','finishWithImage:data:savePath:url:from:',False):('observeImageFinish','diagnostics'),
+        }
+        if key in seen or (not spec['class'].startswith('AWE') and
+                           sdk_hooks.get(key) != (spec['operation'],spec['feature'])):
             raise ValueError('Duplicate or out-of-scope hook')
         seen.add(key)
-        if spec['feature'] not in ('guest', 'ads', 'diagnostics', 'search') or spec['types'] != OPERATIONS.get(spec['operation']):
+        if spec['feature'] not in ('guest', 'ads', 'diagnostics', 'search', 'english') or spec['types'] != OPERATIONS.get(spec['operation']):
             raise ValueError('Invalid hook operation/type')
         if not isinstance(spec['class_method'], bool): raise ValueError('Invalid method kind')
     for key, value in translations.items():
