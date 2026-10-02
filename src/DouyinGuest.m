@@ -629,6 +629,7 @@ __attribute__((constructor)) static void DGStart(void) {
                           @"Log in for more results":@"Log in for more", @"Offline; check connection":@"Check connection",
                           @"Singing":@"Sing", @"Groups":@"Team", @"Beauty":@"Looks",
                           @"Keep audio on when locked":@"Audio after lock",
+                          @"AI-generated. For reference only.":@"AI; reference only",
                           @"Keep playing in background":@"Background playback"};
         counters = [NSMutableDictionary new]; installed = [NSMutableDictionary new]; overwritten = [NSMutableSet new];
         [NSUserDefaults.standardUserDefaults registerDefaults:@{@"DGGuestEnabled": @YES, @"DGAdsEnabled": @YES, @"DGEnglishEnabled": @YES, @"DGSearchEnabled":@YES, @"DGBackgroundEnabled":@YES, @"DGFeedCompatEnabled":@YES}];

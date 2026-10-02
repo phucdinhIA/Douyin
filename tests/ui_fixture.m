@@ -554,6 +554,12 @@ static NSUInteger countText(UIView *view, NSString *text) {
     UILabel *aiNotice=label(realHeader,@"内容由AI生成，仅供参考",60);aiNotice.frame=CGRectMake(4,60,250,28);
     [aiNotice layoutIfNeeded];check([aiNotice.text isEqualToString:@"AI-generated. For reference only."],
         @"AI chrome disclaimer translates in an explicitly identified header");
+    aiNotice.frame=CGRectMake(4,60,120,28);[aiNotice setNeedsLayout];[aiNotice layoutIfNeeded];
+    check([aiNotice.text isEqualToString:@"AI; reference only"] &&
+          [aiNotice.text sizeWithAttributes:@{NSFontAttributeName:aiNotice.font}].width*aiNotice.minimumScaleFactor<=120,
+          @"AI disclaimer preserves reference-only meaning in a narrow control");
+    aiNotice.frame=CGRectMake(4,60,250,28);[aiNotice setNeedsLayout];[aiNotice layoutIfNeeded];
+    check([aiNotice.text isEqualToString:@"AI-generated. For reference only."],@"AI disclaimer restores complete English text when widened");
     UILabel *countLabel=label(realHeader,@"评论 1081",0);countLabel.frame=CGRectMake(0,0,150,28);[countLabel layoutIfNeeded];
     check([countLabel.text isEqualToString:@"Comments 1081"] && countLabel.adjustsFontSizeToFitWidth,@"actual native comment header name supports dynamic count and fitting");
     NSMutableAttributedString *collection=[[NSMutableAttributedString alloc] initWithString:@"观看完整合集：示例合集" attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]}];
