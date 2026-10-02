@@ -69,7 +69,7 @@ NSArray *DGMediaReadVisibleComments(UIView *root) {
     cell.detailTextLabel.text=[self.loading isEqual:@(path.row)] ? @"Đang dịch…" : self.answers[@(path.row)] ?: @"Chạm để dịch tiếng Việt";return cell;
 }
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)path {
-    [tableView deselectRowAtIndexPath:path animated:YES];if (self.loading || path.row>=self.comments.count) return;
+    [tableView deselectRowAtIndexPath:path animated:YES];if (self.loading || path.row<0 || (NSUInteger)path.row>=self.comments.count) return;
     NSNumber *row=@(path.row);self.loading=row;[tableView reloadData];DGMediaCount(@"GTX comment selected");__weak DGCommentTranslations *weakSelf=self;
     [self.client translateComment:self.comments[path.row] completion:^(NSString *answer,NSString *failure) {
         DGCommentTranslations *owner=weakSelf;if (!owner || !owner.view.window) return;owner.loading=nil;owner.answers[row]=answer ?: failure;[owner.tableView reloadData];DGMediaCount(answer ? @"GTX ready" : @"GTX failed");

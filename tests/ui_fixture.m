@@ -285,12 +285,12 @@ static NSData *mediaBody(NSURLRequest *request) {
     if ([request.URL.host isEqual:@"api.apify.com"]) {
         if ([request.URL.path containsString:@"/runs"]) {status=201;data=mediaJSON(@{@"data":@{@"id":@"run1",@"status":@"SUCCEEDED",@"defaultDatasetId":@"data1"}});}
         else data=mediaJSON(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"duration":@10,@"errMsg":@""}]);
-    } else if ([request.URL.host isEqual:@"api.deepgram.com"]) data=mediaJSON(@{@"metadata":@{@"duration":@10},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[@{@"word":@"??",@"start":@0,@"end":@1},@{@"word":@"??",@"start":@2,@"end":@3},@{@"word":@"??",@"start":@5,@"end":@6}]}]}]}});
+    } else if ([request.URL.host isEqual:@"api.deepgram.com"]) data=mediaJSON(@{@"metadata":@{@"duration":@10},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[@{@"word":@"你好",@"start":@0,@"end":@1},@{@"word":@"中国",@"start":@2,@"end":@3},@{@"word":@"谢谢",@"start":@5,@"end":@6}]}]}]}});
     else if ([request.URL.host isEqual:@"generativelanguage.googleapis.com"]) {
         NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSString *text=body[@"contents"][0][@"parts"][0][@"text"];NSArray *input=[NSJSONSerialization JSONObjectWithData:[text dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];
-        for (NSDictionary *cue in input) [rows addObject:@{@"id":cue[@"id"],@"text":@[@"Xin ch?o",@"Trung Qu?c",@"C?m ?n"][[cue[@"id"] unsignedIntegerValue]]}];
+        for (NSDictionary *cue in input) [rows addObject:@{@"id":cue[@"id"],@"text":@[@"Xin chào",@"Trung Quốc",@"Cảm ơn"][[cue[@"id"] unsignedIntegerValue]]}];
         data=mediaJSON(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":[[NSString alloc] initWithData:mediaJSON(@{@"translations":rows}) encoding:NSUTF8StringEncoding]}]},@"finishReason":@"STOP"}]});
-    } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);data=mediaJSON(@[@[@[@"Video r?t hay, c?m ?n b?n!",@"????????"]]]);}
+    } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);data=mediaJSON(@[@[@[@"Video rất hay, cảm ơn bạn!",@"视频很好，谢谢！"]]]);}
     else {status=500;data=mediaJSON(@{});}
     [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
@@ -366,31 +366,31 @@ static NSUInteger countText(UIView *view, NSString *text) {
     DGMediaInstall(nil);check([DGMediaSnapshot()[@"hooks_installed"] integerValue]==7,@"media installs only seven verified native ABI hooks");
     AWEPlayVideoViewController *player=[AWEPlayVideoViewController new];AWEAwemeModel *model=[AWEAwemeModel new];model.itemID=@"7534679152504376595";player.model=model;player.playback=0.5;
     player.view.backgroundColor=UIColor.darkGrayColor;self.window.rootViewController=player;[player viewDidAppear:NO];[self.window layoutIfNeeded];
-    UILabel *title=label(player.view,@"Video fixture ? ph? ?? theo th?i gian ph?t",220);title.frame=CGRectMake(18,220,self.window.bounds.size.width-36,60);title.numberOfLines=0;title.textColor=UIColor.whiteColor;
+    UILabel *title=label(player.view,@"Video fixture · phụ đề theo thời gian phát",220);title.frame=CGRectMake(18,220,self.window.bounds.size.width-36,60);title.numberOfLines=0;title.textColor=UIColor.whiteColor;
     UIButton *button=(UIButton *)findID(player.view,@"vietnamese-captions-button");UILabel *caption=(UILabel *)findID(player.view,@"vietnamese-captions-text");
     check(button && caption.hidden && atomic_load(&mediaRequests)==0,@"video appearance adds one opt-in button and sends no provider requests");
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];mediaWait(^BOOL{return ![DGMediaSnapshot()[@"caption_running"] boolValue];});DGMediaFixtureTick(player);
-    check(!caption.hidden && [caption.text isEqual:@"Xin ch?o"],@"caption extraction transcription translation and overlay complete via mock pipeline");
-    DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin ch?o"],@"paused playback holds caption without advancing wall time");
+    check(!caption.hidden && [caption.text isEqual:@"Xin chào"],@"caption extraction transcription translation and overlay complete via mock pipeline");
+    DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin chào"],@"paused playback holds caption without advancing wall time");
     player.playback=1.5;DGMediaFixtureTick(player);check(caption.hidden,@"speech gap hides previous cue");
-    player.playback=5.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"C?m ?n"] && !caption.hidden,@"seek forward uses actual native playback time");
-    player.playback=0.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin ch?o"],@"seek backward and video loop restore first cue");
+    player.playback=5.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"Cảm ơn"] && !caption.hidden,@"seek forward uses actual native playback time");
+    player.playback=0.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin chào"],@"seek backward and video loop restore first cue");
     [self saveWindowImage:@"ui-captions.png"];int requests=atomic_load(&mediaRequests);
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];check(caption.hidden,@"subtitle off hides overlay immediately");
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];DGMediaFixtureTick(player);check(!caption.hidden && atomic_load(&mediaRequests)==requests,@"subtitle re-enable uses complete cache without API cost");
     AWEAwemeModel *other=[AWEAwemeModel new];other.itemID=@"7683814443658054955";player.model=other;check(caption.hidden && ![DGMediaSnapshot()[@"caption_showing"] boolValue],@"changing native video model cancels and clears prior subtitles");
     [button sendActionsForControlEvents:UIControlEventTouchUpInside];[NSNotificationCenter.defaultCenter postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];check(caption.hidden && ![DGMediaSnapshot()[@"caption_running"] boolValue],@"background notification cancels pending caption pipeline");
     AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
-    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.text=@"????????";[comments.view addSubview:native];
-    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"?????";hidden.hidden=YES;[comments.view addSubview:hidden];
+    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.text=@"视频很好，谢谢！";[comments.view addSubview:native];
+    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"隐藏的评论";hidden.hidden=YES;[comments.view addSubview:hidden];
     label(comments.view,@"Username must not be captured",140);ServalMarkdownView *analysis=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(10,380,320,50)];analysis.content=@"AI summary must not be captured";[comments.view addSubview:analysis];[comments viewDidAppear:NO];[comments.view layoutIfNeeded];
-    check([DGMediaReadVisibleComments(comments.view) isEqual:@[@"????????"]],@"GTX captures only visible native comment text excluding names hidden comments and AI");
+    check([DGMediaReadVisibleComments(comments.view) isEqual:@[@"视频很好，谢谢！"]],@"GTX captures only visible native comment text excluding names hidden comments and AI");
     UIButton *entry=(UIButton *)findID(comments.view,@"gtx-comments-button");check(entry && atomic_load(&commentRequests)==0,@"opening comments does not automatically translate or call GTX");
     [entry sendActionsForControlEvents:UIControlEventTouchUpInside];mediaWait(^BOOL{return comments.presentedViewController.view.window!=nil;});
     UINavigationController *sheet=(UINavigationController *)comments.presentedViewController;UITableViewController *table=(UITableViewController *)sheet.topViewController;[table.view layoutIfNeeded];NSIndexPath *row=[NSIndexPath indexPathForRow:0 inSection:0];
     check([table.tableView numberOfRowsInSection:0]==1,@"GTX sheet lists selected visible comment without changing original");
-    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];mediaWait(^BOOL{return [[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video r?t hay"];});
-    check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video r?t hay"] && [native.text isEqual:@"????????"] && atomic_load(&commentRequests)==1,@"GTX shows Vietnamese alongside untouched Chinese original");
+    [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];mediaWait(^BOOL{return [[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"];});
+    check([[table.tableView cellForRowAtIndexPath:row].detailTextLabel.text containsString:@"Video rất hay"] && [native.text isEqual:@"视频很好，谢谢！"] && atomic_load(&commentRequests)==1,@"GTX shows Vietnamese alongside untouched Chinese original");
     [table.tableView.delegate tableView:table.tableView didSelectRowAtIndexPath:row];check(atomic_load(&commentRequests)==1,@"reselecting translated comment uses cache without network");
     [self saveWindowImage:@"ui-gtx-comments.png"];
 }
