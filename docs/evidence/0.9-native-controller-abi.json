@@ -1,0 +1,64 @@
+[
+  {
+    "class": "AWEFeedDoubleColumnListDataController",
+    "binary": "AwemeCore",
+    "instance": [
+      {
+        "selector": "addBodyParamsForChunkModel:",
+        "types": "v24@0:8@16",
+        "imp": "0x15402520"
+      },
+      {
+        "selector": "fetchDataWithRequestParams:args:completion:",
+        "types": "v40@0:8@16@24@?32",
+        "imp": "0x153b93e4"
+      },
+      {
+        "selector": "refreshDataWithRequestParams:args:completion:",
+        "types": "v40@0:8@16@24@?32",
+        "imp": "0x10861528"
+      },
+      {
+        "selector": "loadMoreDataWithRequestParams:args:completion:",
+        "types": "v40@0:8@16@24@?32",
+        "imp": "0x1540e754"
+      },
+      {
+        "selector": "enableChunkRequest",
+        "types": "B16@0:8",
+        "imp": "0x15402574"
+      }
+    ]
+  },
+  {
+    "class": "AWESearchCachalotDCFeedDataController",
+    "binary": "AWESearchFramework",
+    "instance": [
+      {
+        "selector": "addBodyParamsForChunkModel:",
+        "types": "v24@0:8@16",
+        "imp": "0xb67088"
+      },
+      {
+        "selector": "fetchDataWithRequestParams:args:completion:",
+        "types": "v40@0:8@16@24@?32",
+        "imp": "0xb674b8"
+      },
+      {
+        "selector": "refreshDataWithRequestParams:args:completion:",
+        "types": "v40@0:8@16@24@?32",
+        "imp": "0xb67578"
+      },
+      {
+        "selector": "loadMoreDataWithRequestParams:args:completion:",
+        "types": "v40@0:8@16@24@?32",
+        "imp": "0xb67638"
+      },
+      {
+        "selector": "enableChunkRequest",
+        "types": "B16@0:8",
+        "imp": "0xb680b0"
+      }
+    ]
+  }
+]

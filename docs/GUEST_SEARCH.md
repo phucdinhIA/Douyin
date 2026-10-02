@@ -1,5 +1,5 @@
-# Search — trạng thái 0.8
+# Search — trạng thái 0.9
 
-Bản 0.8 không thay search policy/quota. Web finder và mở official profile từ 0.7 được giữ; kết quả tìm và video guest phụ thuộc dịch vụ, không bảo đảm search không giới hạn. Chưa có dữ liệu Search trong phiên 0.7 mới nhất để xác nhận cải thiện.
+Vòng 0.9 tập trung định dạng feed, không thay chính sách/quota/authentication Search. Web finder và mở official profile được giữ từ 0.7. Việc dùng chung một controller nằm trong framework Search không chứng minh search từ khóa guest được mở không giới hạn. Chưa có nghiệm thu mới cho tìm kiếm hoặc toàn bộ bình luận.
 
-[Lịch sử và cách dùng](evidence/guest_search-0.7.0.md) · [Kiểm tra thiết bị](DEVICE_TESTS.md).
+[Lịch sử/cách dùng](evidence/guest_search-0.7.0.md) · [Kiểm tra thiết bị](DEVICE_TESTS.md).

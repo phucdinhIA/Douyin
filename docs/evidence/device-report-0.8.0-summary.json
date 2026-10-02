@@ -1,0 +1,34 @@
+{
+  "patch_version": "0.8.0-test",
+  "ios": "18.5",
+  "active_hooks": 76,
+  "expected_hooks": 76,
+  "report_relationship": "second report cumulative; counters overlap and do not count unique tab requests",
+  "first": {
+    "dc_callbacks": 11,
+    "dc_aweme_network_minus11001": 11,
+    "dc_original_standard": 11,
+    "json_http_200": 13,
+    "json_data_empty": 2,
+    "json_data_numeric": 11,
+    "json_strict_invalid": 11
+  },
+  "cumulative_second": {
+    "dc_callbacks": 20,
+    "dc_aweme_network_minus11001": 12,
+    "dc_unknown_domain_minus4": 7,
+    "dc_success": 1,
+    "dc_refresh": 19,
+    "dc_loadmore": 1,
+    "dc_original_standard": 12,
+    "dc_original_chunk": 8,
+    "dc_compatibility_unavailable": 8,
+    "dc_standard_selected": 0,
+    "json_http_200": 22,
+    "json_data_empty": 10,
+    "json_data_numeric": 12,
+    "json_strict_invalid": 12
+  },
+  "user_report": "Featured Retry shows no videos; Tips displays new videos intermittently then an error page and CSP-Domain error -4",
+  "interpretation": "0.8 never selected the compatibility transport in reported sessions. Body format/native parser mismatch or incomplete chunk stream is plausible, not a proven deployed-server cause. HTTP200 does not prove JSON. No physical 0.9 acceptance yet."
+}
