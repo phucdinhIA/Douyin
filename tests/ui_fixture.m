@@ -366,6 +366,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     screen=[UIViewController new];screen.view=live;self.window.rootViewController=screen;[self.window layoutIfNeeded];
     check([roomName.text isEqual:@"明星"] && [chatMessage.text isEqual:@"聊天"],@"LIVE visual sample protects room titles and chat content");
     [self saveWindowImage:@"ui-live.png"];
+    {
     NSDictionary *aiState=DGGeminiSnapshot();
     check([aiState[@"configured"] boolValue] && [aiState[@"native_send_hook"] boolValue] && [aiState[@"native_entry_hook"] boolValue] && [aiState[@"native_leave_hook"] boolValue],@"Gemini fixture installs three exact comment-AI hooks with a synthetic key");
     AWEFeedDoubleColumnCommentAIParseViewController *ai=[AWEFeedDoubleColumnCommentAIParseViewController new];
@@ -406,6 +407,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([contextText.text isEqualToString:captured] && contextText.editable,@"captured context can be reviewed and edited separately from Douyin's analysis");
     [self saveWindowImage:@"ui-gemini-context.png"];
     check([markdown.content isEqualToString:captured],@"Gemini UI does not rewrite original Douyin analysis");
+    }
 }
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {
     (void)application; (void)options;
