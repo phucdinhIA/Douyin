@@ -1,25 +1,20 @@
-# Trạng thái 0.7.0-test
+# Trạng thái 0.8.0-test
 
-**Đã tạo bản thử và kiểm tra build/fixture/IPA; chưa chứng nhận hết lỗi trên iPhone thật.**
+**Đã sửa lựa chọn đường tải DC feed và tạo IPA thử; chưa nghiệm thu Featured/Tips trên iPhone thật.**
 
-File `dist/Douyin-40.6.0-Guest-0.7.0-iPhone15-TEST.ipa`, 704,847,682 byte. SHA-256 `a1047e7fbbc54698416ea0b5e0fe34fba4192811208bc32460e46691e6f4fb3c`. Dylib `6c70d803f783940d3805bb90f3245b67a1d59df39a3bdec29349430821246b80`. Source `69bcdd07d8bf4dd056339e5319d6c53fce642157`. Commit tài liệu sau đó không đổi mã đã build.
+File `dist/Douyin-40.6.0-Guest-0.8.0-iPhone15-TEST.ipa`, 704,850,128 byte. SHA-256 `d3196a51575321adfb341f6e7d8424afdaa86f64f1f6b2aa3e94b8df6529885c`. Dylib `5ff74043a4c0ef4cead321edf23532ca12a9b5b317bcdc3f288aa9c44adbaaf8`. Source `9e9f66280f52b1b5040494035cab16085eafcf77`.
 
-| Hạng mục | Kết quả / giới hạn |
+| Hạng mục | Kết quả |
 |---|---|
-| Phát nền | Thêm overlay `enableBGPlayComponent` trước khi app dựng module; ba preference getter được giữ. Có quan sát player thật; chưa xác nhận âm thanh khi khóa |
-| Xoay | Đã sửa manifest chỉ-dọc iPhone; giữ native fullscreen/controller policy. Chưa xác nhận trên iPhone |
-| Tìm kênh | Đã thêm web finder và mở official HTTPS profile link. Không tăng quota native, chưa chứng minh mọi kết quả/video guest khả dụng |
-| Featured/Tips | Chưa xác định domain lỗi trên thiết bị. Static -11001 ở `com.aweme.network.error` là lỗi chuyển dữ liệu; observer mới giúp phân biệt. Chưa sửa root cause, không xóa tab |
-| Comments/ảnh | Giữ native tải/retry/guest policy; chưa chứng nhận toàn bộ bình luận hoặc sửa độ trễ ảnh |
-| UI | Giữ 893 bản dịch; 99/99 fixture checks đạt, không overflow ở fixture. Không chứng nhận tổng thể UI Douyin thật |
-| CI | [Run 36958376223](https://github.com/phucdinhIA/Douyin/actions/runs/36958376223): 15 Python, Foundation, arm64/signature và UIKit đạt |
-| IPA | 5,629 entry đọc lại/hash; 5,620 CRC/size/mode nguyên vẹn; 4,977 SHA so audit; 0 mismatch |
-| Binary | AwemeCore nguyên vẹn; executable chỉ đổi 51 byte header, giữ size/code |
+| Featured/Tips | Feed compatibility mặc định ON: chọn bộ tải thông thường native nếu đủ class/ABI; không sửa giả response/cursor/hasMore. Chưa xác nhận tải thêm video hoặc hết chớp lỗi |
+| Nguyên nhân xác nhận | 0.7 có NSData và lỗi chuyển dictionary ở serializer; chưa biết dữ liệu thực tế là nén/framed/JSON lỗi hay phản hồi khác |
+| Rollback | Feed compatibility OFF rồi đóng/mở app; giữ dữ liệu và bản cũ |
+| CI | [Run 36964217268](https://github.com/phucdinhIA/Douyin/actions/runs/36964217268): 16 Python, Foundation, arm64/signature và 101/101 UIKit fixture đạt |
+| UI | Giữ 893 bản dịch; đã xem mười ảnh fixture, gồm menu tùy chọn mới. Không phải UI của Douyin chạy với máy chủ |
+| IPA | 5,629 entry hash/readback; 5,620 CRC/size/mode và 4,977 SHA so audit; 0 mismatch |
+| Binary | AwemeCore giữ nguyên; executable chỉ đổi 51 byte header, giữ code/size |
+| Phần khác | Phát nền/xoay/search native/toàn bộ bình luận/ảnh chậm chưa có kết quả nghiệm thu mới; không đưa tuyên bố đã sửa |
 
-Review chín ảnh **fixture**: [LIVE](evidence/ui-live-0.7.0.png), [comments](evidence/ui-comments-0.7.0.png), [Featured hẹp](evidence/ui-featured-narrow-0.7.0.png), [sidebar](evidence/ui-sidebar-0.7.0.png), [error](evidence/ui-network-error-0.7.0.png), [Search](evidence/ui-search-0.7.0.png), [Settings](evidence/ui-settings-0.7.0.png), [web finder](evidence/ui-public-finder-0.7.0.png), [profile link](evidence/ui-public-profile-0.7.0.png).
+[Menu](evidence/ui-feed-compat-0.8.0.png) · [Fixture results](evidence/ui-results-0.8.0.json) · [Kế hoạch](PLAN-0.8.md) · [Nghiên cứu](RESEARCH-0.8.md) · [Validation](VALIDATION.json) · [Thiết bị](DEVICE_TESTS.md) · [Lịch sử 0.7](evidence/status-0.7.0.md).
 
-Run 36957864228 thất bại do trùng tên biến trong Foundation test; đã sửa. Đồng thời kiểm tra phát hiện đổi nhầm guard phiên bản 40.6.0 khi cập nhật patch version; đã sửa và thêm regression. Run 36957970255 đạt Foundation/build nhưng fixture mở prompt tiếp theo trước khi dismissal hoàn tất; đã sửa fixture chờ completion và chụp hai prompt mới. Không dùng artifact của run thất bại.
-
-[Kế hoạch](PLAN-0.7.md) · [Nghiên cứu có pin/hash](RESEARCH-0.7.md) · [12 ABI mới](evidence/0.7-native-hook-abi.json) · [Validation](VALIDATION.json) · [Thử thiết bị](DEVICE_TESTS.md) · [Lịch sử 0.6](evidence/status-0.6.0.md).
-
-**Còn thiếu:** kết quả iPhone 15/iOS 18.5 cho phát nền/xoay, và diagnostics từng phiên Featured/Tips để xác định phản hồi lỗi; không thể nghiệm thu đầy đủ từ fixture.
+**Còn thiếu:** một vòng test iPhone 15/iOS 18.5 cho refresh, tải nhiều trang và chuyển Featured/Tips. Khi còn lỗi cần diagnostics mới để phân biệt HTTP/định dạng/bộ giải mã; chưa có bằng chứng đủ để chứng nhận hết lỗi.

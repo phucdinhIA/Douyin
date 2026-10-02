@@ -1,0 +1,23 @@
+{
+  "patch_version": "0.7.0-test",
+  "ios": "18.5",
+  "active_hooks": 75,
+  "expected_hooks": 75,
+  "json_aweme_network_minus11001": 23,
+  "json_input_data": 23,
+  "dc_callbacks": 15,
+  "dc_aweme_network_minus11001": 8,
+  "dc_unknown_domain_minus4": 7,
+  "generic_initial_success": 3,
+  "generic_initial_item_samples": 10,
+  "generic_loadmore_success": 3,
+  "generic_loadmore_item_samples": 18,
+  "comments_status_zero_getter_reads": 58,
+  "image_finish_callbacks": 367,
+  "image_finish_with_image": 341,
+  "image_finish_without_image": 26,
+  "background_module_viewDidAppear": 6,
+  "background_module_isPlaying_original_YES": 6,
+  "user_report": "Featured shows a few repeating videos with conversion error; Tips briefly displays videos then returns to Network error",
+  "interpretation": "App-wide overlapping counters are not unique tab requests. Domain-matched -11001 confirms native dictionary conversion failure; payload format and server cause not proven. Background state YES is not audible lock-screen verification."
+}

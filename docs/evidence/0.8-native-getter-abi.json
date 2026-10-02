@@ -1,0 +1,68 @@
+[
+  {
+    "class": "TTHttpResponse",
+    "selector": "statusCode",
+    "types": "q16@0:8",
+    "imp": "0x7cee6dc"
+  },
+  {
+    "class": "TTHttpResponse",
+    "selector": "MIMEType",
+    "types": "@16@0:8",
+    "imp": "0x7cee6ec"
+  },
+  {
+    "class": "AWEDCFeedDefaultDataController",
+    "selector": "initFetchWithCompletion:",
+    "types": "v24@0:8@?16",
+    "imp": "0xf723698"
+  },
+  {
+    "class": "AWEDCFeedDefaultDataController",
+    "selector": "loadMoreWithCompletion:",
+    "types": "v24@0:8@?16",
+    "imp": "0xf723704"
+  },
+  {
+    "class": "AWEDCFeedDefaultDataController",
+    "selector": "refreshWithCompletion:",
+    "types": "v24@0:8@?16",
+    "imp": "0xf72379c"
+  },
+  {
+    "class": "AWEDCFeedDefaultDataControllerWrapper",
+    "selector": "fetchDataWithRequestParams:args:completion:",
+    "types": "v40@0:8@16@24@?32",
+    "imp": "0xf725430"
+  },
+  {
+    "class": "AWEDCFeedDefaultDataControllerWrapper",
+    "selector": "refreshDataWithRequestParams:args:completion:",
+    "types": "v40@0:8@16@24@?32",
+    "imp": "0x1517e474"
+  },
+  {
+    "class": "AWEDCFeedDefaultDataControllerWrapper",
+    "selector": "loadMoreDataWithRequestParams:args:completion:",
+    "types": "v40@0:8@16@24@?32",
+    "imp": "0xf72598c"
+  },
+  {
+    "class": "AWEDCFeedDefaultDataControllerWrapper",
+    "selector": "dataController",
+    "types": "@16@0:8",
+    "imp": "0xf725ee0"
+  },
+  {
+    "class": "AWEDCFeedListDataManager",
+    "selector": "shouldRequestWithChunk",
+    "types": "B16@0:8",
+    "imp": "0x14a994d8"
+  },
+  {
+    "class": "AWEDCFeedListDataManager",
+    "selector": "dataController",
+    "types": "@16@0:8",
+    "imp": "0x14a995bc"
+  }
+]

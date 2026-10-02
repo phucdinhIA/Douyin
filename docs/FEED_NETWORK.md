@@ -1,7 +1,9 @@
-# Featured/Tips — trạng thái 0.7
+# Featured/Tips — trạng thái 0.8
 
-0.6 trên thiết bị: DC callbacks14, unknown App -4:5/-11001:9; feed thường initial4/loadmore7 lần thành công. Đây là hai luồng khác nhau. Chưa có bằng chứng rằng hai tab lỗi do đăng nhập hay original IPA hỏng; báo cáo không chỉ rõ domain.
+0.7: serializer có 23 lỗi AwemeNetwork/-11001 với NSData; DC feed có 8 lỗi cùng domain/code và 7 App/-4 chưa rõ domain. Không quy tất cả counter serializer cho Featured/Tips. Feed thường có initial/load-more thành công. Thông báo chuyển dictionary khớp native serializer; chưa có bằng chứng do chưa đăng nhập hoặc IPA bị hỏng.
 
-Static native JSON serializer tạo **com.aweme.network.error -11001** khi input không đúng dạng hoặc chuyển NSData thành dictionary thất bại. Domain phải khớp mới áp dụng nghĩa này. 0.7 thêm whitelist domain và observer giữ nguyên return/error pointer, phân loại input/HTTP/MIME và transport error phù hợp; không ghi raw payload/URL/header. Không giả thành công, không đổi chunk/protobuf/JSON transport hay xóa tab khi chưa có bằng chứng.
+Featured vài video lặp và Tips chớp rồi báo lỗi phù hợp với placeholder/nội dung sẵn có bị request lỗi đưa về dataState8 → error page10. Nguồn vài video đó chưa được chứng minh.
 
-Hai tab quan trọng nếu cần chính các feed đó; lỗi hiện tại không làm feed thường/Nearby/LIVE đồng loạt hỏng theo dữ liệu đã cung cấp. 0.7 chưa sửa root cause của hai tab. [Kế hoạch](PLAN-0.7.md) và [test từng phiên](DEVICE_TESTS.md). [Lịch sử 0.6](evidence/feed_network-0.6.0.md).
+0.8 chọn bộ tải thông thường native nếu đường khối được bật và bộ tải thay thế đủ class/ABI. Giữ cursor, hasMore, response/error và retry; không gán thành công khi request thất bại, không xóa tab. **Đây là sửa tương thích theo giả thuyết có cơ sở, chưa có kết quả iPhone chứng minh đã hết lỗi.**
+
+Diagnostics mới: DC transport original chunk/standard, standard selected/unavailable; DC completion request initial/refresh/load more; HTTP/MIME và JSON size/prefix/strict decode. Không gửi dữ liệu mạng nhạy cảm. [Kế hoạch](PLAN-0.8.md), [research](RESEARCH-0.8.md), [test](DEVICE_TESTS.md), [lịch sử 0.7](evidence/feed_network-0.7.0.md).

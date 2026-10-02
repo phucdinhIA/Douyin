@@ -11,6 +11,7 @@ Retrieved by HTTPS on 2026-10-02 and reviewed as untrusted data. Neither origina
 - `AWEDCFeedListDataManager shouldRequestWithChunk`, `B16@0:8`, IMP `0x14a994d8`, reads config → strategyConfig → tidyAwemeConfig → useChunk.
 - Initial fetch checks that decision and chunk controller; otherwise it invokes `dataController fetchDataWithRequestParams:args:completion:`. Load more has the same branch shape. Refresh is included in the evidence and uses the same decision.
 - Default wrapper's initial/refresh/load-more methods are `v40@0:8@16@24@?32`. The compatibility hook checks all three and the controller's native class at runtime before selection.
+- It also verifies that the wrapper contains the native default controller and that its three completion methods use `v24@0:8@?16`. A wrapper with no underlying loader must not be selected. [Getter/completion ABI evidence](evidence/0.8-native-getter-abi.json).
 - `AWEJSONResponseSerializer` at `0x12b11b84` builds conversion error in `com.aweme.network.error/-11001`. It already uses a cache parser and a fallback parser. Adding an unproven second serializer invocation could duplicate native side effects; not adopted.
 - `TTHttpResponse statusCode` is `q16@0:8`, MIMEType is `@16@0:8`. They can be observed without reading cookies or headers.
 - `AWEDCFeedListViewController handleFetchDataState:` maps failed data state 8 to error page 10. This supports the reported flicker mechanism, but does not establish whether the briefly displayed videos came from cache, placeholder or a partial response.

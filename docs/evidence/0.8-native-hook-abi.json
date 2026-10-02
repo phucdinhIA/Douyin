@@ -1,0 +1,12 @@
+[
+  {
+    "class": "AWEDCFeedListDataManager",
+    "selector": "shouldRequestWithChunk",
+    "class_method": false,
+    "types": "B16@0:8",
+    "operation": "preferStandardFeed",
+    "feature": "feed_compat",
+    "evidence_binary": "AwemeCore",
+    "evidence_imp": "0x14a994d8"
+  }
+]
