@@ -127,6 +127,7 @@ def validate_library(data: bytes):
         '/System/Library/Frameworks/Foundation.framework/Foundation',
         '/System/Library/Frameworks/UIKit.framework/UIKit',
         '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation',
+        '/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics',
     }
     dependencies = []
     identifiers = []

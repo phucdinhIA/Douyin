@@ -27,12 +27,16 @@
 @end
 @interface AWEFeedDoubleColumnCommentAIParseViewController : AWEFeedDoubleColumnAIParseViewController
 @property(nonatomic) NSUInteger nativeEntries;
+@property(nonatomic,strong) UIViewController *capturedPresentation;
 - (void)commentAIParseTabDidEnter;
 - (void)commentAIParseTabWillLeave;
 @end
 @implementation AWEFeedDoubleColumnCommentAIParseViewController
 - (void)commentAIParseTabDidEnter {++self.nativeEntries;}
 - (void)commentAIParseTabWillLeave {}
+- (void)presentViewController:(UIViewController *)viewControllerToPresent animated:(BOOL)flag completion:(void (^)(void))completion {
+    (void)flag;self.capturedPresentation=viewControllerToPresent;if (completion) completion();
+}
 @end
 @interface DGGeminiChatController (FixtureActions)
 - (void)context;
@@ -383,6 +387,12 @@ static NSUInteger countText(UIView *view, NSString *text) {
     AWEFeedDoubleColumnAIParseViewController *otherAI=[AWEFeedDoubleColumnAIParseViewController new];[otherAI inputViewSendQueryContext:queryContext sourceFrom:0];
     check(otherAI.nativeSends==1,@"other AI screens are not routed to Gemini");
     [NSUserDefaults.standardUserDefaults setBool:NO forKey:@"DGGeminiDisabled"];
+    [ai inputViewSendQueryContext:queryContext sourceFrom:0];
+    UINavigationController *routed=[ai.capturedPresentation isKindOfClass:UINavigationController.class] ? (UINavigationController *)ai.capturedPresentation : nil;
+    [routed.topViewController loadViewIfNeeded];
+    UITextView *routedInput=(UITextView *)findID(routed.topViewController.view,@"gemini-input");
+    check(ai.nativeSends==1 && [routed.topViewController isKindOfClass:DGGeminiChatController.class] && [routedInput.text isEqualToString:queryContext.query],@"enabled native submit routes a draft to Gemini without calling native login or sending it automatically");
+    check(![NSJSONSerialization JSONObjectWithData:[NSJSONSerialization dataWithJSONObject:DGGeminiSnapshot() options:0 error:NULL] options:0 error:NULL][@"api_key"],@"Gemini diagnostics do not expose the configured key");
     DGGeminiChatController *gemini=[[DGGeminiChatController alloc] initWithSummary:captured question:queryContext.query];
     UINavigationController *geminiNav=[[UINavigationController alloc] initWithRootViewController:gemini];
     self.window.rootViewController=geminiNav;[self.window layoutIfNeeded];[gemini.view layoutIfNeeded];

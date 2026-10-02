@@ -14,7 +14,7 @@ sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DGGemini.m',
 sources.append(str(ROOT/'tests/ui_fixture.m'))
 run('xcrun','--sdk','iphonesimulator','clang','-target','arm64-apple-ios15.0-simulator',
     '-isysroot',sdk,'-fobjc-arc','-fblocks','-O1','-Wall','-Wextra','-Werror','-I'+str(ROOT/'src'),
-    *sources,'-framework','Foundation','-framework','UIKit','-o',str(APP/'FixtureApp'))
+    *sources,'-framework','Foundation','-framework','UIKit','-framework','CoreGraphics','-o',str(APP/'FixtureApp'))
 info={'CFBundleIdentifier':IDENTIFIER,'CFBundleExecutable':'FixtureApp','CFBundlePackageType':'APPL',
       'CFBundleName':'DGFixture','CFBundleDisplayName':'UIKit Fixture',
       'CFBundleShortVersionString':'40.6.0','CFBundleVersion':'406019','MinimumOSVersion':'15.0',
