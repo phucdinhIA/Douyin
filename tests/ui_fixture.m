@@ -405,6 +405,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     UITextView *viText=(UITextView *)findID(ai.view,@"gemini-translation-text");
     NSDate *translationDeadline=[NSDate dateWithTimeIntervalSinceNow:5];
     while (![viText.text containsString:@"kỹ thuật chụp ảnh"] && translationDeadline.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];
+    NSLog(@"Translation mock observation: requests=%d, ready=%d",atomic_load(&translationRequests),[viText.text containsString:@"kỹ thuật chụp ảnh"]);
     check(atomic_load(&translationRequests)==1 && [viText.text containsString:@"kỹ thuật chụp ảnh"],@"explicit AI entry translates exactly once through isolated mock transport");
     [ai.view layoutIfNeeded];
     UIView *viPanel=findID(ai.view,@"gemini-translation-panel");
@@ -459,7 +460,10 @@ static NSUInteger countText(UIView *view, NSString *text) {
     self.navigation=[[UINavigationController alloc] initWithRootViewController:self.host];
     self.window.rootViewController=self.navigation; self.host.view.backgroundColor=UIColor.systemBackgroundColor;
     [self.window makeKeyAndVisible];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC*2),dispatch_get_main_queue(),^{[self runCases];});
+    // Run from a run-loop timer, not inside a main-queue dispatch block. The async
+    // provider completion dispatches to main; nesting a run loop inside that queue
+    // would prevent the queued completion from running until all assertions finished.
+    [NSTimer scheduledTimerWithTimeInterval:2 repeats:NO block:^(__unused NSTimer *timer) {[self runCases];}];
     return YES;
 }
 - (void)runCases {
