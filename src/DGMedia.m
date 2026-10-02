@@ -5,6 +5,10 @@
 
 static BOOL DGString(id value,NSUInteger limit) {return [value isKindOfClass:NSString.class] && [value length]>0 && [value length]<=limit;}
 static BOOL DGNumber(id value) {return [value isKindOfClass:NSNumber.class] && CFGetTypeID((__bridge CFTypeRef)value)!=CFBooleanGetTypeID() && isfinite([value doubleValue]);}
+static BOOL DGHasHan(NSString *text) {
+    for (NSUInteger i=0;i<text.length;i++) {unichar c=[text characterAtIndex:i];if ((c>=0x3400 && c<=0x4dbf) || (c>=0x4e00 && c<=0x9fff) || (c>=0xf900 && c<=0xfaff)) return YES;}
+    return NO;
+}
 static id DGJSON(NSData *data) {return [data isKindOfClass:NSData.class] && data.length<=16*1024*1024 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL] : nil;}
 static NSString *DGJSONText(id value) {NSData *data=[NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];return data ? [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] : nil;}
 static BOOL DGKey(NSString *key) {return DGString(key,512) && [key rangeOfCharacterFromSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].location==NSNotFound;}
@@ -104,7 +108,7 @@ NSArray *DGCaptionTranslationAnswer(NSData *data,NSInteger status,NSArray *sourc
     NSMutableArray *translated=[NSMutableArray new];
     for (NSUInteger i=0;i<source.count;i++) {
         id row=rows[i];if (![row isKindOfClass:NSDictionary.class] || !DGNumber(row[@"id"]) || ![row[@"id"] isEqual:source[i][@"id"]] || !DGString(row[@"text"],500) || ![row[@"text"] stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length) {if (failure) *failure=@"Gemini trả ID hoặc chữ phụ đề không hợp lệ.";return nil;}
-        NSMutableDictionary *cue=[source[i] mutableCopy];cue[@"text"]=row[@"text"];[translated addObject:cue];
+        NSMutableDictionary *cue=[source[i] mutableCopy];cue[@"text"]=row[@"text"];if (DGHasHan(row[@"text"])) cue[@"needs_gtx"]=@YES;[translated addObject:cue];
     }return translated;
 }
 
@@ -160,6 +164,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 @property(nonatomic) NSTimeInterval preferredTime;
 @property(nonatomic,copy) NSString *videoTitle;
 - (void)translateNext;
+- (void)repairBatch:(NSMutableArray *)result source:(NSArray *)source at:(NSUInteger)index completion:(void (^)(NSArray *,NSString *))completion;
 @end
 @implementation DGMediaClient
 - (instancetype)initWithConfig:(NSDictionary *)config geminiKey:(NSString *)key store:(DGTranslationStore *)store configuration:(NSURLSessionConfiguration *)configuration {
@@ -184,7 +189,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 - (NSURLRequest *)apify:(NSString *)path method:(NSString *)method body:(id)body {
     return DGRequest([@"https://api.apify.com/v2/" stringByAppendingString:path],method,body,[@"Bearer " stringByAppendingString:self.config[@"apify_api_key"]],@"Authorization");
 }
-- (NSString *)cacheKey:(NSString *)kind {return [NSString stringWithFormat:@"caption-v1|nova-3|zh-CN|%@|%@|%@",DGGeminiFastModel,kind,self.videoID];}
+- (NSString *)cacheKey:(NSString *)kind {return [NSString stringWithFormat:@"caption-v2|nova-3|zh-CN|%@|%@|%@",DGGeminiFastModel,kind,self.videoID];}
 - (NSArray *)cached:(NSString *)kind {
     NSString *text=[self.store translationForSource:[self cacheKey:kind]];id result=text ? DGJSON([text dataUsingEncoding:NSUTF8StringEncoding]) : nil;return DGCaptionValidCues(result) ? result : nil;
 }
@@ -276,7 +281,21 @@ static NSString *DGCaptionDigest(NSString *source) {
     [batch sortUsingComparator:^NSComparisonResult(NSDictionary *a,NSDictionary *b) {return [a[@"id"] compare:b[@"id"]];}];
     [self request:DGCaptionTranslationRequestWithTitle(self.geminiKey,batch,self.videoTitle) completion:^(NSData *data,NSInteger status,NSString *failure) {
         NSArray *result=failure ? nil : DGCaptionTranslationAnswer(data,status,batch,&failure);
-        if (!result) {[self fail:failure];return;}[self.translated addObjectsFromArray:result];[self.translated sortUsingComparator:^NSComparisonResult(NSDictionary *a,NSDictionary *b) {return [a[@"id"] compare:b[@"id"]];}];[self save:self.translated kind:@"vi"];[self emit:@"partial" failure:nil];[self translateNext];
+        if (!result) {[self fail:failure];return;}
+        [self repairBatch:[result mutableCopy] source:batch at:0 completion:^(NSArray *repaired,NSString *repairFailure) {
+            if (!repaired) {[self fail:repairFailure];return;}[self.translated addObjectsFromArray:repaired];[self.translated sortUsingComparator:^NSComparisonResult(NSDictionary *a,NSDictionary *b) {return [a[@"id"] compare:b[@"id"]];}];[self save:self.translated kind:@"vi"];[self emit:@"partial" failure:nil];[self translateNext];
+        }];
+    }];
+}
+- (void)repairBatch:(NSMutableArray *)result source:(NSArray *)source at:(NSUInteger)index completion:(void (^)(NSArray *,NSString *))completion {
+    while (index<result.count && ![result[index][@"needs_gtx"] boolValue]) ++index;
+    if (index==result.count) {completion(result,nil);return;}
+    if (self.event) self.event(@"Captions GTX language fallback");
+    [self request:DGGTXRequest(source[index][@"text"]) completion:^(NSData *data,NSInteger status,NSString *failure) {
+        NSString *text=failure ? nil : DGGTXAnswer(data,status,&failure);
+        if (!text || text.length>500 || DGHasHan(text)) {completion(nil,failure ?: @"Chưa có bản dịch Việt đầy đủ cho một câu. Bấm thử lại; bản nhận dạng đã lưu.");return;}
+        NSMutableDictionary *cue=[result[index] mutableCopy];cue[@"text"]=text;[cue removeObjectForKey:@"needs_gtx"];result[index]=cue;
+        [self repairBatch:result source:source at:index+1 completion:completion];
     }];
 }
 - (void)prioritizeTime:(NSTimeInterval)time {if (isfinite(time) && time>=0 && time<=3600) self.preferredTime=time;}
