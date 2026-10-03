@@ -13,6 +13,7 @@ static id DGAObject(id object,NSString *name) {
 static BOOL DGABool(id object,NSString *name) {Method m=DGAMethod(object,name,@"B16@0:8");return m && ((BOOL (*)(id,SEL))method_getImplementation(m))(object,NSSelectorFromString(name));}
 static double DGATime(id object) {Method m=DGAMethod(object,@"currentPlaybackTime",@"d16@0:8");return m ? ((double (*)(id,SEL))method_getImplementation(m))(object,NSSelectorFromString(@"currentPlaybackTime")) : NAN;}
 static void DGAMute(id owner,BOOL muted) {Method m=DGAMethod(owner,@"setMuted:",@"v20@0:8B16");if (m) ((void (*)(id,SEL,BOOL))method_getImplementation(m))(owner,NSSelectorFromString(@"setMuted:"),muted);}
+static char DGAChunkIndexKey;
 @interface DGAudioController : NSObject
 @property(nonatomic,weak) UIViewController *owner;
 @property(nonatomic,strong) AVPlayer *background;
@@ -33,6 +34,13 @@ static void DGAMute(id owner,BOOL muted) {Method m=DGAMethod(owner,@"setMuted:",
 @property(nonatomic) BOOL reportedSourceFailure;
 @property(nonatomic,copy) void (^ready)(BOOL);
 @property(nonatomic) NSTimeInterval readyStarted;
+@property(nonatomic,strong) NSMutableArray *chunks;
+@property(nonatomic,copy) void (^buffering)(BOOL);
+@property(nonatomic) BOOL rollingWaiting;
+@property(nonatomic) BOOL rollingReported;
+@property(nonatomic) NSUInteger voiceGeneration;
+@property(nonatomic) double voiceOffset;
+- (void)rollingTick:(double)time playing:(BOOL)playing foreground:(BOOL)foreground;
 - (void)tick;
 - (void)resign;
 - (void)activate;
@@ -66,7 +74,7 @@ static DGAudioController *DGAudio;
     NSUInteger generation=++self.generation;__weak DGAudioController *weakSelf=self;
     [self.background seekToTime:CMTimeMakeWithSeconds(time,600) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
         dispatch_async(dispatch_get_main_queue(),^{DGAudioController *owner=weakSelf;if (!owner || owner.generation!=generation || !finished || UIApplication.sharedApplication.applicationState==UIApplicationStateActive) return;
-            [owner.background play];if (owner.voice) {[owner.voice seekToTime:CMTimeMakeWithSeconds(time,600)];[owner.voice play];}
+            [owner.background play];if (owner.voice) {[owner.voice seekToTime:CMTimeMakeWithSeconds(MAX(0,time-owner.voiceOffset),600)];if (!owner.chunks) [owner.voice play];else [owner tick];}
             if (owner.record) owner.record(@"Background companion playing",1);
         });
     }];
@@ -91,6 +99,10 @@ static DGAudioController *DGAudio;
         DGAMute(self.owner,YES);
         if (self.background.currentItem.status==AVPlayerItemStatusFailed && !self.reportedSourceFailure) {self.reportedSourceFailure=YES;[self.background pause];[self.voice pause];if (self.record) self.record(@"Background companion source failed",1);}
     }
+    if (self.chunks) {
+        double time=foreground ? DGATime(self.owner) : CMTimeGetSeconds(self.background.currentTime);
+        [self rollingTick:time playing:foreground ? DGABool(self.owner,@"isPlaying") : self.background.rate>0 foreground:foreground];return;
+    }
     if (!self.voice) return;
     if (self.ready && (self.voice.currentItem.status==AVPlayerItemStatusFailed || NSProcessInfo.processInfo.systemUptime-self.readyStarted>8)) {
         void (^callback)(BOOL)=self.ready;self.ready=nil;[self stop];callback(NO);return;
@@ -110,11 +122,56 @@ static DGAudioController *DGAudio;
         void (^callback)(BOOL)=self.ready;self.ready=nil;callback(YES);
     }
 }
+- (void)rollingReport:(BOOL)waiting {
+    if (self.rollingReported && waiting==self.rollingWaiting) return;self.rollingReported=YES;self.rollingWaiting=waiting;
+    if (self.record) self.record(waiting ? @"Dubbing buffer waiting" : @"Dubbing buffer ready",1);if (self.buffering) self.buffering(waiting);
+}
+- (void)rollingMute:(BOOL)voice {
+    if (voice) {[self mute];self.background.muted=YES;}
+    else if (self.background) self.background.muted=NO;
+    else if (self.ownsMute) {DGAMute(self.owner,self.mutedBefore);self.ownsMute=NO;}
+}
+- (void)rollingTick:(double)time playing:(BOOL)playing foreground:(BOOL)foreground {
+    if (!isfinite(time) || time<0 || self.interrupted) {[self.voice pause];return;}
+    NSUInteger index=NSNotFound;for (NSUInteger i=0;i<self.chunks.count;i++) if (time>=[self.chunks[i][@"start"] doubleValue] && time<[self.chunks[i][@"end"] doubleValue]) {index=i;break;}
+    if (index==NSNotFound) {[self.voice pause];[self rollingMute:NO];if (foreground) [self rollingReport:NO];return;}
+    NSDictionary *chunk=self.chunks[index];NSURL *file=chunk[@"file"];
+    if (!file && !chunk[@"failure"]) {
+        [self.voice pause];if (foreground) [self rollingReport:YES];else [self rollingMute:NO];return;
+    }
+    if (chunk[@"failure"]) {
+        [self.voice pause];self.voice=nil;self.voiceGeneration++;self.seeking=NO;[self rollingMute:NO];if (foreground) [self rollingReport:NO];return;
+    }
+    NSNumber *current=objc_getAssociatedObject(self.voice.currentItem,&DGAChunkIndexKey);
+    if (!current || current.unsignedIntegerValue!=index) {
+        [self.voice pause];self.voiceGeneration++;self.seeking=NO;AVQueuePlayer *queue=[AVQueuePlayer new];self.voice=queue;self.readyStarted=NSProcessInfo.processInfo.systemUptime;
+        AVPlayerItem *item=[AVPlayerItem playerItemWithURL:file];objc_setAssociatedObject(item,&DGAChunkIndexKey,@(index),OBJC_ASSOCIATION_RETAIN_NONATOMIC);[queue insertItem:item afterItem:nil];
+        if (self.record) self.record(@"Dubbing rolling anchor",1);
+    }
+    self.voiceOffset=[chunk[@"start"] doubleValue];AVQueuePlayer *queue=(AVQueuePlayer *)self.voice;
+    // Queue consecutive local exports before their boundary; no whole-video export.
+    NSArray *items=queue.items;NSUInteger tail=[objc_getAssociatedObject(items.lastObject,&DGAChunkIndexKey) unsignedIntegerValue];
+    while (queue.items.count<4 && tail+1<self.chunks.count) {
+        NSDictionary *next=self.chunks[tail+1];if (!next[@"file"]) break;AVPlayerItem *item=[AVPlayerItem playerItemWithURL:next[@"file"]];objc_setAssociatedObject(item,&DGAChunkIndexKey,@(++tail),OBJC_ASSOCIATION_RETAIN_NONATOMIC);[queue insertItem:item afterItem:queue.items.lastObject];
+    }
+    if (self.voice.currentItem.status==AVPlayerItemStatusFailed || (self.voice.currentItem.status!=AVPlayerItemStatusReadyToPlay && NSProcessInfo.processInfo.systemUptime-self.readyStarted>8)) {
+        NSMutableDictionary *failed=[chunk mutableCopy];[failed removeObjectForKey:@"file"];failed[@"failure"]=@"Không đọc được audio đoạn này.";self.chunks[index]=failed;[NSFileManager.defaultManager removeItemAtURL:file error:NULL];
+        if (self.record) self.record(@"Dubbing rolling playback failed",1);[self rollingTick:time playing:playing foreground:foreground];return;
+    }
+    [self rollingMute:YES];double local=MAX(0,time-self.voiceOffset);double actual=CMTimeGetSeconds(self.voice.currentTime);double delta=fabs(actual-local);
+    if ((!isfinite(actual) || delta>0.18) && !self.seeking) {
+        self.seeking=YES;NSUInteger generation=self.voiceGeneration;__weak DGAudioController *weakSelf=self;
+        [self.voice seekToTime:CMTimeMakeWithSeconds(local,600) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(__unused BOOL done) {dispatch_async(dispatch_get_main_queue(),^{DGAudioController *owner=weakSelf;if (owner.voiceGeneration==generation) owner.seeking=NO;});}];
+    }
+    float rate=1;Method nativeRate=DGAMethod(self.owner,@"getCurrentPlaybackRate",@"f16@0:8");if (foreground && nativeRate) rate=((float (*)(id,SEL))method_getImplementation(nativeRate))(self.owner,NSSelectorFromString(@"getCurrentPlaybackRate"));if (!isfinite(rate) || rate<=0 || rate>3) rate=1;
+    if (playing && !self.seeking && self.voice.currentItem.status==AVPlayerItemStatusReadyToPlay) self.voice.rate=rate;else [self.voice pause];
+    if (foreground && self.voice.currentItem.status==AVPlayerItemStatusReadyToPlay && !self.seeking && isfinite(delta) && delta<0.1) [self rollingReport:NO];
+}
 - (void)ended:(NSNotification *)note {
     if (note.object!=self.background.currentItem || self.interrupted) return;
     __weak DGAudioController *weakSelf=self;NSUInteger generation=self.generation;
     [self.background seekToTime:kCMTimeZero completionHandler:^(BOOL done) {dispatch_async(dispatch_get_main_queue(),^{
-        DGAudioController *owner=weakSelf;if (!owner || !done || owner.generation!=generation) return;[owner.background play];[owner.voice seekToTime:kCMTimeZero];[owner.voice play];
+        DGAudioController *owner=weakSelf;if (!owner || !done || owner.generation!=generation) return;[owner.background play];if (!owner.chunks) {[owner.voice seekToTime:kCMTimeZero];[owner.voice play];}else {[owner.voice pause];[owner tick];}
     });}];
 }
 - (void)interruption:(NSNotification *)note {
@@ -124,6 +181,8 @@ static DGAudioController *DGAudio;
 - (void)route:(NSNotification *)note {if ([note.userInfo[AVAudioSessionRouteChangeReasonKey] unsignedIntegerValue]==AVAudioSessionRouteChangeReasonOldDeviceUnavailable) {[self.background pause];[self.voice pause];self.interrupted=YES;}}
 - (void)stop {
     self.ready=nil;
+    self.voiceGeneration++;self.buffering=nil;self.rollingReported=NO;self.rollingWaiting=NO;
+    for (NSDictionary *chunk in self.chunks) if (chunk[@"file"]) [NSFileManager.defaultManager removeItemAtURL:chunk[@"file"] error:NULL];self.chunks=nil;self.voiceOffset=0;
     self.generation++;[self.background pause];self.background=nil;[self.voice pause];self.voice=nil;self.seeking=NO;
     if (self.ownsMute) {DGAMute(self.owner,self.mutedBefore);self.ownsMute=NO;}
     if (self.voiceFile) [NSFileManager.defaultManager removeItemAtURL:self.voiceFile error:NULL];self.voiceFile=nil;
@@ -157,10 +216,19 @@ void DGAudioPrepareVoice(UIViewController *owner,NSURL *file,void (^completion)(
     if (!DGAudioVoice(owner,file)) {completion(NO);return;}
     DGAudio.ready=completion;DGAudio.readyStarted=NSProcessInfo.processInfo.systemUptime;[DGAudio tick];
 }
+BOOL DGAudioBeginRolling(UIViewController *owner,NSArray *chunks,void (^buffering)(BOOL)) {
+    if (!chunks.count || DGAudio.owner!=owner || !DGAMethod(owner,@"setMuted:",@"v20@0:8B16") || !DGAMethod(owner,@"isMute",@"B16@0:8") || ![DGAudio session]) return NO;
+    DGAudio.chunks=[chunks mutableCopy];DGAudio.buffering=buffering;DGAudio.rollingReported=NO;DGAudio.voiceGeneration++;DGAudio.interrupted=NO;[DGAudio tick];return YES;
+}
+void DGAudioRollingChunk(UIViewController *owner,NSDictionary *chunk) {
+    NSUInteger index=[chunk[@"index"] unsignedIntegerValue];
+    if (DGAudio.owner!=owner || index>=DGAudio.chunks.count || ![DGAudio.chunks[index][@"start"] isEqual:chunk[@"start"]] || ![DGAudio.chunks[index][@"end"] isEqual:chunk[@"end"]]) {if (chunk[@"file"]) [NSFileManager.defaultManager removeItemAtURL:chunk[@"file"] error:NULL];return;}
+    DGAudio.chunks[index]=chunk;[DGAudio tick];
+}
 void DGAudioStopVoice(UIViewController *owner) {if (DGAudio.owner==owner) [DGAudio stop];}
 NSDictionary *DGAudioSnapshot(void) {
-    double time=CMTimeGetSeconds(DGAudio.voice.currentTime);
-    return @{@"background_companion":@(DGAudio.background!=nil),@"dubbing_active":@(DGAudio.voice!=nil),@"audio_interrupted":@(DGAudio.interrupted),@"dubbing_rate":@(DGAudio.voice.rate),@"dubbing_time":isfinite(time) ? @(time) : NSNull.null};
+    double time=CMTimeGetSeconds(DGAudio.voice.currentTime)+DGAudio.voiceOffset;NSUInteger ready=0,failed=0;for (NSDictionary *chunk in DGAudio.chunks) {if (chunk[@"file"]) ready++;if (chunk[@"failure"]) failed++;}
+    return @{@"background_companion":@(DGAudio.background!=nil),@"dubbing_active":@(DGAudio.voice!=nil),@"audio_interrupted":@(DGAudio.interrupted),@"dubbing_rate":@(DGAudio.voice.rate),@"dubbing_time":isfinite(time) ? @(time) : NSNull.null,@"dubbing_chunks_ready":@(ready),@"dubbing_chunks_failed":@(failed),@"dubbing_chunks_total":@(DGAudio.chunks.count),@"dubbing_buffering":@(DGAudio.rollingWaiting)};
 }
 #ifdef DG_GEMINI_FIXTURE
 void DGAudioFixtureTick(void) {[DGAudio tick];}

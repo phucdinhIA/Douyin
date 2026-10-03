@@ -26,6 +26,8 @@ static NSData *wave(void) {
         atomic_fetch_add(&synthCalls,1);if (![[self.request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Bearer synthetic-vbee"]) atomic_fetch_add(&unsafe,1);
         if (authFailure) {status=401;data=json(@{@"error_message":@"private contents must never display"});}
         else data=json(@{@"status":@1,@"result":@{@"status":@"SUCCESS",@"app_id":config[@"app_id"],@"voice_code":config[@"voice_code"],@"audio_link":@"https://vbee.vn/audio/fixture.wav"}});
+        NSData *body=self.request.HTTPBody;if (!body) {NSInputStream *stream=self.request.HTTPBodyStream;NSMutableData *read=[NSMutableData new];[stream open];uint8_t bytes[4096];NSInteger n;while ((n=[stream read:bytes maxLength:sizeof(bytes)])>0) [read appendBytes:bytes length:(NSUInteger)n];[stream close];body=read;}
+        NSDictionary *input=[NSJSONSerialization JSONObjectWithData:body options:0 error:NULL];if ([input[@"input_text"] containsString:@"FAIL504"]) {status=504;data=json(@{});}
     } else {atomic_fetch_add(&audioCalls,1);if ([self.request valueForHTTPHeaderField:@"Authorization"]) atomic_fetch_add(&unsafe,1);data=wave();}
     [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:self.request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
@@ -56,5 +58,21 @@ int main(void) {@autoreleasepool {
     authFailure=YES;finished=NO;NSArray *authCues=@[@{@"id":@0,@"start":@0,@"end":@5,@"text":NSUUID.UUID.UUIDString}];[client start:authCues];waitFor(^BOOL{return finished;});int calls=atomic_load(&synthCalls);
     check(failure && !file && ![failure containsString:@"private contents"],@"Vbee auth failure is sanitized");[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];
     check(atomic_load(&synthCalls)==calls,@"failed Vbee synthesis does not trigger automatic paid retries");
+    authFailure=NO;DGRollingVoice *rolling=[[DGRollingVoice alloc] initWithConfig:config configuration:cfg];NSMutableArray *longCues=[NSMutableArray new];NSString *prefix=NSUUID.UUID.UUIDString;
+    for (NSUInteger i=0;i<12;i++) [longCues addObject:@{@"id":@(i),@"start":@(i*30),@"end":@(i*30+2),@"text":[NSString stringWithFormat:@"%@ group %lu",prefix,(unsigned long)(i/3)]}];
+    __block NSMutableArray *ready=[NSMutableArray new];rolling.chunkReady=^(NSDictionary *chunk) {[ready addObject:chunk];};int before=atomic_load(&synthCalls);[rolling start:longCues at:0];waitFor(^BOOL{return ready.count==1;});
+    check(ready.count==1 && [ready[0][@"index"] isEqual:@0] && ready[0][@"file"] && atomic_load(&synthCalls)==before+1,@"first rolling chunk is delivered without synthesizing entire video");
+    AVURLAsset *initial=[AVURLAsset URLAssetWithURL:ready[0][@"file"] options:nil];check(fabs(CMTimeGetSeconds(initial.duration)-90)<0.1,@"chunk export preserves silence through exact next chunk boundary");
+    [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];check(ready.count==1,@"prefetch backpressure stops beyond 60 seconds from playback");
+    [rolling prioritizeTime:180];waitFor(^BOOL{return ready.count==2;});check([ready[1][@"index"] isEqual:@2],@"forward seek prioritizes its chunk instead of synthesizing skipped narration");
+    [rolling prioritizeTime:0];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];check(ready.count==2,@"backward seek reuses ready chunk without another synthesis");
+    [rolling cancel];for (NSDictionary *chunk in ready) if (chunk[@"file"]) [NSFileManager.defaultManager removeItemAtURL:chunk[@"file"] error:NULL];
+    ready=[NSMutableArray new];NSMutableArray *faultCues=[NSMutableArray new];NSString *faultPrefix=NSUUID.UUID.UUIDString;
+    for (NSUInteger i=0;i<9;i++) [faultCues addObject:@{@"id":@(i),@"start":@(i*4),@"end":@(i*4+2),@"text":[NSString stringWithFormat:@"%@ %@ %lu",faultPrefix,i/3==1 ? @"FAIL504" : @"ok",(unsigned long)(i/3)]}];
+    __block BOOL firstBeforeRest=NO;before=atomic_load(&synthCalls);rolling.chunkReady=^(NSDictionary *chunk) {if (!ready.count) firstBeforeRest=atomic_load(&synthCalls)==before+1;[ready addObject:chunk];};[rolling start:faultCues at:0];waitFor(^BOOL{return ready.count==3;});
+    check(firstBeforeRest && ready.count==3 && ready[0][@"file"] && ready[1][@"failure"] && ready[2][@"file"],@"one Vbee 504 is isolated while first and later chunks remain usable");
+    check(atomic_load(&synthCalls)==before+3,@"ambiguous gateway timeout never repeats a paid synthesis POST");
+    [rolling cancel];for (NSDictionary *chunk in ready) if (chunk[@"file"]) [NSFileManager.defaultManager removeItemAtURL:chunk[@"file"] error:NULL];
+    [rolling start:faultCues at:0];[rolling cancel];NSUInteger prior=ready.count;[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];check(ready.count==prior,@"cancel rejects stale rolling completion after video changes");
     printf("Audio timeline checks passed: %lu\n",(unsigned long)checks);
 }return 0;}

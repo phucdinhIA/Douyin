@@ -8,6 +8,7 @@ FOUNDATION_EXPORT NSURLRequest *DGGeminiRequest(NSString *key, NSString *model, 
 FOUNDATION_EXPORT NSString *DGGeminiAnswer(NSData *data, NSInteger status, NSString **failure);
 FOUNDATION_EXPORT NSURLRequest *DGGeminiTranslationRequest(NSString *key, NSString *source);
 FOUNDATION_EXPORT NSString *DGGeminiTranslationAnswer(NSData *data, NSInteger status, NSString **failure);
+FOUNDATION_EXPORT NSString *DGGeminiTranslationAnswerLimit(NSData *data, NSInteger status, NSUInteger limit, NSString **failure);
 
 // One request per Send. No automatic replay, account cookies, persistent history or raw error logging.
 @interface DGGeminiClient : NSObject <NSURLSessionTaskDelegate>

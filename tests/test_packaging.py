@@ -34,7 +34,7 @@ class PackagingTests(unittest.TestCase):
         source=(ROOT/'src/DouyinGuest.m').read_text(encoding='utf8')
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleShortVersionString"] isEqualToString:@"40.6.0"',source)
         self.assertIn('objectForInfoDictionaryKey:@"CFBundleVersion"] isEqualToString:@"406019"',source)
-        self.assertIn('@"patch_version": @"0.16.0-test", @"app_version": @"40.6.0"',source)
+        self.assertIn('@"patch_version": @"0.17.0-test", @"app_version": @"40.6.0"',source)
     def test_injection_preserves_offsets_code_and_input(self):
         original = binary(); snapshot = bytes(original)
         modified = patch.inject_load_command(original)

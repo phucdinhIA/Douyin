@@ -4,6 +4,9 @@
 FOUNDATION_EXPORT NSURL *DGCaptionVideoURL(NSString *videoID);
 FOUNDATION_EXPORT NSURLRequest *DGGTXRequest(NSString *source);
 FOUNDATION_EXPORT NSString *DGGTXAnswer(NSData *data, NSInteger status, NSString **failure);
+FOUNDATION_EXPORT NSURLRequest *DGGTXBatchRequest(NSArray<NSString *> *sources);
+FOUNDATION_EXPORT NSArray<NSString *> *DGGTXBatchAnswer(NSData *data, NSInteger status, NSArray<NSString *> *sources, NSString **failure);
+FOUNDATION_EXPORT NSDictionary *DGGTXSnapshot(void);
 FOUNDATION_EXPORT BOOL DGDeepgramNeedsUpload(NSData *data,NSInteger status);
 FOUNDATION_EXPORT NSArray<NSDictionary *> *DGCaptionSegments(NSData *data, NSString **failure);
 FOUNDATION_EXPORT BOOL DGCaptionValidCues(NSArray *cues);
@@ -25,5 +28,6 @@ FOUNDATION_EXPORT NSArray<NSDictionary *> *DGCaptionTranslationAnswer(NSData *da
 - (void)startVideo:(NSString *)videoID at:(NSTimeInterval)time;
 - (void)prioritizeTime:(NSTimeInterval)time;
 - (void)translateComment:(NSString *)source completion:(void (^)(NSString *,NSString *))completion;
+- (void)translateComments:(NSArray<NSString *> *)sources completion:(void (^)(NSDictionary<NSString *,NSString *> *,NSString *))completion;
 - (void)cancel;
 @end

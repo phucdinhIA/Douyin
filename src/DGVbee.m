@@ -98,7 +98,7 @@ static NSString *DGVoiceDigest(NSString *text) {
     if (!self.inflight && self.files.count==self.cues.count && !self.assembling) [self assemble];
 }
 - (void)assemble {
-    self.assembling=YES;NSUInteger generation=self.generation;NSArray *cues=self.cues;NSDictionary *files=[self.files copy];
+    self.assembling=YES;NSUInteger generation=self.generation;NSArray *cues=self.cues;NSDictionary *files=[self.files copy];double timelineDuration=self.timelineDuration;
     __weak DGVbee *weakSelf=self;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^{
         AVMutableComposition *composition=[AVMutableComposition composition];AVMutableCompositionTrack *track=[composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];NSString *failure=nil;
@@ -110,6 +110,8 @@ static NSString *DGVoiceDigest(NSString *text) {
             if (![track insertTimeRange:CMTimeRangeMake(kCMTimeZero,length) ofTrack:source atTime:position error:NULL]) {failure=@"Không ghép được mốc audio Vbee.";break;}
             if (duration>slot) [track scaleTimeRange:CMTimeRangeMake(position,length) toDuration:CMTimeMakeWithSeconds(slot,600)];
         }
+        double end=CMTimeGetSeconds(composition.duration);
+        if (isfinite(timelineDuration) && timelineDuration>end) [composition insertEmptyTimeRange:CMTimeRangeMake(composition.duration,CMTimeMakeWithSeconds(timelineDuration-end,600))];
         dispatch_async(dispatch_get_main_queue(),^{
             DGVbee *owner=weakSelf;if (!owner || owner.generation!=generation) return;
             if (failure) {[owner finish:nil failure:failure];return;}
@@ -130,4 +132,47 @@ static NSString *DGVoiceDigest(NSString *text) {
 }
 - (void)cancel {self.generation++;[self.exporter cancelExport];self.exporter=nil;for (NSURLSessionTask *task in self.tasks) [task cancel];[self.tasks removeAllObjects];[self.session invalidateAndCancel];self.session=nil;}
 - (void)dealloc {[_session invalidateAndCancel];[_exporter cancelExport];}
+@end
+
+NSArray *DGVoiceChunks(NSArray *cues) {
+    if (!DGCaptionValidCues(cues)) return nil;NSMutableArray *chunks=[NSMutableArray new];
+    for (NSUInteger first=0;first<cues.count;first+=3) {
+        NSUInteger last=MIN(first+3,cues.count);double start=first ? [cues[first][@"start"] doubleValue] : 0;
+        double end=last<cues.count ? [cues[last][@"start"] doubleValue] : [cues.lastObject[@"end"] doubleValue];NSMutableArray *local=[NSMutableArray new];
+        for (NSUInteger i=first;i<last;i++) {NSMutableDictionary *cue=[cues[i] mutableCopy];cue[@"start"]=@([cue[@"start"] doubleValue]-start);cue[@"end"]=@([cue[@"end"] doubleValue]-start);[local addObject:cue];}
+        [chunks addObject:@{@"index":@(chunks.count),@"start":@(start),@"end":@(end),@"cues":local}];
+    }return chunks;
+}
+@interface DGRollingVoice ()
+@property(nonatomic,strong) NSDictionary *config;
+@property(nonatomic,strong) NSURLSessionConfiguration *configuration;
+@property(nonatomic,strong) NSArray *chunks;
+@property(nonatomic,strong) NSMutableSet *done;
+@property(nonatomic,strong) DGVbee *job;
+@property(nonatomic) NSTimeInterval time;
+@property(nonatomic) NSUInteger generation;
+- (void)pump;
+@end
+@implementation DGRollingVoice
+- (instancetype)initWithConfig:(NSDictionary *)config configuration:(NSURLSessionConfiguration *)configuration {if ((self=[super init])) {_config=config;_configuration=configuration;}return self;}
+- (void)start:(NSArray *)cues at:(NSTimeInterval)time {
+    [self cancel];self.chunks=DGVoiceChunks(cues);self.done=[NSMutableSet new];self.time=isfinite(time) && time>=0 ? time : 0;[self pump];
+}
+- (void)prioritizeTime:(NSTimeInterval)time {if (isfinite(time) && time>=0) {self.time=time;[self pump];}}
+- (void)pump {
+    if (self.job || !self.chunks.count) return;NSDictionary *next=nil;
+    for (NSDictionary *chunk in self.chunks) {
+        if ([chunk[@"end"] doubleValue]<=self.time || [chunk[@"start"] doubleValue]>self.time+60 || [self.done containsObject:chunk[@"index"]]) continue;
+        next=chunk;break;
+    }if (!next) return;
+    DGVbee *job=[[DGVbee alloc] initWithConfig:self.config configuration:self.configuration];self.job=job;job.timelineDuration=[next[@"end"] doubleValue]-[next[@"start"] doubleValue];
+    job.event=self.event;NSUInteger generation=self.generation;__weak DGRollingVoice *weakSelf=self;
+    job.completion=^(NSURL *file,NSString *failure) {
+        DGRollingVoice *owner=weakSelf;if (!owner || owner.generation!=generation) {if (file) [NSFileManager.defaultManager removeItemAtURL:file error:NULL];return;}
+        owner.job=nil;[owner.done addObject:next[@"index"]];NSMutableDictionary *ready=[next mutableCopy];if (file) ready[@"file"]=file;else ready[@"failure"]=failure ?: @"Vbee chưa tạo được đoạn này.";
+        if (owner.event) owner.event(file ? @"Vbee rolling chunk ready" : @"Vbee rolling chunk failed");if (owner.chunkReady) owner.chunkReady(ready);[owner pump];
+    };[job start:next[@"cues"]];
+}
+- (void)cancel {self.generation++;[self.job cancel];self.job=nil;self.chunks=nil;self.done=nil;}
+- (void)dealloc {[_job cancel];}
 @end

@@ -2,12 +2,14 @@
 #import "DGMedia.h"
 #import "DGVbee.h"
 #import "DGSource.h"
+#import "DGGemini.h"
 #include <stdatomic.h>
 #include <math.h>
 static NSUInteger checks;
 static atomic_int apifyCalls,deepgramCalls,geminiCalls,gtxCalls,unsafeHeaders;
 static BOOL failGemini;
 static BOOL residueGemini;
+static BOOL throttleGTX;
 static void check(BOOL value,NSString *name) {++checks;if (!value) {NSLog(@"FAIL: %@",name);exit(1);}}
 static NSData *json(id root) {return [NSJSONSerialization dataWithJSONObject:root options:NSJSONWritingFragmentsAllowed error:NULL];}
 static NSData *requestData(NSURLRequest *request) {
@@ -42,12 +44,14 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
         }
     } else if ([host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&gtxCalls,1);if ([request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);data=json(@[@[@[@"Xin chào",@"你好",NSNull.null,NSNull.null]],NSNull.null,@"zh-CN"]);}
     else {atomic_fetch_add(&unsafeHeaders,1);status=500;data=json(@{});}
-    [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
+    if ([host isEqual:@"translate.googleapis.com"] && throttleGTX) {status=429;data=json(@{});}
+    [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:status==429 ? @{@"Retry-After":@"180"} : nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
 - (void)stopLoading {}
 @end
 static void waitFor(BOOL (^finished)(void)) {NSDate *deadline=[NSDate dateWithTimeIntervalSinceNow:8];while (!finished() && deadline.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
 int main(void) {@autoreleasepool {
+    [NSUserDefaults.standardUserDefaults removeObjectForKey:@"DGGTXBlockedUntil"];
     check(DGDeepgramNeedsUpload(json(@{@"err_code":@"REMOTE_CONTENT_ERROR"}),400),@"verified CDN rejection enables binary fallback");
     check(!DGDeepgramNeedsUpload(json(@{@"err_code":@"REMOTE_CONTENT_ERROR"}),200) && !DGDeepgramNeedsUpload(json(@{@"err_code":@"INVALID_AUTH"}),401) && !DGDeepgramNeedsUpload(json(@{@"err_code":@"INVALID_QUERY_PARAMETER"}),400) && !DGDeepgramNeedsUpload(json(@{}),400),@"successful paid transcription auth quota and invalid language do not trigger fallback");
     check(DGSourceURLAllowed([NSURL URLWithString:@"https://v95-aw.douyinvod.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"https://evil-douyinvod.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"http://www.douyin.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"https://user:pass@www.douyin.com/media"]),@"source download and background player restrict hosts schemes and credentials");
@@ -67,6 +71,10 @@ int main(void) {@autoreleasepool {
     NSString *error=nil;check([DGGTXAnswer(json(@[@[@[@"Xin ",@"你"],@[@"chào",@"好"]]]),200,&error) isEqual:@"Xin chào"],@"GTX joins translation pieces without dropping spaces");
     check(!DGGTXAnswer(json(@[]),200,&error) && !DGGTXAnswer(json(@{}),200,&error) && !DGGTXAnswer(json(@[@[@1]]),200,&error),@"malformed GTX roots and segments fail safely");
     check(!DGGTXAnswer(json(@{}),429,&error) && [error containsString:@"giới hạn"],@"rate limit is surfaced without retry");
+    NSArray *commentSources=@[@"你好",@"谢谢"];
+    NSData *commentBatch=json(@[@[@[@"__DG_COMMENT_0__\nXin chào\n__DG_COMMENT_1__\nCảm ơn",@"source"]]]);
+    check([DGGTXBatchAnswer(commentBatch,200,commentSources,&error) isEqual:@[@"Xin chào",@"Cảm ơn"]],@"GTX markers map a batch to exact source comments");
+    check(!DGGTXBatchAnswer(json(@[@[@[@"Cảm ơn, xin chào",@"source"]]]),200,commentSources,&error),@"missing GTX markers cannot put another comment's translation in a cell");
     NSArray *cues=DGCaptionSegments(json(transcript()),&error);check(cues.count==3 && DGCaptionValidCues(cues),@"word gaps create separately timed Chinese cues");
     check([cues[0][@"text"] isEqual:@"你好"] && [cues[2][@"start"] doubleValue]==5,@"original speech text and timestamp preserved");
     NSDictionary *overlap=@{@"metadata":@{@"duration":@8},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[@{@"word":@"甲",@"start":@0,@"end":@2},@{@"word":@"乙",@"start":@1,@"end":@3},@{@"word":@"丙",@"start":@5,@"end":@9},@{@"word":@"丁",@"start":@8.5,@"end":@9.5}]}]}]}};
@@ -93,6 +101,12 @@ int main(void) {@autoreleasepool {
     check(!DGCaptionTranslationAnswer(translated(@[rows[1],rows[0],rows[2]],@"STOP"),200,cues,&error),@"reordered or changed IDs rejected");
     check(!DGCaptionTranslationAnswer(translated(rows,@"MAX_TOKENS"),200,cues,&error),@"truncated paid output not saved as success");
     check(!DGCaptionTranslationRequest(@"bad\nkey",cues) && !DGCaptionTranslationRequest(@"fixture",(id)@[@1]),@"header injection and malformed cue request blocked");
+    NSMutableArray *shortTrack=[NSMutableArray new];for (NSUInteger i=0;i<150;i++) [shortTrack addObject:@{@"id":@(i),@"start":@(i*3),@"end":@(i*3+2),@"text":@"这是完整上下文中的一句话。"}];
+    NSURLRequest *full=DGCaptionTranslationRequest(@"fixture-gemini",shortTrack);NSDictionary *fullBody=[NSJSONSerialization JSONObjectWithData:full.HTTPBody options:0 error:NULL];
+    NSArray *fullInput=[NSJSONSerialization JSONObjectWithData:[fullBody[@"contents"][0][@"parts"][0][@"text"] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
+    check(fullInput.count==150 && [fullInput.lastObject[@"id"] isEqual:@149] && [fullBody[@"generationConfig"][@"maxOutputTokens"] unsignedIntegerValue]>8192,@"short-video request contains entire 150-cue context with expanded output budget");
+    NSString *largeAnswer=[@"x" stringByPaddingToLength:40000 withString:@"x" startingAtIndex:0];NSData *largeData=json(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":largeAnswer}]},@"finishReason":@"STOP"}]});
+    check([DGGeminiTranslationAnswerLimit(largeData,200,500000,&error) length]==40000 && !DGGeminiTranslationAnswer(largeData,200,&error),@"subtitle output beyond 32k is complete while AI-analysis limit stays bounded");
     NSURL *cacheURL=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString]];DGCaptionStore *large=[[DGCaptionStore alloc] initWithURL:cacheURL];NSString *longText=[@"x" stringByPaddingToLength:40000 withString:@"x" startingAtIndex:0];[large saveTranslation:longText source:@"long-video"];
     DGCaptionStore *reopened=[[DGCaptionStore alloc] initWithURL:cacheURL];check([[reopened translationForSource:@"long-video"] isEqual:longText],@"long transcript beyond old 32k cache limit persists");[NSFileManager.defaultManager removeItemAtURL:cacheURL error:NULL];
     NSURLSessionConfiguration *config=NSURLSessionConfiguration.ephemeralSessionConfiguration;config.protocolClasses=@[MediaMock.class];DGCaptionStore *store=[[DGCaptionStore alloc] initWithURL:nil];NSDictionary *keys=@{@"apify_api_key":@"fixture-apify",@"deepgram_api_key":@"fixture-deepgram",@"apify_actor":@"apple_yang~douyin-video-audio-downloader"};
@@ -100,7 +114,7 @@ int main(void) {@autoreleasepool {
     client.update=^(NSString *state,NSArray *track,NSString *failure) {stage=state;result=track;check(!failure || [state isEqual:@"failed"],@"errors remain explicit stages");};
     check(atomic_load(&apifyCalls)==0 && atomic_load(&deepgramCalls)==0 && atomic_load(&geminiCalls)==0,@"constructing client makes no API requests");
     [client startVideo:@"7534679152504376595" at:5];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
-    check([stage isEqual:@"ready"] && result.count==3 && atomic_load(&apifyCalls)==2 && atomic_load(&deepgramCalls)==1 && atomic_load(&geminiCalls)==2,@"explicit opt-in runs extraction ASR prioritized batches and full track through mock transport");
+    check([stage isEqual:@"ready"] && result.count==3 && atomic_load(&apifyCalls)==2 && atomic_load(&deepgramCalls)==1 && atomic_load(&geminiCalls)==1,@"explicit opt-in runs extraction ASR one full-context translation and full track through mock transport");
     int paid=atomic_load(&deepgramCalls)+atomic_load(&geminiCalls),apify=atomic_load(&apifyCalls);[client startVideo:@"7534679152504376595"];
     check([stage isEqual:@"cached"] && atomic_load(&deepgramCalls)+atomic_load(&geminiCalls)==paid && atomic_load(&apifyCalls)==apify,@"completed cache skips every cloud provider");
     DGCaptionStore *retryStore=[[DGCaptionStore alloc] initWithURL:nil];client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:retryStore configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;(void)failure;stage=state;};failGemini=YES;stage=nil;[client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"failed"];});
@@ -115,5 +129,12 @@ int main(void) {@autoreleasepool {
     __block BOOL done=NO;[client translateComment:@"你好" completion:^(NSString *answer,NSString *failure) {check([answer isEqual:@"Xin chào"] && !failure,@"comment uses GTX instead of paid providers");done=YES;}];waitFor(^BOOL{return done;});int gtx=atomic_load(&gtxCalls);done=NO;[client translateComment:@"你好" completion:^(NSString *answer,NSString *failure) {(void)answer;(void)failure;done=YES;}];check(done && atomic_load(&gtxCalls)==gtx,@"GTX cache hit makes no request");
     __block BOOL stale=NO;[client translateComment:@"取消" completion:^(NSString *answer,NSString *failure) {(void)answer;(void)failure;stale=YES;}];[client cancel];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.15]];check(!stale,@"cancelled response cannot update newer UI");
     check(atomic_load(&unsafeHeaders)==0,@"all provider credentials isolated no cookies no key-bearing URLs no audio-track mixup");
+    throttleGTX=YES;done=NO;gtx=atomic_load(&gtxCalls);int beforeFallback=atomic_load(&geminiCalls);
+    [client translateComments:@[@"第一条",@"第二条"] completion:^(NSDictionary *answers,NSString *failure) {check(answers.count==2 && !failure,@"GTX 429 uses authorized structured Gemini comment fallback");done=YES;}];waitFor(^BOOL{return done;});
+    check(done && atomic_load(&gtxCalls)==gtx+1 && atomic_load(&geminiCalls)==beforeFallback+1 && [DGGTXSnapshot()[@"gtx_cooldown_seconds"] doubleValue]>170,@"one throttled GTX batch respects provider Retry-After across clients");
+    DGMediaClient *newPanel=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:store configuration:config];done=NO;
+    [newPanel translateComment:@"新的评论" completion:^(NSString *answer,NSString *failure) {check(answer.length && !failure,@"another panel translates during cooldown via Gemini");done=YES;}];waitFor(^BOOL{return done;});
+    check(done && atomic_load(&gtxCalls)==gtx+1,@"panel reopen cannot bypass shared GTX cooldown");
+    [NSUserDefaults.standardUserDefaults removeObjectForKey:@"DGGTXBlockedUntil"];
     printf("Media contract checks passed: %lu\n",(unsigned long)checks);
 }return 0;}

@@ -61,7 +61,7 @@ static void DGWriteTranslation(UIView *view,NSString *source,NSString *answer) {
 @implementation DGAutoComments
 - (void)scan {
     if (!self.active || !self.owner.isViewLoaded || !self.owner.view.window || self.owner.view.hidden || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive) {[self stop];return;}
-    UIView *root=self.owner.view.window;NSMutableArray *nodes=[NSMutableArray arrayWithObject:root];NSUInteger visited=0;NSString *next=nil;
+    UIView *root=self.owner.view.window;NSMutableArray *nodes=[NSMutableArray arrayWithObject:root];NSUInteger visited=0;NSMutableArray *next=[NSMutableArray new];NSUInteger characters=0;
     Class native=NSClassFromString(@"_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel");
     while (nodes.count && visited++<1800) {
         UIView *node=nodes.lastObject;[nodes removeLastObject];if (node.hidden || node.alpha<0.01) continue;
@@ -74,14 +74,14 @@ static void DGWriteTranslation(UIView *view,NSString *source,NSString *answer) {
         BOOL semantic=(native && [node isKindOfClass:native]) || [DGSources containsObject:text];
         if (!semantic || !DGHan(text) || [node isKindOfClass:UITextView.class] || [node isKindOfClass:UIControl.class]) continue;
         NSString *answer=self.answers[text];if (answer) {DGWriteTranslation(node,text,answer);if (self.record) self.record(@"GTX comment applied",1);}
-        else if (!next && ![self.attempted containsObject:text]) next=text;
+        else if (next.count<8 && ![self.attempted containsObject:text] && ![next containsObject:text] && characters+text.length<=2000 && ![text containsString:@"__DG_COMMENT_"]) {[next addObject:text];characters+=text.length;}
     }
-    if (self.pending || !next) return;self.pending=next;[self.attempted addObject:next];
-    if (self.record) self.record(@"GTX visible source captured",1);NSUInteger generation=self.generation;__weak DGAutoComments *weakSelf=self;
-    [self.client translateComment:next completion:^(NSString *answer,NSString *failure) {
+    if (self.pending || !next.count) return;self.pending=@"batch";[self.attempted addObjectsFromArray:next];
+    if (self.record) self.record(@"GTX visible source captured",next.count);NSUInteger generation=self.generation;__weak DGAutoComments *weakSelf=self;
+    [self.client translateComments:next completion:^(NSDictionary *answers,NSString *failure) {
         DGAutoComments *s=weakSelf;if (!s || !s.active || s.generation!=generation) return;
-        s.pending=nil;if (answer) s.answers[next]=answer;
-        if (s.record) s.record(answer ? @"GTX automatic ready" : @"GTX automatic failed",1);
+        s.pending=nil;if (answers) [s.answers addEntriesFromDictionary:answers];
+        if (s.record) s.record(!failure ? @"GTX automatic ready" : @"GTX automatic failed",1);
         // Stop this panel's queue after transport/quota failure; avoid a request storm.
         if (failure) {
             if ([failure containsString:@"giới hạn"] && s.record) s.record(@"GTX automatic rate limited",1);

@@ -81,10 +81,14 @@ NSURLRequest *DGGeminiTranslationRequest(NSString *key,NSString *source) {
     request.HTTPBody=[NSJSONSerialization dataWithJSONObject:body options:0 error:NULL];return request;
 }
 NSString *DGGeminiTranslationAnswer(NSData *data,NSInteger status,NSString **failure) {
+    return DGGeminiTranslationAnswerLimit(data,status,32000,failure);
+}
+NSString *DGGeminiTranslationAnswerLimit(NSData *data,NSInteger status,NSUInteger limit,NSString **failure) {
     NSString *answer=DGGeminiAnswer(data,status,failure);if (!answer) return nil;
     NSDictionary *root=[NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];id first=[root[@"candidates"] firstObject];
-    NSUInteger length=0;for (NSDictionary *part in first[@"content"][@"parts"]) if ([part isKindOfClass:NSDictionary.class] && ![part[@"thought"] isEqual:@YES] && [part[@"text"] isKindOfClass:NSString.class]) length+=[part[@"text"] length]+1;
-    if (![first[@"finishReason"] isEqual:@"STOP"] || length>32000) {
+    NSMutableArray *texts=[NSMutableArray new];for (NSDictionary *part in first[@"content"][@"parts"]) if ([part isKindOfClass:NSDictionary.class] && ![part[@"thought"] isEqual:@YES] && [part[@"text"] isKindOfClass:NSString.class]) [texts addObject:part[@"text"]];
+    answer=[texts componentsJoinedByString:@"\n"];
+    if (!limit || limit>1000000 || ![first[@"finishReason"] isEqual:@"STOP"] || answer.length>limit) {
         if (failure) *failure=@"Bản dịch chưa hoàn tất hoặc quá dài. Không lưu bản dịch dở dang; hãy thử lại thủ công.";return nil;
     }return answer;
 }

@@ -478,6 +478,21 @@ static NSUInteger countText(UIView *view, NSString *text) {
     mediaWait(^BOOL {return ![DGMediaSnapshot()[@"caption_running"] boolValue];});
     check([DGAudioSnapshot()[@"dubbing_active"] boolValue] && player.muted && player.playing && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"complete mock subtitle Gemini Vbee export and native audio integration resumes current video with aligned dubbing");
     player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"switching video after complete flow releases previous dubbing and restores audio");DGMediaFixtureVbee(@{});
+    player.model=model;player.playback=0.2;player.playing=YES;[player viewDidAppear:NO];
+    NSArray *layout=@[@{@"index":@0,@"start":@0,@"end":@2},@{@"index":@1,@"start":@2,@"end":@4},@{@"index":@2,@"start":@4,@"end":@6},@{@"index":@3,@"start":@6,@"end":@8}];
+    __block BOOL buffered=NO;__block NSUInteger rollingResumes=0;
+    check(DGAudioBeginRolling(player,layout,^(BOOL wait) {buffered=wait;if (wait) [player pause];else {[player resumePlayVideo];rollingResumes++;}}),@"rolling playback establishes current video and local chunk clock");
+    check(buffered && !player.playing,@"rolling playback pauses before initial audio exists");
+    NSMutableDictionary *firstChunk=[layout[0] mutableCopy];NSURL *firstFile=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".wav"]]];[NSFileManager.defaultManager copyItemAtURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"] toURL:firstFile error:NULL];firstChunk[@"file"]=firstFile;DGAudioRollingChunk(player,firstChunk);
+    mediaWait(^BOOL {DGAudioFixtureTick();return !buffered;});
+    check(!buffered && player.playing && player.muted && [DGAudioSnapshot()[@"dubbing_chunks_ready"] integerValue]==1 && rollingResumes==1,@"first chunk resumes video while later chunks remain unprepared");
+    player.playback=2.4;DGAudioFixtureTick();check(buffered && !player.playing,@"reaching an unprepared next chunk pauses rather than playing silent dubbing");
+    NSMutableDictionary *secondChunk=[layout[1] mutableCopy];NSURL *secondFile=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".wav"]]];[NSFileManager.defaultManager copyItemAtURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"] toURL:secondFile error:NULL];secondChunk[@"file"]=secondFile;DGAudioRollingChunk(player,secondChunk);
+    mediaWait(^BOOL {DGAudioFixtureTick();return !buffered;});check(!buffered && player.playing && fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-2.4)<0.1,@"next local chunk aligns its offset and resumes paused video");
+    player.playback=0.3;mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.3)<0.1;});check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.3)<0.1,@"rolling backward seek rebuilds queue from existing first file");
+    NSMutableDictionary *failedChunk=[layout[2] mutableCopy];failedChunk[@"failure"]=@"Synthetic 504";DGAudioRollingChunk(player,failedChunk);player.playback=4.1;DGAudioFixtureTick();check(!player.muted && !buffered && player.playing,@"failed chunk retains Vietnamese subtitles and restores original audio");
+    player.playback=6.2;DGAudioFixtureTick();check(buffered,@"later unprepared chunk still buffers after isolated failure");player.model=other;
+    check(!player.muted && [DGAudioSnapshot()[@"dubbing_chunks_total"] integerValue]==0 && ![NSFileManager.defaultManager fileExistsAtPath:firstFile.path] && ![NSFileManager.defaultManager fileExistsAtPath:secondFile.path],@"video change releases rolling queue and temporary chunk audio");
     AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.textLayout=[YYTextLayout layoutWithContainer:[NSObject new] text:[[NSAttributedString alloc] initWithString:@"视频很好，谢谢！"]];[comments.view addSubview:native];
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"隐藏的评论";hidden.hidden=YES;[comments.view addSubview:hidden];
@@ -506,6 +521,10 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
     check(atomic_load(&commentRequests)==translatedRequests,@"closing comment session cancels automatic work");
     [self saveWindowImage:@"ui-gtx-comments.png"];
+    atomic_store(&gtxThrottle,YES);native.textLayout=nil;native.text=@"额度限制测试";int before429=atomic_load(&commentRequests);[button sendActionsForControlEvents:UIControlEventTouchUpInside];
+    mediaWait(^BOOL {return [native.text containsString:@"Xin chào"];});check([native.text containsString:@"Xin chào"] && atomic_load(&commentRequests)==before429+1,@"ordinary comment automatically uses Gemini when GTX returns 429");
+    native.text=@"另一个限制测试";mediaWait(^BOOL {return [native.text containsString:@"Xin chào"];});check([native.text containsString:@"Xin chào"] && atomic_load(&commentRequests)==before429+1,@"new visible comment uses authorized fallback during shared cooldown without repeated GTX calls");
+    DGCommentsStop(comments);atomic_store(&gtxThrottle,NO);
 
 }
 
