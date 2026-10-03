@@ -75,6 +75,7 @@ jobs:
             build/ui-fixture/ui-gemini-context.png
             build/ui-fixture/ui-gemini-translation.png
             build/ui-fixture/ui-captions.png
+            build/ui-fixture/ui-captions-long.png
             build/ui-fixture/ui-gtx-comments.png
             build/ui-fixture/ui-comments-long.png
             build/ui-fixture/ui-ai-ocr-source.png

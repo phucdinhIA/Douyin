@@ -449,6 +449,12 @@ static NSUInteger countText(UIView *view, NSString *text) {
     NSString *middlePage=DGSubtitlePageAt(pages,3,1,5);check([DGSubtitlePageAt(pages,3,1,5) isEqual:middlePage] && [DGSubtitlePageAt(pages,1,1,5) isEqual:DGSubtitlePageAt(pages,1,1,5)],@"page selection uses native video time so pause seek and loop do not advance on wall-clock time");
     NSArray *landscapePages=DGSubtitlePages(longSubtitle,460,[UIFont systemFontOfSize:19],2);check(landscapePages.count && [[landscapePages componentsJoinedByString:@""] isEqual:longSubtitle],@"landscape uses two-line pages and retains the whole cue");
     check(!DGSubtitlePages(longSubtitle,NAN,readingFont,3).count && !DGSubtitlePages(@"",220,readingFont,3).count && !DGSubtitlePageAt(pages,NAN,1,5),@"subtitle layout rejects empty text invalid dimensions and invalid clocks safely");
+    NSArray *previousTrack=DGMediaFixtureTrack(player,@[@{@"id":@0,@"start":@0,@"end":@8,@"text":longSubtitle}]);DGMediaFixtureTick(player);
+    check(caption.text.length<longSubtitle.length && caption.numberOfLines==3 && caption.bounds.size.height<=ceil(caption.font.lineHeight*3)+14,@"production overlay shows only a short measured page rather than clipping a whole long cue");
+    [self saveWindowImage:@"ui-captions-long.png"];CGFloat originalY=caption.frame.origin.y;DGMediaFixtureDrag(player,-10000);
+    check(caption.frame.origin.y<originalY && caption.frame.origin.y>=self.window.safeAreaInsets.top+164,@"dragging subtitles upward clamps below header controls");DGMediaFixtureDrag(player,10000);
+    check(fabs(caption.frame.origin.y-originalY)<1 && CGRectGetMaxY(caption.frame)<self.window.bounds.size.height-144,@"dragging subtitles down clamps above native description and navigation areas");
+    DGMediaFixtureTrack(player,previousTrack);DGMediaFixtureTick(player);
     DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin chào"],@"paused playback holds caption without advancing wall time");
     player.playback=1.5;DGMediaFixtureTick(player);check(caption.hidden,@"speech gap hides previous cue");
     player.playback=5.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"Cảm ơn"] && !caption.hidden,@"seek forward uses actual native playback time");

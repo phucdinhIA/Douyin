@@ -9,4 +9,6 @@ FOUNDATION_EXPORT void DGMediaFixtureConfiguration(NSURLSessionConfiguration *co
 FOUNDATION_EXPORT void DGMediaFixtureTick(UIViewController *owner);
 FOUNDATION_EXPORT BOOL DGMediaFixtureShortcut(UIWindow *window,CGPoint point);
 FOUNDATION_EXPORT void DGMediaFixtureBackend(NSDictionary *config);
+FOUNDATION_EXPORT NSArray *DGMediaFixtureTrack(UIViewController *owner,NSArray *cues);
+FOUNDATION_EXPORT void DGMediaFixtureDrag(UIViewController *owner,CGFloat dy);
 #endif

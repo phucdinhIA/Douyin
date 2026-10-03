@@ -383,4 +383,6 @@ void DGMediaFixtureConfiguration(NSURLSessionConfiguration *configuration,NSURL 
 void DGMediaFixtureTick(UIViewController *owner) {[objc_getAssociatedObject(owner,&DGCaptionKey) tick];}
 BOOL DGMediaFixtureShortcut(UIWindow *window,CGPoint point) {return DGMediaStartShortcut(window,point);}
 void DGMediaFixtureBackend(NSDictionary *config) {DGMediaBackend=config;}
+NSArray *DGMediaFixtureTrack(UIViewController *owner,NSArray *cues) {DGCaptionEntry *entry=objc_getAssociatedObject(owner,&DGCaptionKey);NSArray *previous=entry.cues;entry.cues=cues;[entry tick];return previous;}
+void DGMediaFixtureDrag(UIViewController *owner,CGFloat dy) {DGCaptionEntry *entry=objc_getAssociatedObject(owner,&DGCaptionKey);UIPanGestureRecognizer *pan=(id)entry.caption.gestureRecognizers.firstObject;[pan setTranslation:CGPointMake(0,dy) inView:owner.view.window];[entry drag:pan];}
 #endif
