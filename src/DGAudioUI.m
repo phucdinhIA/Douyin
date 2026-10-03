@@ -4,6 +4,7 @@
 #import <MediaPlayer/MediaPlayer.h>
 #import <objc/runtime.h>
 #include <math.h>
+#include <stdlib.h>
 static Method DGAMethod(id object,NSString *name,NSString *types) {
     Method method=class_getInstanceMethod(object_getClass(object),NSSelectorFromString(name));return method && !strcmp(method_getTypeEncoding(method),types.UTF8String) ? method : NULL;
 }
