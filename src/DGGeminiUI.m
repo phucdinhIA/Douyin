@@ -289,7 +289,7 @@ static __weak DGGeminiEntry *DGActiveTranslation;
 @implementation DGGeminiEntry
 - (void)captureDrawnAnalysis {
     // Vision can initialize its Chinese model slowly on the first local capture.
-    self.session.sourceWaitTimeout=60;
+    self.session.sourceWaitTimeout=90;
     id content=DGAIGetter(self.owner,@"contentVC");
     if (![content isKindOfClass:UIViewController.class]) content=DGAIGetter(self.owner,@"getCurrentViewController");
     UIView *root=[content isKindOfClass:UIViewController.class] ? [content viewIfLoaded] : self.owner.viewIfLoaded;
@@ -310,7 +310,11 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     }
     if (web && self.captureAttempts<3) {
         if (DGRecordAI) DGRecordAI(@"AI scoped web capture",1);
-        [web evaluateJavaScript:@"(()=>{const a=document.querySelector('[data-ai-analysis],.markdown-body,.markdown-content,[role=article],article,main');return (a||document.body)?.innerText?.slice(0,24000)||''})()" completionHandler:^(id text,__unused NSError *error) {finish([text isKindOfClass:NSString.class] ? text : @"");}];return;
+        [web evaluateJavaScript:@"(()=>{const a=document.querySelector('[data-ai-analysis],.markdown-body,.markdown-content,[role=article],article,main');return (a||document.body)?.innerText?.slice(0,24000)||''})()" completionHandler:^(id text,__unused NSError *error) {
+#ifdef DG_GEMINI_FIXTURE
+            NSLog(@"AI web fixture: loading=%d, characters=%lu, error=%ld",web.loading,(unsigned long)([text isKindOfClass:NSString.class] ? [text length] : 0),(long)error.code);
+#endif
+            finish([text isKindOfClass:NSString.class] ? text : @"");}];return;
     }
     // OCR runs locally on the original AI surface only; the app's translation UI
     // is hidden synchronously for the snapshot and restored before returning.

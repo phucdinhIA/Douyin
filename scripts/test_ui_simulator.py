@@ -49,7 +49,7 @@ try:
     run('xcrun','simctl','launch','--stdout='+str(OUT/'fixture-stdout.log'),'--stderr='+str(OUT/'fixture-stderr.log'),device,IDENTIFIER)
     container=pathlib.Path(run('xcrun','simctl','get_app_container',device,IDENTIFIER,'data'))
     result=container/'Documents/ui-results.json'
-    deadline=time.monotonic()+150
+    deadline=time.monotonic()+300
     while not result.exists() and time.monotonic()<deadline:time.sleep(1)
     if not result.exists():raise RuntimeError('UIKit fixture did not finish; it may have crashed')
     shutil.copy2(result,OUT/'ui-results.json')

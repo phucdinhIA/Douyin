@@ -767,14 +767,21 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([markdown.content isEqualToString:captured],@"Gemini UI does not rewrite original Douyin analysis");
     AWEFeedDoubleColumnCommentAIParseViewController *webAI=[AWEFeedDoubleColumnCommentAIParseViewController new];self.window.rootViewController=webAI;webAI.view.backgroundColor=UIColor.systemBackgroundColor;
     webAI.contentVC=[UIViewController new];[webAI addChildViewController:webAI.contentVC];webAI.contentVC.view.frame=webAI.view.bounds;[webAI.view addSubview:webAI.contentVC.view];[webAI.contentVC didMoveToParentViewController:webAI];
-    WKWebView *web=[[WKWebView alloc] initWithFrame:CGRectMake(12,100,width-24,300)];[webAI.contentVC.view addSubview:web];[web loadHTMLString:@"<html><body><article>这是独立的网页分析内容。</article></body></html>" baseURL:nil];mediaWait(^BOOL{return !web.loading;});
+    WKWebView *web=[[WKWebView alloc] initWithFrame:CGRectMake(12,100,width-24,300)];[webAI.contentVC.view addSubview:web];[web loadHTMLString:@"<html><body><article>这是独立的网页分析内容。</article></body></html>" baseURL:nil];
+    __block BOOL webDocumentReady=NO,webCheckPending=NO;NSDate *webLoadDeadline=[NSDate dateWithTimeIntervalSinceNow:60];
+    while (!webDocumentReady && webLoadDeadline.timeIntervalSinceNow>0) {
+        if (!webCheckPending) {webCheckPending=YES;[web evaluateJavaScript:@"document.querySelector('article')?.innerText?.length>0" completionHandler:^(id ready,__unused NSError *error) {webCheckPending=NO;webDocumentReady=[ready isEqual:@YES];}];}
+        [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+    }
+    check(webDocumentReady,@"cold WebKit fixture confirms a rendered article before testing scoped capture");
     DGGeminiTranslationFixtureConfiguration(translationMock,nil);int beforeWeb=atomic_load(&translationRequests);[webAI commentAIParseTabDidEnter];
-    mediaWait(^BOOL {DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);return atomic_load(&translationRequests)>beforeWeb && [((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"];});
+    NSDate *webCaptureDeadline=[NSDate dateWithTimeIntervalSinceNow:90];
+    while (![ ((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"] && webCaptureDeadline.timeIntervalSinceNow>0) {DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
     check(atomic_load(&translationRequests)==beforeWeb+1 && [((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"],@"scoped web-rendered analysis translates through Claude without requiring Markdown native labels");[webAI commentAIParseTabWillLeave];
     [web removeFromSuperview];UILabel *drawnText=[[UILabel alloc] initWithFrame:CGRectMake(16,140,width-32,120)];drawnText.font=[UIFont systemFontOfSize:28];drawnText.numberOfLines=0;drawnText.text=@"这是屏幕上显示的中文分析内容。";[webAI.contentVC.view addSubview:drawnText];[self.window layoutIfNeeded];
     [self saveWindowImage:@"ui-ai-ocr-source.png"];
     DGGeminiTranslationFixtureConfiguration(translationMock,nil);int beforeOCR=atomic_load(&translationRequests);[webAI commentAIParseTabDidEnter];
-    NSDate *ocrDeadline=[NSDate dateWithTimeIntervalSinceNow:45];while (atomic_load(&translationRequests)==beforeOCR && ocrDeadline.timeIntervalSinceNow>0) {DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
+    NSDate *ocrDeadline=[NSDate dateWithTimeIntervalSinceNow:90];while (atomic_load(&translationRequests)==beforeOCR && ocrDeadline.timeIntervalSinceNow>0) {DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
     mediaWait(^BOOL {return [((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"];});
     check(atomic_load(&translationRequests)==beforeOCR+1 && [((UILabel *)findID(webAI.view,@"gemini-translation-status")).text containsString:@"đang hiển thị"],@"local Chinese OCR waits for matching captures then translates visible AI content without image upload");[webAI commentAIParseTabWillLeave];
     drawnText.text=@"这是另一个尚未翻译的分析。";DGGeminiTranslationFixtureConfiguration(translationMock,nil);int beforeStaleOCR=atomic_load(&translationRequests);[webAI commentAIParseTabDidEnter];DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);[webAI commentAIParseTabWillLeave];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
