@@ -312,6 +312,7 @@ static UIView *findID(UIView *root,NSString *identifier) {
 @end
 static atomic_int mediaRequests,commentRequests;
 static atomic_bool gtxThrottle;
+static atomic_bool longComments;
 static NSData *mediaJSON(id value) {return [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];}
 static NSData *mediaBody(NSURLRequest *request) {
     if (request.HTTPBody) return request.HTTPBody;
@@ -331,7 +332,7 @@ static NSData *mediaBody(NSURLRequest *request) {
     } else if ([request.URL.host isEqual:@"api.deepgram.com"]) data=mediaJSON(@{@"metadata":@{@"duration":@10},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[@{@"word":@"你好",@"start":@0,@"end":@1},@{@"word":@"中国",@"start":@2,@"end":@3},@{@"word":@"谢谢",@"start":@5,@"end":@6}]}]}]}});
     else if ([request.URL.host isEqual:@"generativelanguage.googleapis.com"]) {
         NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSString *text=body[@"contents"][0][@"parts"][0][@"text"];NSArray *input=[NSJSONSerialization JSONObjectWithData:[text dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];
-        for (NSDictionary *cue in input) [rows addObject:@{@"id":cue[@"id"],@"text":@[@"Xin chào",@"Trung Quốc",@"Cảm ơn"][[cue[@"id"] unsignedIntegerValue]]}];
+        for (NSDictionary *cue in input) [rows addObject:@{@"id":cue[@"id"],@"text":atomic_load(&longComments) ? [@"Bản dịch tiếng Việt dài cần xuống dòng đầy đủ, giữ đúng ý của bình luận và đọc rõ trên màn hình nhỏ. " stringByPaddingToLength:1400 withString:@"Nội dung tiếp theo phải được cuộn để đọc, không bị che bởi hàng kế tiếp. " startingAtIndex:0] : @[@"Xin chào",@"Trung Quốc",@"Cảm ơn"][[cue[@"id"] unsignedIntegerValue]]}];
         data=mediaJSON(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":[[NSString alloc] initWithData:mediaJSON(@{@"translations":rows}) encoding:NSUTF8StringEncoding]}]},@"finishReason":@"STOP"}]});
     } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);if (atomic_load(&gtxThrottle)) {status=429;data=mediaJSON(@{});}else data=mediaJSON(@[@[@[@"Video rất hay, cảm ơn bạn!",@"视频很好，谢谢！"]]]);}
     else if ([request.URL.host isEqual:@"yd.transduck.com"]) {
@@ -538,6 +539,17 @@ static NSUInteger countText(UIView *view, NSString *text) {
     native.text=@"另一个限制测试";mediaWait(^BOOL {return countText(comments.view,@"Xin chào")>0;});check(countText(comments.view,@"Xin chào")>0 && atomic_load(&commentRequests)==before429+1,@"new visible comment uses authorized fallback during shared cooldown without repeated GTX calls");
     check([commentButton.currentTitle containsString:@"Gemini"],@"comment status names the paid fallback provider instead of claiming GTX success");
     DGCommentsStop(comments);atomic_store(&gtxThrottle,NO);
+    atomic_store(&longComments,YES);AWECommentContainerViewController *longPanel=[AWECommentContainerViewController new];UIViewController *inner=[UIViewController new];self.window.rootViewController=longPanel;longPanel.view.backgroundColor=UIColor.systemBackgroundColor;[longPanel addChildViewController:inner];inner.view.frame=longPanel.view.bounds;[longPanel.view addSubview:inner.view];[inner didMoveToParentViewController:longPanel];
+    UIScrollView *nativeList=[[UIScrollView alloc] initWithFrame:CGRectMake(0,100,self.window.bounds.size.width,500)];nativeList.contentSize=CGSizeMake(nativeList.bounds.size.width,1400);[inner.view addSubview:nativeList];
+    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *fixed=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(16,4,300,24)];fixed.text=@"新评论长文内容测试";[nativeList addSubview:fixed];
+    UIButton *reply=[UIButton buttonWithType:UIButtonTypeSystem];reply.frame=CGRectMake(16,36,80,30);[reply setTitle:@"Reply" forState:UIControlStateNormal];[nativeList addSubview:reply];UIImageView *attachment=[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"star"]];attachment.frame=CGRectMake(16,80,100,100);[nativeList addSubview:attachment];
+    DGMediaClient *readerClient=[[DGMediaClient alloc] initWithConfig:@{} geminiKey:@"fixture-key-no-network" store:[[DGTranslationStore alloc] initWithURL:nil] configuration:cfg];DGCommentsStart(longPanel,readerClient,nil);
+    mediaWait(^BOOL {UITableView *t=(id)findID(inner.view,@"comments-vietnamese-table");[inner.view layoutIfNeeded];return t.contentSize.height>t.bounds.size.height;});
+    UITableView *reader=(id)findID(inner.view,@"comments-vietnamese-table");check(reader.contentSize.height>reader.bounds.size.height && reader.visibleCells.firstObject.textLabel.numberOfLines==0 && fixed.bounds.size.height==24,@"long Vietnamese translation owns a scrollable measured row instead of overwriting a fixed Chinese label");[self saveWindowImage:@"ui-comments-long.png"];
+    UISegmentedControl *readerLanguage=(id)findID(inner.view,@"comments-language");readerLanguage.selectedSegmentIndex=1;[readerLanguage sendActionsForControlEvents:UIControlEventValueChanged];
+    CGPoint replyPoint=[reply convertPoint:CGPointMake(40,15) toView:inner.view];check([inner.view hitTest:replyPoint withEvent:nil]==reply && attachment.superview==nativeList && nativeList.contentInset.top==48,@"original mode reserves language-switch space and preserves reply controls and image attachments");
+    DGMediaClient *nestedReader=[[DGMediaClient alloc] initWithConfig:@{} geminiKey:@"fixture-key-no-network" store:[[DGTranslationStore alloc] initWithURL:nil] configuration:cfg];DGCommentsStart(inner,nestedReader,nil);
+    check(nativeList.contentInset.top==0 && findID(inner.view,@"comments-translation-panel")!=nil,@"nested comment ownership removes the previous surface and restores its native insets");DGCommentsStop(inner);check(!findID(longPanel.view,@"comments-translation-panel") && nativeList.contentInset.top==0,@"closing comments removes the reader and restores native layout");atomic_store(&longComments,NO);
 
 }
 
@@ -755,6 +767,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     mediaWait(^BOOL {DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);return atomic_load(&translationRequests)>beforeWeb && [((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"];});
     check(atomic_load(&translationRequests)==beforeWeb+1 && [((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"],@"scoped web-rendered analysis translates through Claude without requiring Markdown native labels");[webAI commentAIParseTabWillLeave];
     [web removeFromSuperview];UILabel *drawnText=[[UILabel alloc] initWithFrame:CGRectMake(16,140,width-32,120)];drawnText.font=[UIFont systemFontOfSize:28];drawnText.numberOfLines=0;drawnText.text=@"这是屏幕上显示的中文分析内容。";[webAI.contentVC.view addSubview:drawnText];[self.window layoutIfNeeded];
+    [self saveWindowImage:@"ui-ai-ocr-source.png"];
     DGGeminiTranslationFixtureConfiguration(translationMock,nil);int beforeOCR=atomic_load(&translationRequests);[webAI commentAIParseTabDidEnter];
     mediaWait(^BOOL {DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);return atomic_load(&translationRequests)>beforeOCR && [((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"];});
     check(atomic_load(&translationRequests)==beforeOCR+1 && [((UILabel *)findID(webAI.view,@"gemini-translation-status")).text containsString:@"đang hiển thị"],@"local Chinese OCR waits for matching captures then translates visible AI content without image upload");[webAI commentAIParseTabWillLeave];

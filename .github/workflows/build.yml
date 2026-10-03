@@ -82,5 +82,9 @@ jobs:
             build/ui-fixture/ui-gemini-translation.png
             build/ui-fixture/ui-captions.png
             build/ui-fixture/ui-gtx-comments.png
+            build/ui-fixture/ui-comments-long.png
+            build/ui-fixture/ui-ai-ocr-source.png
+            build/ui-fixture/fixture-stdout.log
+            build/ui-fixture/fixture-stderr.log
           if-no-files-found: warn
           retention-days: 14

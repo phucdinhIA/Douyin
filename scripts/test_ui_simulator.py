@@ -46,14 +46,14 @@ try:
     run('xcrun','simctl','boot',device)
     run('xcrun','simctl','bootstatus',device,'-b',timeout=240)
     run('xcrun','simctl','install',device,str(APP))
-    run('xcrun','simctl','launch',device,IDENTIFIER)
+    run('xcrun','simctl','launch','--stdout='+str(OUT/'fixture-stdout.log'),'--stderr='+str(OUT/'fixture-stderr.log'),device,IDENTIFIER)
     container=pathlib.Path(run('xcrun','simctl','get_app_container',device,IDENTIFIER,'data'))
     result=container/'Documents/ui-results.json'
     deadline=time.monotonic()+90
     while not result.exists() and time.monotonic()<deadline:time.sleep(1)
     if not result.exists():raise RuntimeError('UIKit fixture did not finish; it may have crashed')
     shutil.copy2(result,OUT/'ui-results.json')
-    for name in ['ui-sidebar.png','ui-network-error.png','ui-search.png','ui-settings.png','ui-comments.png','ui-featured-narrow.png','ui-live.png','ui-public-finder.png','ui-public-profile.png','ui-feed-compat.png','ui-gemini.png','ui-gemini-context.png','ui-gemini-translation.png','ui-captions.png','ui-gtx-comments.png']:
+    for name in ['ui-sidebar.png','ui-network-error.png','ui-search.png','ui-settings.png','ui-comments.png','ui-featured-narrow.png','ui-live.png','ui-public-finder.png','ui-public-profile.png','ui-feed-compat.png','ui-gemini.png','ui-gemini-context.png','ui-gemini-translation.png','ui-captions.png','ui-gtx-comments.png','ui-comments-long.png','ui-ai-ocr-source.png']:
         visual=container/'Documents'/name
         if not visual.exists():raise RuntimeError('Visual fixture output missing: '+name)
         shutil.copy2(visual,OUT/name)

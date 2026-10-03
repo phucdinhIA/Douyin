@@ -71,7 +71,7 @@ static NSString *DGReadSummary(UIView *root,BOOL *complete) {
     while (pending.count && visited++<1200 && total<24000) {
         UIView *node=pending.lastObject;[pending removeLastObject];
         if (node.hidden || node.alpha<0.01) continue;
-        BOOL visible=CGRectIntersectsRect([node convertRect:node.bounds toView:root],root.bounds);
+        BOOL visible=!CGRectIsEmpty(node.bounds) && CGRectIntersectsRect([node convertRect:node.bounds toView:root],root.bounds);
         // Layout wrappers can have zero bounds while unclipped descendants draw normally.
         if (!visible && node.clipsToBounds) continue;
         if ([node.accessibilityIdentifier isEqual:@"gemini-translation-panel"]) continue;
@@ -299,7 +299,9 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     BOOL panelHidden=self.panel.hidden,buttonHidden=self.button.hidden;self.panel.hidden=YES;self.button.hidden=YES;
     UIGraphicsImageRendererFormat *format=[UIGraphicsImageRendererFormat defaultFormat];format.scale=MIN(2,UIScreen.mainScreen.scale);
     UIGraphicsImageRenderer *renderer=[[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(MIN(root.bounds.size.width,1024),MIN(root.bounds.size.height,2048)) format:format];
-    UIImage *snapshot=[renderer imageWithActions:^(__unused UIGraphicsImageRendererContext *context) {[root drawViewHierarchyInRect:root.bounds afterScreenUpdates:NO];}];
+    [root layoutIfNeeded];
+    __block BOOL drawn=NO;
+    UIImage *snapshot=[renderer imageWithActions:^(__unused UIGraphicsImageRendererContext *context) {drawn=[root drawViewHierarchyInRect:root.bounds afterScreenUpdates:YES];}];
     self.panel.hidden=panelHidden;self.button.hidden=buttonHidden;if (DGRecordAI) DGRecordAI(@"AI local OCR started",1);
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^{
         VNRecognizeTextRequest *request=[VNRecognizeTextRequest new];request.recognitionLevel=VNRequestTextRecognitionLevelAccurate;request.recognitionLanguages=@[@"zh-Hans",@"en-US"];request.usesLanguageCorrection=YES;
@@ -309,6 +311,9 @@ static __weak DGGeminiEntry *DGActiveTranslation;
         }];NSMutableArray *lines=[NSMutableArray new];NSUInteger length=0;
         for (VNRecognizedTextObservation *observation in results) {VNRecognizedText *text=[observation topCandidates:1].firstObject;if (text.confidence<0.35 || !text.string.length) continue;length+=text.string.length;if (length>24000) break;[lines addObject:text.string];}
         NSString *source=[lines componentsJoinedByString:@"\n"];dispatch_async(dispatch_get_main_queue(),^{
+#ifdef DG_GEMINI_FIXTURE
+            NSLog(@"AI OCR fixture: drawn=%d, image=%.0fx%.0f, ok=%d, error=%ld, observations=%lu, retained=%lu",drawn,snapshot.size.width,snapshot.size.height,ok,(long)error.code,(unsigned long)request.results.count,(unsigned long)lines.count);
+#endif
             DGGeminiEntry *entry=weakSelf;if (!entry || entry.captureGeneration!=generation || !entry.tabEntered) return;
             entry.capturePending=NO;entry.nextCapture=NSProcessInfo.processInfo.systemUptime+1;
             if (source.length && [entry.ocrCandidate isEqual:source]) {entry.capturedVisibleOnly=YES;finish(source);}

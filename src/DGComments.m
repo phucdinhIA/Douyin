@@ -48,9 +48,11 @@ static BOOL DGHan(NSString *text) {for (NSUInteger i=0;i<text.length;i++) {unich
 @property(nonatomic,copy) void (^record)(NSString *,NSUInteger);
 @property(nonatomic) BOOL active;
 @property(nonatomic) BOOL dirty;
+@property(nonatomic) BOOL blocked,reservedOriginalSpace;
 @property(nonatomic) NSUInteger generation;
 - (void)scan;
 - (void)stop;
+- (void)restoreOriginalSpace;
 @end
 @implementation DGAutoComments
 - (void)attach {
@@ -78,9 +80,12 @@ static BOOL DGHan(NSString *text) {for (NSUInteger i=0;i<text.length;i++) {unich
 - (void)provider:(NSNotification *)note {if ([note.object isKindOfClass:NSString.class]) [self.status setTitle:note.object forState:UIControlStateNormal];}
 - (void)languageChanged {BOOL original=self.language.selectedSegmentIndex==1;self.table.hidden=original;self.status.hidden=original;self.panel.backgroundColor=original ? UIColor.clearColor : UIColor.systemBackgroundColor;
     // Original mode exposes the native list below a small language switch.
+    if (original && self.nativeScroll && !self.reservedOriginalSpace) {UIEdgeInsets inset=self.nativeScroll.contentInset;inset.top+=48;self.nativeScroll.contentInset=inset;UIEdgeInsets indicator=self.nativeScroll.scrollIndicatorInsets;indicator.top+=48;self.nativeScroll.scrollIndicatorInsets=indicator;CGPoint offset=self.nativeScroll.contentOffset;offset.y-=48;self.nativeScroll.contentOffset=offset;self.reservedOriginalSpace=YES;}
+    if (!original) [self restoreOriginalSpace];
     self.panel.userInteractionEnabled=YES;
 }
-- (void)retry {[self.attempted removeAllObjects];[self scan];}
+- (void)restoreOriginalSpace {if (!self.reservedOriginalSpace) return;self.reservedOriginalSpace=NO;UIEdgeInsets inset=self.nativeScroll.contentInset;inset.top-=48;self.nativeScroll.contentInset=inset;UIEdgeInsets indicator=self.nativeScroll.scrollIndicatorInsets;indicator.top-=48;self.nativeScroll.scrollIndicatorInsets=indicator;CGPoint offset=self.nativeScroll.contentOffset;offset.y+=48;self.nativeScroll.contentOffset=offset;}
+- (void)retry {self.blocked=NO;[self.attempted removeAllObjects];[self scan];}
 - (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section {(void)table;(void)section;return self.sources.count+(self.nativeScroll ? 1 : 0);}
 - (UITableViewCell *)tableView:(UITableView *)table cellForRowAtIndexPath:(NSIndexPath *)path {
     UITableViewCell *cell=[table dequeueReusableCellWithIdentifier:@"translated-comment"] ?: [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"translated-comment"];
@@ -106,7 +111,7 @@ static BOOL DGHan(NSString *text) {for (NSUInteger i=0;i<text.length;i++) {unich
     }
     if (self.sources.count && !self.panel) [self attach];
     if (self.panel && self.dirty) {[self.table reloadData];self.dirty=NO;}
-    if (self.pending || !next.count) return;self.pending=@"batch";[self.status setTitle:@"GTX · đang dịch" forState:UIControlStateNormal];[self.attempted addObjectsFromArray:next];
+    if (self.blocked || self.pending || !next.count) return;self.pending=@"batch";[self.status setTitle:@"GTX · đang dịch" forState:UIControlStateNormal];[self.attempted addObjectsFromArray:next];
     if (self.record) self.record(@"GTX visible source captured",next.count);NSUInteger generation=self.generation;__weak DGAutoComments *weakSelf=self;
     [self.client translateComments:next completion:^(NSDictionary *answers,NSString *failure) {
         DGAutoComments *s=weakSelf;if (!s || !s.active || s.generation!=generation) return;
@@ -115,18 +120,19 @@ static BOOL DGHan(NSString *text) {for (NSUInteger i=0;i<text.length;i++) {unich
         if (s.record) s.record(!failure ? @"GTX automatic ready" : @"GTX automatic failed",1);
         // Stop this panel's queue after transport/quota failure; avoid a request storm.
         if (failure) {
+            s.blocked=YES;
             if ([failure containsString:@"giới hạn"] && s.record) s.record(@"GTX automatic rate limited",1);
             [s.status setTitle:@"Dịch lỗi · thử lại" forState:UIControlStateNormal];return;
         }[s scan];
     }];
 }
-- (void)stop {[self.panel removeFromSuperview];[NSNotificationCenter.defaultCenter removeObserver:self name:@"DGCommentProviderStatus" object:nil];self.panel=nil;self.table=nil;self.status=nil;self.language=nil;self.active=NO;self.generation++;[self.timer invalidate];self.timer=nil;[self.client cancel];self.pending=nil;}
+- (void)stop {[self restoreOriginalSpace];[self.panel removeFromSuperview];[NSNotificationCenter.defaultCenter removeObserver:self name:@"DGCommentProviderStatus" object:nil];self.panel=nil;self.table=nil;self.status=nil;self.language=nil;self.active=NO;self.generation++;[self.timer invalidate];self.timer=nil;[self.client cancel];self.pending=nil;}
 - (void)dealloc {[_timer invalidate];[_client cancel];[NSNotificationCenter.defaultCenter removeObserver:self];}
 @end
 void DGCommentsStart(UIViewController *owner,DGMediaClient *client,void (^record)(NSString *,NSUInteger)) {
     DGAutoComments *s=objc_getAssociatedObject(owner,&DGAutoCommentsKey);if (s.active) return;
     if (!s) {s=[DGAutoComments new];s.owner=owner;s.answers=[NSMutableDictionary new];s.sources=[NSMutableArray new];s.attempted=[NSMutableSet new];objc_setAssociatedObject(owner,&DGAutoCommentsKey,s,OBJC_ASSOCIATION_RETAIN_NONATOMIC);}
-    [s.attempted removeAllObjects];[s.sources removeAllObjects];s.client=client;s.record=record;s.active=YES;s.dirty=YES;s.generation++;
+    [s.attempted removeAllObjects];[s.sources removeAllObjects];s.client=client;s.record=record;s.active=YES;s.blocked=NO;s.dirty=YES;s.generation++;
     if (!DGCommentSessions) DGCommentSessions=[NSHashTable weakObjectsHashTable];
     for (DGAutoComments *other in DGCommentSessions.allObjects) if (other!=s) [other stop];[DGCommentSessions addObject:s];
     __weak DGAutoComments *weakSelf=s;s.timer=[NSTimer timerWithTimeInterval:0.35 repeats:YES block:^(__unused NSTimer *t) {[weakSelf scan];}];[NSRunLoop.mainRunLoop addTimer:s.timer forMode:NSRunLoopCommonModes];

@@ -88,7 +88,7 @@ static NSString *DGTranslationDigest(NSString *source) {
     if (cached) {self.waiting=NO;if (self.update) self.update(@"cached",cached);return;}
     if (!complete && time-self.changed<0.75) {if (changed && self.update) self.update(@"settling",@"Đã lấy phân tích · chuẩn bị dịch…");return;}
     self.waiting=NO;
-    if (self.update) self.update(@"sending",@"Đang dịch sang tiếng Việt bằng Gemini…");
+    if (self.update) self.update(@"sending",@"Đang dịch sang tiếng Việt…");
     NSUInteger request=self.generation;__weak DGTranslationSession *weakSelf=self;
     self.sender(source,^(NSString *answer,NSString *failure) {
         DGTranslationSession *owner=weakSelf;if (!owner.active || request!=owner.generation) return;
