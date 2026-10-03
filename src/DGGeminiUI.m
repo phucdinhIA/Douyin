@@ -260,6 +260,7 @@ void DGGeminiPresentFrom(UIViewController *presenter) {
 @property(nonatomic) NSUInteger captureGeneration,captureAttempts;
 @property(nonatomic) NSTimeInterval nextCapture;
 @property(nonatomic,copy) NSString *ocrCandidate;
+@property(nonatomic,strong) VNRecognizeTextRequest *ocrRequest;
 @property(nonatomic) BOOL capturedVisibleOnly;
 @property(nonatomic) BOOL tabEntered;
 @property(nonatomic) BOOL automaticSpent;
@@ -274,6 +275,8 @@ void DGGeminiPresentFrom(UIViewController *presenter) {
 static __weak DGGeminiEntry *DGActiveTranslation;
 @implementation DGGeminiEntry
 - (void)captureDrawnAnalysis {
+    // Vision can initialize its Chinese model slowly on the first local capture.
+    self.session.sourceWaitTimeout=60;
     id content=DGAIGetter(self.owner,@"contentVC");
     if (![content isKindOfClass:UIViewController.class]) content=DGAIGetter(self.owner,@"getCurrentViewController");
     UIView *root=[content isKindOfClass:UIViewController.class] ? [content viewIfLoaded] : self.owner.viewIfLoaded;
@@ -311,8 +314,8 @@ static __weak DGGeminiEntry *DGActiveTranslation;
 #ifdef DG_GEMINI_FIXTURE
     [UIImagePNGRepresentation(snapshot) writeToURL:[[NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject URLByAppendingPathComponent:@"ui-ai-ocr-capture.png"] atomically:YES];
 #endif
+    VNRecognizeTextRequest *request=[VNRecognizeTextRequest new];request.recognitionLevel=VNRequestTextRecognitionLevelAccurate;request.recognitionLanguages=@[@"zh-Hans",@"en-US"];request.usesLanguageCorrection=YES;self.ocrRequest=request;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^{
-        VNRecognizeTextRequest *request=[VNRecognizeTextRequest new];request.recognitionLevel=VNRequestTextRecognitionLevelAccurate;request.recognitionLanguages=@[@"zh-Hans",@"en-US"];request.usesLanguageCorrection=YES;
         VNImageRequestHandler *handler=[[VNImageRequestHandler alloc] initWithCGImage:snapshot.CGImage options:@{}];NSError *error=nil;BOOL ok=[handler performRequests:@[request] error:&error];
         NSArray *results=ok ? request.results : @[];results=[results sortedArrayUsingComparator:^NSComparisonResult(VNRecognizedTextObservation *a,VNRecognizedTextObservation *b) {
             CGFloat row=CGRectGetMidY(b.boundingBox)-CGRectGetMidY(a.boundingBox);if (fabs(row)>0.015) return row>0 ? NSOrderedAscending : NSOrderedDescending;return CGRectGetMinX(a.boundingBox)<CGRectGetMinX(b.boundingBox) ? NSOrderedAscending : NSOrderedDescending;
@@ -323,6 +326,7 @@ static __weak DGGeminiEntry *DGActiveTranslation;
             NSLog(@"AI OCR fixture: drawn=%d, image=%.0fx%.0f, ok=%d, error=%ld, observations=%lu, retained=%lu",drawn,snapshot.size.width,snapshot.size.height,ok,(long)error.code,(unsigned long)request.results.count,(unsigned long)lines.count);
 #endif
             DGGeminiEntry *entry=weakSelf;if (!entry || entry.captureGeneration!=generation || !entry.tabEntered) return;
+            if (entry.ocrRequest==request) entry.ocrRequest=nil;
             entry.capturePending=NO;entry.nextCapture=NSProcessInfo.processInfo.systemUptime+1;
             if (source.length && [entry.ocrCandidate isEqual:source]) {entry.capturedVisibleOnly=YES;finish(source);}
             else entry.ocrCandidate=source;
@@ -428,6 +432,7 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     (void)notification;if (self.tabEntered && self.owner.view.window && !self.owner.view.hidden) [self start];
 }
 - (void)stop {
+    [self.ocrRequest cancel];self.ocrRequest=nil;
     self.captureGeneration++;self.capturePending=NO;
     [self.timer invalidate];self.timer=nil;[self.session leave];self.panel.hidden=YES;self.button.hidden=YES;
     [NSNotificationCenter.defaultCenter removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];

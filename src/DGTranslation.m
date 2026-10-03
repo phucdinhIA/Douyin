@@ -82,7 +82,8 @@ static NSString *DGTranslationDigest(NSString *source) {
     if (!self.active || !self.waiting) return;
     source=source ?: @"";
     BOOL changed=![self.source isEqualToString:source];if (changed) {self.source=[source copy];self.changed=time;}
-    if (time-self.entered>=20) {self.waiting=NO;if (self.update) self.update(@"failed",source.length ? @"Phân tích vẫn đang thay đổi. Bấm Dịch lại để thử khi nội dung đã xong." : @"Phân tích đã hiện nhưng chưa đọc được chữ từ renderer. Bấm Đọc lại hoặc gửi Copy diagnostics.");return;}
+    NSTimeInterval timeout=self.sourceWaitTimeout>0 ? MIN(90,MAX(20,self.sourceWaitTimeout)) : 20;
+    if (time-self.entered>=timeout) {self.waiting=NO;if (self.update) self.update(@"failed",source.length ? @"Phân tích vẫn đang thay đổi. Bấm Dịch lại để thử khi nội dung đã xong." : @"Phân tích đã hiện nhưng chưa đọc được chữ từ renderer. Bấm Đọc lại hoặc gửi Copy diagnostics.");return;}
     if (![source stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length || source.length>24000) return;
     NSString *cached=[self.store translationForSource:source];
     if (cached) {self.waiting=NO;if (self.update) self.update(@"cached",cached);return;}
