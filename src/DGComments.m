@@ -8,6 +8,7 @@
 static char DGAutoCommentsKey;
 static NSMutableOrderedSet *DGSources;
 static NSHashTable *DGCommentSessions;
+static __weak UIViewController *DGCommentAIOwner;
 static id DGRead(id object,NSString *name) {
     SEL sel=NSSelectorFromString(name);Method m=class_getInstanceMethod(object_getClass(object),sel);
     char *type=m ? method_copyReturnType(m) : NULL;BOOL safe=type && type[0]=='@' && method_getNumberOfArguments(m)==2;free(type);
@@ -96,6 +97,8 @@ static BOOL DGHan(NSString *text) {for (NSUInteger i=0;i<text.length;i++) {unich
 - (void)tableView:(UITableView *)table didSelectRowAtIndexPath:(NSIndexPath *)path {[table deselectRowAtIndexPath:path animated:YES];if ((NSUInteger)path.row==self.sources.count && self.nativeScroll) {CGFloat bottom=MAX(-self.nativeScroll.adjustedContentInset.top,self.nativeScroll.contentSize.height-self.nativeScroll.bounds.size.height+self.nativeScroll.adjustedContentInset.bottom);CGFloat y=MIN(bottom,self.nativeScroll.contentOffset.y+self.nativeScroll.bounds.size.height*0.65);[self.nativeScroll setContentOffset:CGPointMake(self.nativeScroll.contentOffset.x,y) animated:NO];[self scan];}}
 - (void)scan {
     if (!self.active || !self.owner.isViewLoaded || !self.owner.view.window || self.owner.view.hidden || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive) {[self stop];return;}
+    BOOL ai=DGCommentAIOwner && DGCommentAIOwner.view.window==self.owner.view.window;
+    self.panel.hidden=ai;if (ai) {[self restoreOriginalSpace];return;}
     UIView *root=self.owner.view.window;NSMutableArray *nodes=[NSMutableArray arrayWithObject:root];NSUInteger visited=0;NSMutableArray *next=[NSMutableArray new];NSUInteger characters=0;
     Class native=NSClassFromString(@"_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel");
     while (nodes.count && visited++<1800) {
@@ -140,6 +143,13 @@ void DGCommentsStart(UIViewController *owner,DGMediaClient *client,void (^record
     [s scan];
 }
 void DGCommentsStop(UIViewController *owner) {[objc_getAssociatedObject(owner,&DGAutoCommentsKey) stop];}
+void DGCommentsSetAIActive(UIViewController *owner,BOOL active) {
+    if (active) DGCommentAIOwner=owner;else if (DGCommentAIOwner==owner) DGCommentAIOwner=nil;
+    for (DGAutoComments *s in DGCommentSessions.allObjects) {
+        BOOL hide=DGCommentAIOwner && DGCommentAIOwner.view.window==s.owner.view.window;
+        s.panel.hidden=hide;if (hide) [s restoreOriginalSpace];else if (s.active) {[s languageChanged];[s scan];}
+    }
+}
 void DGCommentsInstall(void) {
     if (DGSources) return;DGSources=[NSMutableOrderedSet new];Class cls=NSClassFromString(@"AWECommentResponseModel");
     Method m=class_getInstanceMethod(cls,NSSelectorFromString(@"commentArray"));if (!m || strcmp(method_getTypeEncoding(m),"@16@0:8")) return;IMP original=method_getImplementation(m);

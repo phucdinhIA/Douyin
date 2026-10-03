@@ -24,7 +24,7 @@ static NSString *DGTranslationDigest(NSString *source) {
             NSDictionary *saved=root[@"entries"];
             for (NSString *key in saved) {
                 id entry=saved[key];
-                if (key.length==64 && [entry isKindOfClass:NSDictionary.class] && [entry[@"text"] isKindOfClass:NSString.class] && [entry[@"text"] length]>0 && [entry[@"text"] length]<=32000 && [entry[@"used"] isKindOfClass:NSNumber.class] && _entries.count<32) _entries[key]=entry;
+                if (key.length==64 && [entry isKindOfClass:NSDictionary.class] && [entry[@"text"] isKindOfClass:NSString.class] && [entry[@"text"] length]>0 && [entry[@"text"] length]<=96000 && [entry[@"used"] isKindOfClass:NSNumber.class] && _entries.count<32) _entries[key]=entry;
             }
         }
     }return self;
@@ -36,7 +36,7 @@ static NSString *DGTranslationDigest(NSString *source) {
 }
 - (void)saveTranslation:(NSString *)translation source:(NSString *)source {
     NSString *key=DGTranslationDigest(source);
-    if (!key || ![translation isKindOfClass:NSString.class] || !translation.length || translation.length>32000) return;
+    if (!key || ![translation isKindOfClass:NSString.class] || !translation.length || translation.length>96000) return;
     self.entries[key]=@{@"text":translation,@"used":@(NSDate.date.timeIntervalSince1970)};
     while (self.entries.count>32) [self removeOldest];
     NSData *data=[NSJSONSerialization dataWithJSONObject:@{@"version":@1,@"entries":self.entries} options:0 error:NULL];

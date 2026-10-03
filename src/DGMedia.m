@@ -106,7 +106,7 @@ BOOL DGCaptionValidCues(NSArray *cues) {
     if (![cues isKindOfClass:NSArray.class] || !cues.count || cues.count>2400) return NO;
     double previous=0,previousID=-1;NSUInteger total=0;
     for (NSUInteger i=0;i<cues.count;i++) {
-        id cue=cues[i];if (![cue isKindOfClass:NSDictionary.class] || !DGNumber(cue[@"id"]) || [cue[@"id"] doubleValue]!=[cue[@"id"] integerValue] || [cue[@"id"] doubleValue]<=previousID || [cue[@"id"] integerValue]>=2400 || !DGNumber(cue[@"start"]) || !DGNumber(cue[@"end"]) || !DGString(cue[@"text"],500)) return NO;
+        id cue=cues[i];if (![cue isKindOfClass:NSDictionary.class] || !DGNumber(cue[@"id"]) || [cue[@"id"] doubleValue]!=[cue[@"id"] integerValue] || [cue[@"id"] doubleValue]<=previousID || [cue[@"id"] integerValue]>=2400 || !DGNumber(cue[@"start"]) || !DGNumber(cue[@"end"]) || !DGString(cue[@"text"],2000)) return NO;
         double start=[cue[@"start"] doubleValue],end=[cue[@"end"] doubleValue];total+=[cue[@"text"] length];
         if (start<previous-0.001 || end<=start || end>3601 || total>200000) return NO;previous=end;previousID=[cue[@"id"] doubleValue];
     }return YES;
@@ -509,19 +509,26 @@ static NSString *DGCaptionDigest(NSString *source) {
     NSMutableArray *batch=[NSMutableArray new];
     // A small first batch makes the current scene visible sooner. Subsequent
     // batches amortize network overhead while retaining context across sentences.
-    BOOL whole=[self.source.lastObject[@"end"] doubleValue]<=600;
-    NSUInteger limit=whole ? self.source.count : self.translated.count ? 16 : 8;if (whole) preferred=0;
-    if (whole && self.event) self.event(@"Captions Claude full context");
-    for (NSUInteger step=0;step<self.source.count && batch.count<limit;step++) {NSUInteger i=(preferred+step)%self.source.count;if (!i && batch.count) break;if (![done containsObject:self.source[i][@"id"]]) [batch addObject:self.source[i]];}
+    NSUInteger characters=0;for (NSDictionary *cue in self.source) characters+=[cue[@"text"] length];
+    BOOL whole=self.source.count<=8 && characters<=1600;
+    NSUInteger limit=whole ? self.source.count : self.translated.count ? 12 : 8;if (whole) preferred=0;
+    if ([self.source.lastObject[@"end"] doubleValue]<=600 && characters<=12000 && self.event) self.event(@"Captions Claude full context");
+    NSUInteger batchCharacters=0,characterLimit=self.translated.count ? 2400 : 1600;
+    for (NSUInteger step=0;step<self.source.count && batch.count<limit;step++) {NSUInteger i=(preferred+step)%self.source.count;if (!i && batch.count) break;if (![done containsObject:self.source[i][@"id"]]) {NSUInteger size=[self.source[i][@"text"] length];if (batch.count && batchCharacters+size>characterLimit) break;[batch addObject:self.source[i]];batchCharacters+=size;}}
     if (whole) batch=[self.source mutableCopy];
     // Keep a batch in timeline order even when selection wraps to the beginning.
     [batch sortUsingComparator:^NSComparisonResult(NSDictionary *a,NSDictionary *b) {return [a[@"id"] compare:b[@"id"]];}];
     self.backend=[[DGTransduckClient alloc] initWithConfig:self.config[@"backend"] ?: DGBackendConfig() configuration:self.configuration];self.backend.event=self.event;
+    NSTimeInterval sent=NSProcessInfo.processInfo.systemUptime;
+    self.timingInfo[@"translation_batch_rows"]=@(batch.count);
     NSUInteger generation=self.generation;__weak DGMediaClient *weakSelf=self;
-    [self.backend post:@"/api/v2/ai-translate/translate" body:DGClaudeBody(batch,[@"douyin_" stringByAppendingString:self.videoID],self.videoTitle) completion:^(NSData *data,NSInteger status,NSString *failure) {
+    [self.backend post:@"/api/v2/ai-translate/translate" body:DGClaudeBodyWithContext(batch,self.source,[@"douyin_" stringByAppendingString:self.videoID],self.videoTitle) completion:^(NSData *data,NSInteger status,NSString *failure) {
         DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;
         [owner.backend cancel];owner.backend=nil;
+        owner.timingInfo[@"translation_response"]=DGClaudeResponseDiagnostics(data,status,batch.count);
+        owner.timingInfo[@"translation_seconds"]=@(NSProcessInfo.processInfo.systemUptime-sent);
         NSArray *result=failure ? nil : DGClaudeAnswer(data,status,batch,&failure);
+        owner.timingInfo[@"translation_check"]=result ? @"accepted" : @"rejected";
         if (!result) {[owner fail:failure];return;}
         if (whole) owner.translated=[result mutableCopy];else [owner.translated addObjectsFromArray:result];
         [owner.translated sortUsingComparator:^NSComparisonResult(NSDictionary *a,NSDictionary *b) {return [a[@"id"] compare:b[@"id"]];}];

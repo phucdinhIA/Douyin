@@ -226,7 +226,7 @@ static BOOL DGMediaPause(UIViewController *owner) {
     UIWindow *surface=self.owner.view.window;if (!surface) return;
     CGRect safe=UIEdgeInsetsInsetRect(surface.bounds,surface.safeAreaInsets);BOOL vertical=safe.size.height>safe.size.width;NSUInteger lines=vertical ? 3 : 2;
     self.buttonTop.constant=vertical ? 58 : 8;
-    CGFloat width=MAX(40,safe.size.width-24-64); // Preserve the action rail in both orientations.
+    CGFloat width=MAX(40,safe.size.width-32); // Symmetric margins keep captions centered.
     UIFont *font=[[UIFontMetrics metricsForTextStyle:UIFontTextStyleBody] scaledFontForFont:[UIFont systemFontOfSize:19 weight:UIFontWeightMedium] maximumPointSize:24];
     NSString *source=cue[@"text"];
     if (![source isEqual:self.pageSource] || fabs(width-self.pageWidth)>0.5 || fabs(font.pointSize-self.pageFont)>0.1 || lines!=self.pageLines) {
@@ -236,11 +236,11 @@ static BOOL DGMediaPause(UIViewController *owner) {
     NSString *text=DGSubtitlePageAt(self.pages,time,[cue[@"start"] doubleValue],[cue[@"end"] doubleValue]);self.caption.text=text;self.caption.accessibilityLabel=source;self.caption.hidden=!text.length;
     CGFloat height=ceil([text boundingRectWithSize:CGSizeMake(width-24,CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName:font} context:nil].size.height)+14;
     height=MIN(ceil(font.lineHeight*lines)+14,MAX(font.lineHeight+14,height));
-    CGFloat top=CGRectGetMinY(safe)+(vertical ? 164 : 62),bottom=CGRectGetMaxY(safe)-(vertical ? MIN(230,MAX(144,safe.size.height*0.22)) : 48);
-    double position=[NSUserDefaults.standardUserDefaults objectForKey:@"DGSubtitlePosition"] ? [NSUserDefaults.standardUserDefaults doubleForKey:@"DGSubtitlePosition"] : 1;
+    CGFloat top=CGRectGetMinY(safe)+(vertical ? 164 : 62),bottom=CGRectGetMaxY(safe)-(vertical ? 64 : 16);
+    double position=[NSUserDefaults.standardUserDefaults objectForKey:@"DGSubtitlePositionV2"] ? [NSUserDefaults.standardUserDefaults doubleForKey:@"DGSubtitlePositionV2"] : 1;
     if (!isfinite(position)) position=1;position=MAX(0,MIN(1,position));
     CGFloat y=top+MAX(0,bottom-height-top)*position;
-    self.caption.frame=CGRectMake(CGRectGetMinX(safe)+12,y,width,height);
+    self.caption.frame=CGRectMake(CGRectGetMidX(safe)-width/2,y,width,height);
 }
 - (void)drag:(UIPanGestureRecognizer *)pan {
     [self moveCaptionBy:[pan translationInView:self.owner.view.window].y];[pan setTranslation:CGPointZero inView:self.owner.view.window];
@@ -248,9 +248,9 @@ static BOOL DGMediaPause(UIViewController *owner) {
 - (void)moveCaptionBy:(CGFloat)dy {
     if (!self.showing || self.caption.hidden) return;
     UIWindow *surface=self.owner.view.window;CGRect safe=UIEdgeInsetsInsetRect(surface.bounds,surface.safeAreaInsets);BOOL vertical=safe.size.height>safe.size.width;
-    CGFloat top=CGRectGetMinY(safe)+(vertical ? 164 : 62),bottom=CGRectGetMaxY(safe)-(vertical ? MIN(230,MAX(144,safe.size.height*0.22)) : 48),range=MAX(1,bottom-self.caption.bounds.size.height-top);
+    CGFloat top=CGRectGetMinY(safe)+(vertical ? 164 : 62),bottom=CGRectGetMaxY(safe)-(vertical ? 64 : 16),range=MAX(1,bottom-self.caption.bounds.size.height-top);
     CGFloat y=self.caption.frame.origin.y+dy;
-    [NSUserDefaults.standardUserDefaults setDouble:MAX(0,MIN(1,(y-top)/range)) forKey:@"DGSubtitlePosition"];[self tick];
+    [NSUserDefaults.standardUserDefaults setDouble:MAX(0,MIN(1,(y-top)/range)) forKey:@"DGSubtitlePositionV2"];[self tick];
 }
 - (void)stop {
     [self.client cancel];self.client=nil;[self.timer invalidate];self.timer=nil;self.running=NO;self.showing=NO;self.waiting=NO;self.failed=NO;self.caption.hidden=YES;self.cues=@[];self.status.text=@"";[self.button setTitle:@"Phụ đề Việt" forState:UIControlStateNormal];

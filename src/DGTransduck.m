@@ -14,28 +14,87 @@ static NSString *DGBackendFailure(NSInteger status) {
     return @"Dịch chưa trả kết quả hợp lệ. Bấm thử lại khi kết nối ổn định.";
 }
 NSDictionary *DGClaudeBody(NSArray *cues,NSString *videoID,NSString *title) {
+    return DGClaudeBodyWithContext(cues,cues,videoID,title);
+}
+NSDictionary *DGClaudeBodyWithContext(NSArray *cues,NSArray *context,NSString *videoID,NSString *title) {
     if (!DGCaptionValidCues(cues) || !DGBackendString(videoID,160)) return nil;
+    if (!DGCaptionValidCues(context)) return nil;
+    NSUInteger contextCharacters=0;for (NSDictionary *cue in context) contextCharacters+=[cue[@"text"] length];
+    BOOL full=[context.lastObject[@"end"] doubleValue]<=600 && contextCharacters<=12000;
     NSMutableArray *items=[NSMutableArray new];NSUInteger total=0;
     for (NSUInteger i=0;i<cues.count;i++) {
-        NSDictionary *cue=cues[i];total+=[cue[@"text"] length];if (total>60000) return nil;
+        NSDictionary *cue=cues[i];total+=[cue[@"text"] length];if (total>60000 || !DGBackendString(cue[@"text"],500)) return nil;
+        NSUInteger at=[context indexOfObject:cue];if (at==NSNotFound) return nil;
         NSMutableDictionary *item=[@{@"index":cue[@"id"],@"text":cue[@"text"],@"start":cue[@"start"],@"end":cue[@"end"],@"googleTranslation":@""} mutableCopy];
         NSMutableArray *before=[NSMutableArray new],*after=[NSMutableArray new];
-        for (NSUInteger j=i>3 ? i-3 : 0;j<i;j++) [before addObject:@{@"text":cues[j][@"text"]}];
-        for (NSUInteger j=i+1;j<MIN(i+3,cues.count);j++) [after addObject:@{@"text":cues[j][@"text"]}];
+        // Include the whole short transcript once across the boundary items,
+        // while translating only the bounded target batch. Other rows use the
+        // extension's three preceding / two following context sentences.
+        for (NSUInteger j=full && i==0 ? 0 : at>3 ? at-3 : 0;j<at;j++) [before addObject:@{@"text":context[j][@"text"]}];
+        for (NSUInteger j=at+1;j<(full && i==cues.count-1 ? context.count : MIN(at+3,context.count));j++) [after addObject:@{@"text":context[j][@"text"]}];
         if (before.count) item[@"contextBefore"]=before;if (after.count) item[@"contextAfter"]=after;[items addObject:item];
     }
     return @{@"videoId":videoID,@"title":title ?: @"",@"model":DGClaudeModel,@"toLanguage":@"vi-VN",@"translationRulesEnabled":@NO,@"skipTranslation":@NO,@"subtitles":items};
 }
-NSArray *DGClaudeAnswer(NSData *data,NSInteger status,NSArray *source,NSString **failure) {
+static NSArray *DGClaudeRows(NSData *data,NSInteger status,NSArray *source,NSUInteger max,NSUInteger totalMax,NSString **failure) {
     id root=DGBackendJSON(data),items=[root isKindOfClass:NSDictionary.class] ? root[@"subtitleTranslateResults"] : nil;
-    if (status!=200 || !DGCaptionValidCues(source) || ![items isKindOfClass:NSArray.class] || [items count]!=source.count) {if (failure) *failure=DGBackendFailure(status);return nil;}
+    if (status!=200) {if (failure) *failure=DGBackendFailure(status);return nil;}
+    if (!DGCaptionValidCues(source) || ![items isKindOfClass:NSArray.class]) {if (failure) *failure=@"Claude trả cấu trúc bản dịch không hợp lệ.";return nil;}
+    if ([items count]!=source.count) {if (failure) *failure=[NSString stringWithFormat:@"Claude trả %lu/%lu đoạn dịch. Bản gốc và mốc thời gian đã được giữ lại.",(unsigned long)[items count],(unsigned long)source.count];return nil;}
+    NSMutableDictionary *indexed=[NSMutableDictionary new];NSUInteger indexedCount=0;
+    for (id item in items) {
+        if (![item isKindOfClass:NSDictionary.class]) {if (failure) *failure=@"Claude trả đoạn dịch không hợp lệ.";return nil;}
+        if (item[@"index"]) {
+            id value=item[@"index"];NSString *key=[value isKindOfClass:NSNumber.class] ? [value stringValue] : [value isKindOfClass:NSString.class] ? value : nil;
+            // IDs are exact nonnegative decimal integers, never inferred from timestamps.
+            if (!key.length || [key rangeOfCharacterFromSet:NSCharacterSet.decimalDigitCharacterSet.invertedSet].location!=NSNotFound || indexed[key]) {if (failure) *failure=@"Claude trả ID đoạn dịch trùng hoặc không hợp lệ.";return nil;}
+            indexed[key]=item;indexedCount++;
+        }
+    }
+    if (indexedCount && indexedCount!=source.count) {if (failure) *failure=@"Claude trả ID không đầy đủ; chưa thể ghép đúng bản dịch.";return nil;}
     NSMutableArray *result=[NSMutableArray new];
+    NSUInteger total=0;
     for (NSUInteger i=0;i<source.count;i++) {
-        id item=items[i];NSString *text=[item isKindOfClass:NSDictionary.class] ? item[@"translateResult"] : nil;
-        if (!DGBackendString(text,500) || ![text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length || ![item[@"useAiTranslate"] isEqual:@YES] || (item[@"index"] && ![item[@"index"] isEqual:source[i][@"id"]])) {if (failure) *failure=@"AI chưa trả đủ bản dịch theo từng mốc phụ đề.";return nil;}
+        id item=indexedCount ? indexed[[source[i][@"id"] stringValue]] : items[i];NSString *text=item[@"translateResult"];
+        if (!item) {if (failure) *failure=@"Claude trả ID khác bản gốc; chưa thể ghép đúng bản dịch.";return nil;}
+        if (![text isKindOfClass:NSString.class] || ![text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length) {if (failure) *failure=[NSString stringWithFormat:@"Claude chưa dịch đoạn %lu/%lu.",(unsigned long)i+1,(unsigned long)source.count];return nil;}
+        total+=text.length;if (text.length>max || total>totalMax) {if (failure) *failure=@"Bản dịch vượt giới hạn dung lượng an toàn; không cắt bỏ nội dung.";return nil;}
+        // useAiTranslate reports the provider's choice of engine, not completeness.
         for (NSUInteger j=0;j<text.length;j++) {unichar c=[text characterAtIndex:j];if (c>=0x3400 && c<=0x9fff) {if (failure) *failure=@"AI còn trả chữ Trung trong bản dịch. Giữ bản gốc để thử lại.";return nil;}}
         NSMutableDictionary *cue=[source[i] mutableCopy];cue[@"text"]=text;[result addObject:cue];
-    }return DGCaptionValidCues(result) ? result : nil;
+    }return result;
+}
+NSArray *DGClaudeAnswer(NSData *data,NSInteger status,NSArray *source,NSString **failure) {
+    NSArray *result=DGClaudeRows(data,status,source,2000,200000,failure);return DGCaptionValidCues(result) ? result : nil;
+}
+NSArray *DGClaudeAnalysisSegments(NSString *source) {
+    if (!DGBackendString(source,24000) || ![source stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length) return nil;
+    NSMutableArray *segments=[NSMutableArray new];NSUInteger offset=0;
+    while (offset<source.length) {
+        NSUInteger length=MIN((NSUInteger)400,source.length-offset);
+        // Prefer paragraph/sentence boundaries; never cut a composed character.
+        if (length<source.length-offset) {
+            NSRange search=NSMakeRange(offset+length/2,length-length/2);
+            NSRange end=[source rangeOfCharacterFromSet:[NSCharacterSet characterSetWithCharactersInString:@"\n。！？"] options:NSBackwardsSearch range:search];if (end.location!=NSNotFound) length=NSMaxRange(end)-offset;
+        }
+        NSRange range=[source rangeOfComposedCharacterSequencesForRange:NSMakeRange(offset,length)];NSUInteger index=segments.count;
+        [segments addObject:@{@"id":@(index),@"start":@(index),@"end":@(index+1),@"text":[source substringWithRange:range]}];offset=NSMaxRange(range);
+    }return segments;
+}
+NSString *DGClaudeAnalysisAnswer(NSData *data,NSInteger status,NSArray *segments,NSString **failure) {
+    NSArray *rows=DGClaudeRows(data,status,segments,4096,96000,failure);if (!rows) return nil;
+    NSMutableArray *pieces=[NSMutableArray new];for (NSDictionary *row in rows) [pieces addObject:row[@"text"]];
+    NSString *answer=[pieces componentsJoinedByString:@"\n\n"];if (answer.length>96000) {if (failure) *failure=@"Bản dịch phân tích quá lớn; không cắt bỏ nội dung.";return nil;}return answer;
+}
+NSDictionary *DGClaudeResponseDiagnostics(NSData *data,NSInteger status,NSUInteger expected) {
+    id root=DGBackendJSON(data),rows=[root isKindOfClass:NSDictionary.class] ? root[@"subtitleTranslateResults"] : nil;
+    NSUInteger count=[rows isKindOfClass:NSArray.class] ? [rows count] : 0,max=0,empty=0,han=0;
+    if ([rows isKindOfClass:NSArray.class]) for (id row in rows) {
+        NSString *text=[row isKindOfClass:NSDictionary.class] ? row[@"translateResult"] : nil;
+        if (![text isKindOfClass:NSString.class] || ![text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length) {empty++;continue;}max=MAX(max,text.length);
+        for (NSUInteger j=0;j<text.length;j++) {unichar c=[text characterAtIndex:j];if (c>=0x3400 && c<=0x9fff) {han++;break;}}
+    }
+    return @{@"http_status":@(status),@"expected_rows":@(expected),@"returned_rows":@(count),@"largest_row_characters":@(max),@"empty_rows":@(empty),@"han_rows":@(han)};
 }
 @interface DGTransduckClient ()
 @property(nonatomic,strong) NSDictionary *config;

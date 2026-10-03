@@ -13,6 +13,7 @@
 #import <WebKit/WebKit.h>
 #import "DGAudioUI.h"
 static atomic_int translationRequests;
+static atomic_bool expandedAnalysis,emptyAnalysis;
 @interface TranslationFixtureProtocol : NSURLProtocol
 @end
 @implementation TranslationFixtureProtocol
@@ -21,7 +22,10 @@ static atomic_int translationRequests;
 - (void)startLoading {
     atomic_fetch_add(&translationRequests,1);
     NSHTTPURLResponse *response=[[NSHTTPURLResponse alloc] initWithURL:self.request.URL statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:@{@"Content-Type":@"application/json"}];
-    NSData *data=[NSJSONSerialization dataWithJSONObject:@{@"subtitleTranslateResults":@[@{@"translateResult":@"Nội dung do AI tạo.\n\nVideo này bàn về các <mark class=\"highlight\">kỹ thuật chụp ảnh</mark>.\n\nBản dịch minh họa trong fixture, không phải kết quả kiểm tra trên Douyin thật.",@"useAiTranslate":@YES}]} options:0 error:NULL];
+    NSString *text=@"Nội dung do AI tạo.\n\nVideo này bàn về các <mark class=\"highlight\">kỹ thuật chụp ảnh</mark>.\n\nBản dịch minh họa trong fixture, không phải kết quả kiểm tra trên Douyin thật.";
+    if (atomic_load(&expandedAnalysis)) text=[@"Video giới thiệu cách chọn ánh sáng và giữ bố cục cân đối. " stringByPaddingToLength:1401 withString:@"Video giới thiệu cách chọn ánh sáng và giữ bố cục cân đối. " startingAtIndex:0];
+    if (atomic_load(&emptyAnalysis)) text=@"";
+    NSData *data=[NSJSONSerialization dataWithJSONObject:@{@"subtitleTranslateResults":@[@{@"translateResult":text,@"useAiTranslate":@NO}]} options:0 error:NULL];
     [self.client URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
 - (void)stopLoading {}
@@ -443,7 +447,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     NSDictionary *timing=DGMediaSnapshot()[@"last_caption_timing"];
     check(![DGMediaSnapshot()[@"native_source_fast_path"] boolValue] && [timing[@"input_mode"] isEqual:@"apify_remote"] && [timing[@"deepgram_audio_seconds"] isEqual:@10],@"real caption button with a native play URL uses the canonical pipeline and exposes numeric timing diagnostics");
     player.currentPlayURL=nil;
-    check(caption.numberOfLines==3 && caption.font.pointSize>=19 && caption.frame.origin.y>CGRectGetMidY(self.window.bounds) && CGRectGetMaxX(caption.frame)<self.window.bounds.size.width-60 && CGRectGetMaxY(caption.frame)<self.window.bounds.size.height-144,@"portrait subtitles have at most three lines and clear right controls and bottom description");
+    check(caption.numberOfLines==3 && caption.font.pointSize>=19 && fabs(CGRectGetMidX(caption.frame)-CGRectGetMidX(self.window.bounds))<1 && fabs(CGRectGetMaxY(caption.frame)-(self.window.bounds.size.height-self.window.safeAreaInsets.bottom-64))<1,@"portrait subtitles use symmetric margins and sit centered directly above bottom navigation");
     NSString *longSubtitle=@"Bản dịch tiếng Việt cần dễ đọc và giữ chính xác từng ý trong câu gốc. Mỗi trang chỉ có vài dòng, không che các nút và không dồn toàn bộ nội dung video vào một đoạn dài. Tiếng Việt có dấu và biểu tượng 👨‍👩‍👧‍👦 cũng phải được giữ đầy đủ.";
     UIFont *readingFont=[UIFont systemFontOfSize:24];NSArray *pages=DGSubtitlePages(longSubtitle,220,readingFont,3);
     check(pages.count>2 && [[pages componentsJoinedByString:@""] isEqual:longSubtitle],@"measured subtitle pagination retains all Vietnamese accents punctuation and emoji without shortening meaning");
@@ -457,7 +461,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(caption.text.length<longSubtitle.length && caption.numberOfLines==3 && caption.bounds.size.height<=ceil(caption.font.lineHeight*3)+14,@"production overlay shows only a short measured page rather than clipping a whole long cue");
     [self saveWindowImage:@"ui-captions-long.png"];CGFloat originalY=caption.frame.origin.y;DGMediaFixtureDrag(player,-10000);
     check(caption.frame.origin.y<originalY && caption.frame.origin.y>=self.window.safeAreaInsets.top+164,@"dragging subtitles upward clamps below header controls");DGMediaFixtureDrag(player,10000);
-    check(fabs(caption.frame.origin.y-originalY)<1 && CGRectGetMaxY(caption.frame)<self.window.bounds.size.height-144,@"dragging subtitles down clamps above native description and navigation areas");
+    check(fabs(caption.frame.origin.y-originalY)<1 && CGRectGetMaxY(caption.frame)<=self.window.bounds.size.height-self.window.safeAreaInsets.bottom-64+1,@"dragging subtitles down clamps just above bottom navigation with no horizontal offset");
     DGMediaFixtureTrack(player,previousTrack);DGMediaFixtureTick(player);
     DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin chào"],@"paused playback holds caption without advancing wall time");
     player.playback=1.5;DGMediaFixtureTick(player);check(caption.hidden,@"speech gap hides previous cue");
@@ -775,6 +779,27 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(atomic_load(&translationRequests)==beforeOCR+1 && [((UILabel *)findID(webAI.view,@"gemini-translation-status")).text containsString:@"đang hiển thị"],@"local Chinese OCR waits for matching captures then translates visible AI content without image upload");[webAI commentAIParseTabWillLeave];
     drawnText.text=@"这是另一个尚未翻译的分析。";DGGeminiTranslationFixtureConfiguration(translationMock,nil);int beforeStaleOCR=atomic_load(&translationRequests);[webAI commentAIParseTabDidEnter];DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);[webAI commentAIParseTabWillLeave];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
     check(atomic_load(&translationRequests)==beforeStaleOCR,@"leaving AI rejects in-flight OCR and cannot spend a stale translation request");
+    // Reproduce a comment sheet containing an embedded AI content controller.
+    AWECommentContainerViewController *sheet=[AWECommentContainerViewController new];sheet.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=sheet;
+    UIScrollView *commentList=[[UIScrollView alloc] initWithFrame:CGRectMake(0,150,width,400)];[sheet.view addSubview:commentList];
+    _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *comment=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(12,30,width-24,50)];comment.text=@"视频很好，谢谢！";[commentList addSubview:comment];
+    [sheet viewDidAppear:NO];mediaWait(^BOOL {return findID(sheet.view,@"comments-language")!=nil;});UIView *commentPanel=findID(sheet.view,@"comments-translation-panel");check(commentPanel && !commentPanel.hidden,@"comment reader exists before embedded AI tab is opened");
+    AWEFeedDoubleColumnCommentAIParseViewController *embedded=[AWEFeedDoubleColumnCommentAIParseViewController new];[sheet addChildViewController:embedded];embedded.view.frame=CGRectMake(0,250,width,self.window.bounds.size.height-250);[sheet.view addSubview:embedded.view];[embedded didMoveToParentViewController:sheet];
+    UIScrollView *analysisScroll=[[UIScrollView alloc] initWithFrame:embedded.view.bounds];analysisScroll.contentSize=CGSizeMake(width,1400);[embedded.view addSubview:analysisScroll];
+    ServalMarkdownView *embeddedMarkdown=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(12,12,width-24,1200)];embeddedMarkdown.content=@"这是嵌入评论窗口中的分析，必须完整翻译，保留所有信息。";[analysisScroll addSubview:embeddedMarkdown];
+    UILabel *originalText=label(embeddedMarkdown,embeddedMarkdown.content,0);originalText.numberOfLines=0;originalText.frame=CGRectMake(0,0,width-24,180);
+    DGGeminiTranslationFixtureConfiguration(translationMock,nil);atomic_store(&expandedAnalysis,YES);[embedded commentAIParseTabDidEnter];DGGeminiTranslationFixtureTick(embedded,NSProcessInfo.processInfo.systemUptime+4);DGGeminiTranslationFixtureTick(embedded,NSProcessInfo.processInfo.systemUptime+5);
+    UITextView *expandedText=(id)findID(embedded.view,@"gemini-translation-text");mediaWait(^BOOL {return expandedText.text.length==1401;});[sheet.view layoutIfNeeded];
+    check(expandedText.text.length==1401 && !expandedText.hidden && commentPanel.hidden,@"embedded AI displays full 1401-character translation and hides the sibling comment switch");
+    UIView *embeddedPanel=findID(embedded.view,@"gemini-translation-panel");check(embeddedPanel.frame.origin.y<=13 && CGRectGetMaxY(expandedText.frame)<CGRectGetMinY(findID(embedded.view,@"gemini-translation-language").superview.frame),@"embedded AI reader starts at the renderer origin and docks controls below the reading area");
+    [self saveWindowImage:@"ui-ai-embedded.png"];
+    UISegmentedControl *embeddedLanguage=(id)findID(embedded.view,@"gemini-translation-language");embeddedLanguage.selectedSegmentIndex=1;[embeddedLanguage sendActionsForControlEvents:UIControlEventValueChanged];[embedded.view layoutIfNeeded];
+    check(expandedText.hidden && findID(embedded.view,@"gemini-translation-status").hidden && analysisScroll.contentInset.bottom>0 && commentPanel.hidden,@"original embedded analysis has a single docked switch, no overlaid error text, and scroll space for its final lines");
+    [embedded commentAIParseTabWillLeave];check(!commentPanel.hidden && fabs(analysisScroll.contentInset.bottom)<0.5,@"leaving embedded AI restores comment reader and native scroll insets");
+    atomic_store(&expandedAnalysis,NO);atomic_store(&emptyAnalysis,YES);embeddedMarkdown.content=@"另一段分析用来测试空白响应。";DGGeminiTranslationFixtureConfiguration(translationMock,nil);[embedded commentAIParseTabDidEnter];DGGeminiTranslationFixtureTick(embedded,NSProcessInfo.processInfo.systemUptime+4);DGGeminiTranslationFixtureTick(embedded,NSProcessInfo.processInfo.systemUptime+5);
+    mediaWait(^BOOL {return [((UILabel *)findID(embedded.view,@"gemini-translation-status")).text containsString:@"chưa dịch đoạn"];});
+    check(!expandedText.hidden && !findID(embedded.view,@"gemini-translation-retry").hidden && commentPanel.hidden,@"incomplete prose shows a dedicated readable error pane with retry, never an overlay on original analysis");
+    [self saveWindowImage:@"ui-ai-translation-error.png"];[embedded commentAIParseTabWillLeave];atomic_store(&emptyAnalysis,NO);DGCommentsStop(sheet);
     }
 }
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {

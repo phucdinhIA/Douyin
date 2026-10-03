@@ -12,6 +12,8 @@ static BOOL sessionRenew;
 static BOOL failGemini;
 static BOOL residueGemini;
 static BOOL throttleGTX;
+static BOOL manyCues;
+static NSMutableArray *observedBatches;
 static void check(BOOL value,NSString *name) {++checks;if (!value) {NSLog(@"FAIL: %@",name);exit(1);}}
 static NSData *json(id root) {return [NSJSONSerialization dataWithJSONObject:root options:NSJSONWritingFragmentsAllowed error:NULL];}
 static NSData *requestData(NSURLRequest *request) {
@@ -34,7 +36,7 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
     if ([host isEqual:@"api.apify.com"]) {
         atomic_fetch_add(&apifyCalls,1);if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Bearer fixture-apify"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);
         if ([request.URL.path containsString:@"/runs"]) {status=201;data=json(@{@"data":@{@"id":@"run1",@"status":@"SUCCEEDED",@"defaultDatasetId":@"data1"}});}
-        else data=json(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"audioUrl":@"https://wrong-track.example/music.mp3",@"duration":asrMode==5 ? @2000 : asrMode>=4 ? @8 : asrMode ? @2 : @10,@"errMsg":@""}]);
+        else data=json(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"audioUrl":@"https://wrong-track.example/music.mp3",@"duration":manyCues ? @130 : asrMode==5 ? @2000 : asrMode>=4 ? @8 : asrMode ? @2 : @10,@"errMsg":@""}]);
     } else if ([host isEqual:@"api.deepgram.com"]) {
         atomic_fetch_add(&deepgramCalls,1);NSDictionary *body=[NSJSONSerialization JSONObjectWithData:requestData(request) options:0 error:NULL];
         BOOL binary=![[request valueForHTTPHeaderField:@"Content-Type"] isEqual:@"application/json"];
@@ -45,6 +47,7 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
         else if (asrMode>=4 && asrMode!=6) data=timedWords(@[@{@"word":@"你好",@"start":@0.2,@"end":@1.5}],2);
         else if (asrMode && (!binary || asrMode==2)) data=timedWords(@[],2);
         else if (asrMode) data=timedWords(@[@{@"word":@"你好",@"start":@0.2,@"end":@1.5}],2);
+        else if (manyCues) {NSMutableArray *words=[NSMutableArray new];for (NSUInteger i=0;i<32;i++) [words addObject:@{@"word":@"你好。",@"start":@(i*4),@"end":@(i*4+1)}];data=timedWords(words,130);}
         else data=json(transcript());
     } else if ([host isEqual:@"www.douyin.com"]) {
         atomic_fetch_add(&sourceCalls,1);data=[NSData dataWithContentsOfFile:asrMode>=4 && asrMode!=5 ? @"tests/fixtures/source-audio-tail.mp4" : @"tests/fixtures/source-audio.mp4"];
@@ -54,7 +57,7 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
         if ([request.URL.path isEqual:@"/login"]) {atomic_fetch_add(&loginCalls,1);headers=@{@"Set-Cookie":@"SESSION=fresh-backend; Path=/; Secure; HttpOnly"};data=json(@{@"message":@"ok"});}
         else {
         atomic_fetch_add(&claudeCalls,1);if ((!sessionRenew && ![[request valueForHTTPHeaderField:@"Ck"] isEqual:@"synthetic-backend"]) || [request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);
-        NSDictionary *body=[NSJSONSerialization JSONObjectWithData:requestData(request) options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];for (NSDictionary *cue in body[@"subtitles"]) [rows addObject:@{@"translateResult":residueGemini && cue==[body[@"subtitles"] lastObject] ? @"Xin ch\u00e0o \u4e2d\u56fd" : @"Xin ch\u00e0o Vi\u1ec7t Nam",@"useAiTranslate":@YES}];
+        NSDictionary *body=[NSJSONSerialization JSONObjectWithData:requestData(request) options:0 error:NULL];if (manyCues) [observedBatches addObject:body];NSMutableArray *rows=[NSMutableArray new];for (NSDictionary *cue in body[@"subtitles"]) [rows addObject:@{@"translateResult":residueGemini && cue==[body[@"subtitles"] lastObject] ? @"Xin ch\u00e0o \u4e2d\u56fd" : @"Xin ch\u00e0o Vi\u1ec7t Nam",@"useAiTranslate":@YES}];
         status=failGemini ? 429 : sessionRenew && [[request valueForHTTPHeaderField:@"Ck"] isEqual:@"expired-backend"] ? 401 : 200;data=json(@{@"subtitleTranslateResults":rows});}
     } else if ([host isEqual:@"generativelanguage.googleapis.com"]) {
         atomic_fetch_add(&geminiCalls,1);if (![[request valueForHTTPHeaderField:@"x-goog-api-key"] isEqual:@"fixture-gemini"] || [request valueForHTTPHeaderField:@"Authorization"]) atomic_fetch_add(&unsafeHeaders,1);
@@ -180,6 +183,25 @@ int main(void) {@autoreleasepool {
     NSArray *parsedClaude=DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"translateResult":@"Xin chào",@"useAiTranslate":@YES}]}),200,one,&error);
     check([parsedClaude[0][@"id"] isEqual:@0] && [parsedClaude[0][@"start"] isEqual:@0] && [parsedClaude[0][@"end"] isEqual:@1],@"Claude output retains authoritative local IDs and timestamps");
     check(!DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[]}),200,one,&error) && !DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"index":@9,@"translateResult":@"Xin chào",@"useAiTranslate":@YES}]}),200,one,&error),@"Claude count mismatch and wrong explicit index fail before changing the track");
+    NSString *expanded=[@"Bản dịch đầy đủ. " stringByPaddingToLength:1401 withString:@"Bản dịch đầy đủ. " startingAtIndex:0];
+    NSData *expandedResponse=json(@{@"subtitleTranslateResults":@[@{@"translateResult":expanded,@"useAiTranslate":@NO}]});
+    check([DGClaudeAnalysisAnswer(expandedResponse,200,one,&error) isEqual:expanded],@"live 400-character Mandarin to 1401-character prose expansion is accepted without a subtitle budget or engine-flag requirement");
+    check([DGClaudeAnswer(expandedResponse,200,one,&error)[0][@"text"] isEqual:expanded],@"expanded subtitle text is paginated by the UI rather than rejected at 500 characters");
+    NSArray *pair=@[one[0],@{@"id":@7,@"start":@2,@"end":@3,@"text":@"谢谢"}];
+    NSData *reversed=json(@{@"subtitleTranslateResults":@[@{@"index":@"7",@"translateResult":@"Cảm ơn",@"start":@999,@"end":@1000},@{@"index":@"0",@"translateResult":@"Xin chào"}]});
+    NSArray *mapped=DGClaudeAnswer(reversed,200,pair,&error);
+    check([mapped[0][@"text"] isEqual:@"Xin chào"] && [mapped[1][@"text"] isEqual:@"Cảm ơn"] && [mapped[1][@"start"] isEqual:@2] && [mapped[1][@"end"] isEqual:@3],@"explicit reordered decimal-string IDs map to the correct source; provider timestamps never replace source times");
+    check(!DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"index":@0,@"translateResult":@"Một"},@{@"index":@0,@"translateResult":@"Hai"}]}),200,pair,&error),@"duplicate response IDs never attach one translation to two scenes");
+    check(!DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"index":@0,@"translateResult":@"Một"},@{@"translateResult":@"Hai"}]}),200,pair,&error),@"mixed indexed and unindexed responses cannot shift scenes");
+    check(!DGClaudeAnalysisAnswer(json(@{@"subtitleTranslateResults":@[@{@"translateResult":@" \n"}]}),200,one,&error) && [error containsString:@"chưa dịch đoạn"],@"empty prose reports missing text without an unrelated subtitle timing error");
+    check(!DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"translateResult":@"Dịch 中国"}]}),200,one,&error),@"engine flags may be absent but untranslated Mandarin is still rejected");
+    check(!DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"translateResult":[expanded stringByPaddingToLength:2001 withString:@"x" startingAtIndex:0]}]}),200,one,&error),@"subtitle expansion has a finite 2000-character bound and never truncates silently");
+    NSString *analysis=[@"这是一个完整的分析。\n" stringByPaddingToLength:1200 withString:@"这是一个完整的分析。\n" startingAtIndex:0];NSArray *segments=DGClaudeAnalysisSegments(analysis);NSMutableString *joined=[NSMutableString new];for (NSDictionary *segment in segments) [joined appendString:segment[@"text"]];
+    check([joined isEqual:analysis] && segments.count>=3 && !DGClaudeAnalysisSegments(@" \n"),@"analysis segmentation preserves every character and prefers sentence or paragraph boundaries");
+    NSArray *targets=[shortTrack subarrayWithRange:NSMakeRange(20,8)];NSDictionary *bounded=DGClaudeBodyWithContext(targets,shortTrack,@"douyin_context",@"");
+    check([bounded[@"subtitles"] count]==8 && [bounded[@"subtitles"][0][@"index"] isEqual:@20] && [bounded[@"subtitles"][0][@"contextBefore"] count]==20 && [bounded[@"subtitles"][7][@"contextAfter"] count]==122,@"bounded eight-target batch retains all earlier and later short-video context without translating it again");
+    NSDictionary *metrics=DGClaudeResponseDiagnostics(expandedResponse,200,1);NSString *metricText=[[NSString alloc] initWithData:json(metrics) encoding:NSUTF8StringEncoding];
+    check([metrics[@"largest_row_characters"] isEqual:@1401] && [metrics[@"returned_rows"] isEqual:@1] && ![metricText containsString:@"Bản dịch"],@"response diagnostics contain counts and sizes without translated text");
     NSString *largeAnswer=[@"x" stringByPaddingToLength:40000 withString:@"x" startingAtIndex:0];NSData *largeData=json(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":largeAnswer}]},@"finishReason":@"STOP"}]});
     check([DGGeminiTranslationAnswerLimit(largeData,200,500000,&error) length]==40000 && !DGGeminiTranslationAnswer(largeData,200,&error),@"subtitle output beyond 32k is complete while AI-analysis limit stays bounded");
     NSURL *cacheURL=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString]];DGCaptionStore *large=[[DGCaptionStore alloc] initWithURL:cacheURL];NSString *longText=[@"x" stringByPaddingToLength:40000 withString:@"x" startingAtIndex:0];[large saveTranslation:longText source:@"long-video"];
@@ -259,5 +281,14 @@ int main(void) {@autoreleasepool {
     failGemini=YES;__block BOOL limited=NO;int beforeLimit=atomic_load(&claudeCalls);[backend post:@"/api/v2/ai-translate/translate" body:DGClaudeBody(one,@"douyin_auth_test",@"") completion:^(__unused NSData *data,NSInteger status,__unused NSString *failure) {limited=status==429;}];waitFor(^BOOL{return limited;});
     check(limited && atomic_load(&claudeCalls)==beforeLimit+1,@"backend quota limit makes no automatic paid retry");[backend cancel];failGemini=NO;sessionRenew=NO;[NSUserDefaults.standardUserDefaults removeObjectForKey:@"DGTransduckSession:renew@example.test"];
     [NSUserDefaults.standardUserDefaults removeObjectForKey:@"DGGTXBlockedUntil"];
+    manyCues=YES;observedBatches=[NSMutableArray new];stage=nil;result=nil;__block NSUInteger partialCount=0;
+    client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
+    client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)failure;stage=state;result=track;if ([state isEqual:@"partial"] && !partialCount) partialCount=track.count;};
+    [client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
+    check([stage isEqual:@"ready"] && result.count==32 && partialCount==8 && observedBatches.count==3 && [observedBatches[1][@"subtitles"] count]==12,@"short video with many cues emits eight complete initial cues before two bounded twelve-cue batches");
+    check([observedBatches[0][@"subtitles"][7][@"contextAfter"] count]==24 && [observedBatches[2][@"subtitles"][0][@"contextBefore"] count]==20,@"each short-video target batch retains full transcript context on its boundary rows");
+    NSDictionary *diagnostic=client.timingDiagnostics;
+    check([diagnostic[@"translation_check"] isEqual:@"accepted"] && [diagnostic[@"translation_response"][@"expected_rows"] isEqual:@12] && [diagnostic[@"translation_seconds"] doubleValue]>=0,@"successful caption translation records response counts latency and stage separately from ASR timing");
+    manyCues=NO;observedBatches=nil;[client cancel];
     printf("Media contract checks passed: %lu\n",(unsigned long)checks);
 }return 0;}

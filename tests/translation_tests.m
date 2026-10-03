@@ -37,6 +37,10 @@ int main(void) {@autoreleasepool {
     check(sends==1 && [state isEqual:@"cached"],@"reopening exact analysis uses cached translation without API");
     DGTranslationStore *reloaded=[[DGTranslationStore alloc] initWithURL:url];
     check([[reloaded translationForSource:source] isEqual:@"Bản dịch 42"],@"completed cache survives process restart");
+    NSString *expanded=[@"x" stringByPaddingToLength:80000 withString:@"x" startingAtIndex:0];[store saveTranslation:expanded source:@"long expanded analysis"];
+    DGTranslationStore *expandedCache=[[DGTranslationStore alloc] initWithURL:url];check([[expandedCache translationForSource:@"long expanded analysis"] length]==80000,@"complete Vietnamese prose expansion beyond 32k persists within a bounded 96k budget");
+    [store saveTranslation:[expanded stringByPaddingToLength:96001 withString:@"x" startingAtIndex:0] source:@"oversized"];
+    check(![store translationForSource:@"oversized"],@"oversized prose cache entry is rejected without silent truncation");
     check(![reloaded translationForSource:@"其他分析"],@"different video analysis cannot reuse wrong translation");
     [session leave];[session enterAt:30];[session observeSource:@"新分析" at:30];[session observeSource:@"新分析" at:34];
     void (^late)(NSString *,NSString *)=[reply copy];[session leave];late(@"late answer",nil);
@@ -51,7 +55,7 @@ int main(void) {@autoreleasepool {
     [session leave];session.sourceWaitTimeout=60;[session enterAt:200];[session observeSource:@"" at:225];check(session.waiting && sends==before+1,@"cold local OCR can initialize beyond the native renderer's short deadline without a paid request");[session observeSource:@"" at:260];check(!session.waiting && [state isEqual:@"failed"] && sends==before+1,@"extended OCR capture still has a finite sixty-second deadline");
     check(cancels>=4,@"all leave paths call transport cancellation");
     NSDictionary *persisted=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:url] options:0 error:NULL];
-    check([persisted[@"entries"] count]==1,@"cache contains digest-keyed completed entries");
+    check([persisted[@"entries"] count]==2,@"cache contains digest-keyed completed entries");
     NSString *serialized=[[NSString alloc] initWithData:json(persisted) encoding:NSUTF8StringEncoding];
     check(![serialized containsString:source] && ![serialized containsString:@"api_key"],@"cache excludes raw original and credentials");
     for (NSUInteger i=0;i<40;++i) [store saveTranslation:@"dịch" source:[NSString stringWithFormat:@"source%lu",(unsigned long)i]];

@@ -2,6 +2,7 @@
 #import "DGGemini.h"
 #import "DGTranslation.h"
 #import "DGTransduck.h"
+#import "DGComments.h"
 #import <WebKit/WebKit.h>
 #import <Vision/Vision.h>
 #import <CommonCrypto/CommonDigest.h>
@@ -258,6 +259,11 @@ void DGGeminiPresentFrom(UIViewController *presenter) {
 @property(nonatomic,strong) UILabel *status;
 @property(nonatomic,strong) UISegmentedControl *language;
 @property(nonatomic,strong) UIButton *retry;
+@property(nonatomic,strong) UIView *toolbar;
+@property(nonatomic,strong) NSLayoutConstraint *panelTop,*retryHeight,*statusGap,*statusHiddenHeight;
+@property(nonatomic,weak) UIScrollView *nativeScroll;
+@property(nonatomic) CGFloat originalBottomSpace;
+@property(nonatomic,copy) NSDictionary *translationDiagnostics;
 @property(nonatomic,strong) NSTimer *timer;
 @property(nonatomic,strong) DGTranslationSession *session;
 @property(nonatomic,strong) DGGeminiClient *client;
@@ -347,14 +353,29 @@ static __weak DGGeminiEntry *DGActiveTranslation;
 }
 - (void)renderLanguage {
     BOOL original=self.language.selectedSegmentIndex==1;
-    BOOL showTranslation=self.hasTranslation && !original;
-    self.translation.hidden=!showTranslation;self.status.hidden=NO;self.retry.hidden=![self.retry.accessibilityValue isEqual:@"available"];
-    self.panel.backgroundColor=showTranslation ? UIColor.systemBackgroundColor : UIColor.clearColor;
-    self.status.backgroundColor=UIColor.systemBackgroundColor;self.panel.passthrough=!showTranslation;
+    self.translation.hidden=original;self.status.hidden=original;
+    BOOL retry=!original && [self.retry.accessibilityValue isEqual:@"available"];self.retry.hidden=!retry;self.retryHeight.constant=retry ? 44 : 0;
+    self.statusGap.constant=original ? 0 : 8;
+    self.statusHiddenHeight.active=original;
+    self.status.textColor=original ? UIColor.clearColor : UIColor.secondaryLabelColor;
+    self.panel.backgroundColor=original ? UIColor.clearColor : UIColor.systemBackgroundColor;
+    self.toolbar.backgroundColor=UIColor.systemBackgroundColor;self.panel.passthrough=original;
+    [self.owner.view layoutIfNeeded];
+    UIScrollView *scroll=self.nativeScroll;
+    if (!scroll) {
+        NSMutableArray *nodes=[NSMutableArray arrayWithObject:self.owner.view];CGFloat area=0;NSUInteger visited=0;
+        while (nodes.count && visited++<1200) {UIView *v=nodes.lastObject;[nodes removeLastObject];if (v.hidden || v==self.panel || v==self.button) continue;
+            if ([v isKindOfClass:UIScrollView.class] && ![v isKindOfClass:UITextView.class] && DGAIVisible(v,self.owner.view)) {CGFloat size=v.bounds.size.width*v.bounds.size.height;if (size>area) {area=size;scroll=(id)v;}}
+            [nodes addObjectsFromArray:v.subviews];
+        }self.nativeScroll=scroll;
+    }
+    CGFloat needed=0;if (original && scroll) {CGRect frame=[scroll convertRect:scroll.bounds toView:self.owner.view];needed=MAX(0,CGRectGetMaxY(frame)-CGRectGetMinY([self.toolbar convertRect:self.toolbar.bounds toView:self.owner.view]));}
+    CGFloat change=needed-self.originalBottomSpace;if (scroll && fabs(change)>0.5) {UIEdgeInsets inset=scroll.contentInset;inset.bottom+=change;scroll.contentInset=inset;UIEdgeInsets indicator=scroll.verticalScrollIndicatorInsets;indicator.bottom+=change;scroll.verticalScrollIndicatorInsets=indicator;self.originalBottomSpace=needed;}
 }
 - (void)start {
     if (self.session.active || !DGOn()) return;
     if (DGActiveTranslation!=self) [DGActiveTranslation stop];DGActiveTranslation=self;
+    DGCommentsSetAIActive(self.owner,YES);
     if (!DGTranslationCache) {
         NSURL *base=[NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
         DGTranslationCache=[[DGTranslationStore alloc] initWithURL:[base URLByAppendingPathComponent:@"DouyinGuest/ai-claude-vi-v1.json"]];
@@ -371,16 +392,13 @@ static __weak DGGeminiEntry *DGActiveTranslation;
             nil
 #endif
         ];
-        NSMutableArray *cues=[NSMutableArray new];NSUInteger offset=0;
-        while (offset<source.length) {
-            NSUInteger length=MIN((NSUInteger)400,source.length-offset);NSRange range=[source rangeOfComposedCharacterSequencesForRange:NSMakeRange(offset,length)];
-            NSUInteger index=cues.count;[cues addObject:@{@"id":@(index),@"start":@(index),@"end":@(index+1),@"text":[source substringWithRange:range]}];offset=NSMaxRange(range);
-        }
+        NSArray *cues=DGClaudeAnalysisSegments(source);
         if (DGRecordAI) DGRecordAI(@"AI Claude translation sent",1);
         NSData *sourceBytes=[source dataUsingEncoding:NSUTF8StringEncoding];unsigned char digest[CC_SHA256_DIGEST_LENGTH];CC_SHA256(sourceBytes.bytes,(CC_LONG)sourceBytes.length,digest);NSMutableString *identity=[NSMutableString stringWithString:@"douyin_ai_"];for (NSUInteger i=0;i<sizeof(digest);i++) [identity appendFormat:@"%02x",digest[i]];
         [entry.translator post:@"/api/v2/ai-translate/translate" body:DGClaudeBody(cues,identity,@"Douyin AI analysis") completion:^(NSData *data,NSInteger status,NSString *failure) {
-            NSArray *translated=failure ? nil : DGClaudeAnswer(data,status,cues,&failure);NSMutableArray *pieces=[NSMutableArray new];for (NSDictionary *cue in translated) [pieces addObject:cue[@"text"]];NSString *answer=translated ? [pieces componentsJoinedByString:@"\n\n"] : nil;
+            NSString *answer=failure ? nil : DGClaudeAnalysisAnswer(data,status,cues,&failure);
             DGGeminiEntry *current=weakSelf;[current.translator cancel];current.translator=nil;
+            current.translationDiagnostics=DGClaudeResponseDiagnostics(data,status,cues.count);
             if (!DGOn() || !current.tabEntered || !current.owner.view.window || current.owner.view.hidden) {[current stop];return;}
             if (![DGSummaryForController(current.owner) isEqualToString:source]) {
                 completion(nil,@"Phân tích đã thay đổi trong lúc dịch. Bấm Dịch lại để dịch nội dung mới.");return;
@@ -393,6 +411,7 @@ static __weak DGGeminiEntry *DGActiveTranslation;
         BOOL ready=[state isEqual:@"ready"] || [state isEqual:@"cached"];
         entry.hasTranslation=ready;
         if (ready && !entry.userChoseLanguage) entry.language.selectedSegmentIndex=0;
+        if ([state isEqual:@"failed"] && !entry.userChoseLanguage) entry.language.selectedSegmentIndex=0;
         entry.status.text=ready ? (entry.capturedVisibleOnly ? @"Đã dịch vùng phân tích đang hiển thị · Claude" : [state isEqual:@"cached"] ? @"Bản dịch đã lưu · Không gọi API lại" : @"Đã dịch · Claude Sonnet 5") : text;
         // The renderer supplies HTML highlight markers; UITextView displays plain text.
         NSString *plain=text;
@@ -426,6 +445,15 @@ static __weak DGGeminiEntry *DGActiveTranslation;
         [self.session observeSource:@"" at:time];return;
     }
     self.hadWindow=YES;
+    // Use the rendered analysis origin, not an extra fixed offset inside an
+    // already embedded AI controller. Preserve the native tab/header above it.
+    NSMutableArray *nodes=[NSMutableArray arrayWithObject:self.owner.view];NSUInteger visited=0;CGFloat first=CGFLOAT_MAX;
+    while (nodes.count && visited++<1200) {UIView *v=nodes.lastObject;[nodes removeLastObject];if (v.hidden || v==self.panel || v==self.button) continue;
+        NSString *name=NSStringFromClass(v.class);
+        if (([name containsString:@"Markdown"] || [v isKindOfClass:WKWebView.class]) && DGAIVisible(v,self.owner.view)) first=MIN(first,CGRectGetMinY([v convertRect:v.bounds toView:self.owner.view]));
+        [nodes addObjectsFromArray:v.subviews];
+    }
+    if (first!=CGFLOAT_MAX) self.panelTop.constant=MAX(0,first-self.owner.view.safeAreaInsets.top);
     if (DGRecordAI) DGRecordAI(@"Gemini translation poll",1);
     BOOL complete=NO;NSString *source=DGSummaryForControllerReady(self.owner,&complete);
     if (complete && DGRecordAI) DGRecordAI(@"Gemini capture complete",1);
@@ -440,6 +468,8 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     (void)notification;if (self.tabEntered && self.owner.view.window && !self.owner.view.hidden) [self start];
 }
 - (void)stop {
+    DGCommentsSetAIActive(self.owner,NO);
+    if (self.originalBottomSpace && self.nativeScroll) {UIEdgeInsets inset=self.nativeScroll.contentInset;inset.bottom-=self.originalBottomSpace;self.nativeScroll.contentInset=inset;UIEdgeInsets indicator=self.nativeScroll.verticalScrollIndicatorInsets;indicator.bottom-=self.originalBottomSpace;self.nativeScroll.verticalScrollIndicatorInsets=indicator;self.originalBottomSpace=0;}
     [self.ocrRequest cancel];self.ocrRequest=nil;
     self.captureGeneration++;self.capturePending=NO;
     [self.timer invalidate];self.timer=nil;[self.session leave];self.panel.hidden=YES;self.button.hidden=YES;
@@ -469,13 +499,21 @@ static void DGAttachEntry(UIViewController *owner) {
         entry.status=[UILabel new];entry.status.numberOfLines=0;entry.status.font=[UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];entry.status.textColor=UIColor.secondaryLabelColor;entry.status.accessibilityIdentifier=@"gemini-translation-status";
         entry.translation=[UITextView new];entry.translation.editable=NO;entry.translation.font=[UIFont preferredFontForTextStyle:UIFontTextStyleBody];entry.translation.accessibilityIdentifier=@"gemini-translation-text";
         entry.retry=[UIButton buttonWithType:UIButtonTypeSystem];[entry.retry setTitle:@"Dịch lại" forState:UIControlStateNormal];entry.retry.accessibilityIdentifier=@"gemini-translation-retry";[entry.retry addTarget:entry action:@selector(retryTranslation) forControlEvents:UIControlEventTouchUpInside];
-        for (UIView *view in @[entry.language,entry.status,entry.translation,entry.retry]) {view.translatesAutoresizingMaskIntoConstraints=NO;[entry.panel addSubview:view];}
+        entry.toolbar=[UIView new];entry.toolbar.translatesAutoresizingMaskIntoConstraints=NO;entry.toolbar.layer.cornerRadius=10;entry.toolbar.clipsToBounds=YES;[entry.panel addSubview:entry.toolbar];
+        for (UIView *view in @[entry.language,entry.status,entry.retry]) {view.translatesAutoresizingMaskIntoConstraints=NO;[entry.toolbar addSubview:view];}
+        entry.translation.translatesAutoresizingMaskIntoConstraints=NO;[entry.panel addSubview:entry.translation];
+        entry.panelTop=[entry.panel.topAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.topAnchor constant:64];
+        entry.retryHeight=[entry.retry.heightAnchor constraintEqualToConstant:0];
+        entry.statusGap=[entry.status.topAnchor constraintEqualToAnchor:entry.language.bottomAnchor constant:8];
+        entry.statusHiddenHeight=[entry.status.heightAnchor constraintEqualToConstant:0];
+        [entry.status.heightAnchor constraintLessThanOrEqualToConstant:80].active=YES;
         [NSLayoutConstraint activateConstraints:@[
-            [entry.panel.topAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.topAnchor constant:64],[entry.panel.bottomAnchor constraintEqualToAnchor:entry.button.topAnchor constant:-8],[entry.panel.leadingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.leadingAnchor constant:8],[entry.panel.trailingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.trailingAnchor constant:-8],
-            [entry.language.topAnchor constraintEqualToAnchor:entry.panel.topAnchor constant:8],[entry.language.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:12],[entry.language.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-12],
-            [entry.status.topAnchor constraintEqualToAnchor:entry.language.bottomAnchor constant:8],[entry.status.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:12],[entry.status.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-12],
-            [entry.translation.topAnchor constraintEqualToAnchor:entry.status.bottomAnchor constant:8],[entry.translation.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:4],[entry.translation.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-4],[entry.translation.bottomAnchor constraintEqualToAnchor:entry.retry.topAnchor],
-            [entry.retry.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:12],[entry.retry.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-12],[entry.retry.bottomAnchor constraintEqualToAnchor:entry.panel.bottomAnchor],[entry.retry.heightAnchor constraintEqualToConstant:44]]];
+            entry.panelTop,[entry.panel.bottomAnchor constraintEqualToAnchor:entry.button.topAnchor constant:-8],[entry.panel.leadingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.leadingAnchor constant:8],[entry.panel.trailingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.trailingAnchor constant:-8],
+            [entry.toolbar.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor],[entry.toolbar.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor],[entry.toolbar.bottomAnchor constraintEqualToAnchor:entry.panel.bottomAnchor],
+            [entry.language.topAnchor constraintEqualToAnchor:entry.toolbar.topAnchor constant:8],[entry.language.leadingAnchor constraintEqualToAnchor:entry.toolbar.leadingAnchor constant:12],[entry.language.trailingAnchor constraintEqualToAnchor:entry.toolbar.trailingAnchor constant:-12],
+            entry.statusGap,[entry.status.leadingAnchor constraintEqualToAnchor:entry.toolbar.leadingAnchor constant:12],[entry.status.trailingAnchor constraintEqualToAnchor:entry.toolbar.trailingAnchor constant:-12],
+            [entry.translation.topAnchor constraintEqualToAnchor:entry.panel.topAnchor constant:4],[entry.translation.leadingAnchor constraintEqualToAnchor:entry.panel.leadingAnchor constant:4],[entry.translation.trailingAnchor constraintEqualToAnchor:entry.panel.trailingAnchor constant:-4],[entry.translation.bottomAnchor constraintEqualToAnchor:entry.toolbar.topAnchor constant:-4],
+            [entry.retry.topAnchor constraintEqualToAnchor:entry.status.bottomAnchor],[entry.retry.leadingAnchor constraintEqualToAnchor:entry.toolbar.leadingAnchor constant:12],[entry.retry.trailingAnchor constraintEqualToAnchor:entry.toolbar.trailingAnchor constant:-12],[entry.retry.bottomAnchor constraintEqualToAnchor:entry.toolbar.bottomAnchor constant:-8],entry.retryHeight]];
         objc_setAssociatedObject(owner,&DGEntryKey,entry,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         [NSNotificationCenter.defaultCenter addObserver:entry selector:@selector(becameActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     }
@@ -527,5 +565,5 @@ void DGGeminiInstall(void (^record)(NSString *,NSUInteger)) {
     }
 }
 NSDictionary *DGGeminiSnapshot(void) {
-    return @{@"configured":@([DGConfig[@"api_key"] isKindOfClass:NSString.class] && [DGConfig[@"api_key"] length]>0),@"enabled":@(DGOn()),@"native_send_hook":@(DGSendHookInstalled),@"native_entry_hook":@(DGEntryHookInstalled),@"native_leave_hook":@(DGLeaveHookInstalled),@"translation_disappear_hook":@(DGDisappearHookInstalled),@"translation_active":@(DGActiveTranslation.session.active),@"translation_model":DGClaudeModel,@"translation_cache_entries_max":@32,@"translation_automatic_retries":@0,@"model":[NSUserDefaults.standardUserDefaults boolForKey:@"DGGeminiFast"] ? DGGeminiFastModel : DGGeminiQualityModel};
+    return @{@"configured":@([DGConfig[@"api_key"] isKindOfClass:NSString.class] && [DGConfig[@"api_key"] length]>0),@"enabled":@(DGOn()),@"native_send_hook":@(DGSendHookInstalled),@"native_entry_hook":@(DGEntryHookInstalled),@"native_leave_hook":@(DGLeaveHookInstalled),@"translation_disappear_hook":@(DGDisappearHookInstalled),@"translation_active":@(DGActiveTranslation.session.active),@"translation_response":DGActiveTranslation.translationDiagnostics ?: @{},@"translation_model":DGClaudeModel,@"translation_cache_entries_max":@32,@"translation_automatic_retries":@0,@"model":[NSUserDefaults.standardUserDefaults boolForKey:@"DGGeminiFast"] ? DGGeminiFastModel : DGGeminiQualityModel};
 }
