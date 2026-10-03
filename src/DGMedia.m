@@ -392,7 +392,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 - (void)translateComment:(NSString *)source completion:(void (^)(NSString *,NSString *))completion {
     [self translateComments:source ? @[source] : @[] completion:^(NSDictionary *answers,NSString *failure) {completion(source ? answers[source] : nil,failure);}];
 }
-- (void)translateComments:(NSArray *)sources completion:(void (^)(NSDictionary *,NSString *))completion {
+- (void)translateComments:(NSArray<NSString *> *)sources completion:(void (^)(NSDictionary<NSString *,NSString *> *,NSString *))completion {
     [self cancel];if (!DGGTXBatchRequest(sources)) {completion(nil,@"Bình luận không hợp lệ.");return;}
     NSMutableDictionary *answers=[NSMutableDictionary new];NSMutableArray *pending=[NSMutableArray new];
     for (NSString *source in sources) {NSString *cached=[self.store translationForSource:[@"gtx-zh-vi-v1|" stringByAppendingString:source]];if (cached) answers[source]=cached;else if (![pending containsObject:source]) [pending addObject:source];}
