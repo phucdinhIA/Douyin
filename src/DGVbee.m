@@ -110,16 +110,28 @@ static NSString *DGVoiceDigest(NSString *text) {
             if (![track insertTimeRange:CMTimeRangeMake(kCMTimeZero,length) ofTrack:source atTime:position error:NULL]) {failure=@"Không ghép được mốc audio Vbee.";break;}
             if (duration>slot) [track scaleTimeRange:CMTimeRangeMake(position,length) toDuration:CMTimeMakeWithSeconds(slot,600)];
         }
-        double end=CMTimeGetSeconds(composition.duration);
-        if (isfinite(timelineDuration) && timelineDuration>end) [composition insertEmptyTimeRange:CMTimeRangeMake(composition.duration,CMTimeMakeWithSeconds(timelineDuration-end,600))];
+        double end=CMTimeGetSeconds(composition.duration);NSURL *padding=nil;
+        // M4A export drops a trailing empty composition range. Insert actual silent
+        // PCM so the queued file ends exactly at the next video's chunk offset.
+        if (!failure && isfinite(timelineDuration) && timelineDuration>end) {
+            padding=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@"-silence.caf"]]];
+            AVAudioFormat *format=[[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatInt16 sampleRate:16000 channels:1 interleaved:YES];
+            AVAudioFile *silent=[[AVAudioFile alloc] initForWriting:padding settings:format.settings commonFormat:AVAudioPCMFormatInt16 interleaved:YES error:NULL];
+            AVAudioPCMBuffer *buffer=[[AVAudioPCMBuffer alloc] initWithPCMFormat:format frameCapacity:4096];memset(buffer.int16ChannelData[0],0,4096*sizeof(int16_t));
+            NSUInteger remaining=(NSUInteger)ceil((timelineDuration-end)*16000);BOOL written=silent!=nil;
+            while (written && remaining) {buffer.frameLength=(AVAudioFrameCount)MIN(remaining,4096);written=[silent writeFromBuffer:buffer error:NULL];remaining-=buffer.frameLength;}silent=nil;
+            AVURLAsset *asset=[AVURLAsset URLAssetWithURL:padding options:nil];AVAssetTrack *source=[asset tracksWithMediaType:AVMediaTypeAudio].firstObject;
+            if (!written || !source || ![track insertTimeRange:CMTimeRangeMake(kCMTimeZero,CMTimeMakeWithSeconds(timelineDuration-end,600)) ofTrack:source atTime:composition.duration error:NULL]) failure=@"Không đệm được khoảng lặng giữa các đoạn.";
+        }
         dispatch_async(dispatch_get_main_queue(),^{
-            DGVbee *owner=weakSelf;if (!owner || owner.generation!=generation) return;
-            if (failure) {[owner finish:nil failure:failure];return;}
+            DGVbee *owner=weakSelf;if (!owner || owner.generation!=generation) {if (padding) [NSFileManager.defaultManager removeItemAtURL:padding error:NULL];return;}
+            if (failure) {if (padding) [NSFileManager.defaultManager removeItemAtURL:padding error:NULL];[owner finish:nil failure:failure];return;}
             AVAssetExportSession *exporter=[[AVAssetExportSession alloc] initWithAsset:composition presetName:AVAssetExportPresetAppleM4A];owner.exporter=exporter;
             NSURL *file=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@"-vi.m4a"]]];exporter.outputURL=file;exporter.outputFileType=AVFileTypeAppleM4A;
             AVMutableAudioMixInputParameters *parameters=[AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:track];parameters.audioTimePitchAlgorithm=AVAudioTimePitchAlgorithmSpectral;
             AVMutableAudioMix *mix=[AVMutableAudioMix audioMix];mix.inputParameters=@[parameters];exporter.audioMix=mix;
             [exporter exportAsynchronouslyWithCompletionHandler:^{dispatch_async(dispatch_get_main_queue(),^{
+                if (padding) [NSFileManager.defaultManager removeItemAtURL:padding error:NULL];
                 DGVbee *current=weakSelf;if (!current || current.generation!=generation) {[NSFileManager.defaultManager removeItemAtURL:file error:NULL];return;}
                 if (exporter.status!=AVAssetExportSessionStatusCompleted) {[NSFileManager.defaultManager removeItemAtURL:file error:NULL];[current finish:nil failure:@"Không xuất được giọng lồng tiếng."];return;}
                 if (current.event) current.event(@"Vbee timeline ready");[current.session finishTasksAndInvalidate];[current finish:file failure:nil];
