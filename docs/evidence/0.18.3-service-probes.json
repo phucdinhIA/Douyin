@@ -1,0 +1,524 @@
+{
+  "date": "2026-10-03",
+  "live_requests": 4,
+  "cases": [
+    {
+      "name": "prose400",
+      "status": 200,
+      "seconds": 5.11,
+      "input_count": 1,
+      "input_chars": [
+        400
+      ],
+      "root_keys": [
+        "subtitleTranslateResults",
+        "domain"
+      ],
+      "output_count": 1,
+      "rows": [
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 1401,
+          "has_han": false
+        }
+      ],
+      "context": "three preceding / two following within targets"
+    },
+    {
+      "name": "cues24",
+      "status": 200,
+      "seconds": 19.3,
+      "input_count": 24,
+      "input_chars": [
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29
+      ],
+      "root_keys": [
+        "subtitleTranslateResults",
+        "domain"
+      ],
+      "output_count": 24,
+      "rows": [
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 95,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 95,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 99,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 89,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 94,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 94,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 95,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 99,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 90,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 100,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 95,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 98,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 100,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 103,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 104,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 104,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 104,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 104,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 99,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 105,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 104,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 104,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 108,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 107,
+          "has_han": false
+        }
+      ],
+      "context": "three preceding / two following within targets"
+    },
+    {
+      "name": "cues8_neighbor_context",
+      "status": 200,
+      "seconds": 6.53,
+      "input_count": 8,
+      "input_chars": [
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28
+      ],
+      "root_keys": [
+        "subtitleTranslateResults",
+        "domain"
+      ],
+      "output_count": 8,
+      "rows": [
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 93,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 91,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 90,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 94,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 94,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 90,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 95,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 95,
+          "has_han": false
+        }
+      ],
+      "context": "three preceding / two following within targets"
+    },
+    {
+      "name": "cues8_fullcontext24",
+      "status": 200,
+      "seconds": 6.72,
+      "input_count": 8,
+      "input_chars": [
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28
+      ],
+      "root_keys": [
+        "subtitleTranslateResults",
+        "domain"
+      ],
+      "output_count": 8,
+      "rows": [
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 100,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 91,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 99,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 94,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 89,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 99,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 95,
+          "has_han": false
+        },
+        {
+          "keys": [
+            "translateResult",
+            "useAiTranslate"
+          ],
+          "index": null,
+          "useAiTranslate": true,
+          "chars": 95,
+          "has_han": false
+        }
+      ],
+      "context": "full 24-cue transcript"
+    }
+  ],
+  "scope": "Synthetic Mandarin prose and timed cues. No raw speech, translation, credentials or sessions. Not the exact user videos.",
+  "finding": "Old 500-character prose limit rejects a complete 1401-character response. Eight target cues with full 24-cue context returned in 6.72 seconds versus 19.30 seconds for 24 targets. Small samples; provider latency is variable.",
+  "physical_device_tested": false
+}
