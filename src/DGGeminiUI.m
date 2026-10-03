@@ -299,12 +299,18 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     // is hidden synchronously for the snapshot and restored before returning.
     BOOL panelHidden=self.panel.hidden,buttonHidden=self.button.hidden;self.panel.hidden=YES;self.button.hidden=YES;
     UIGraphicsImageRendererFormat *format=[UIGraphicsImageRendererFormat defaultFormat];format.scale=MIN(2,UIScreen.mainScreen.scale);
-    UIGraphicsImageRenderer *renderer=[[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(MIN(root.bounds.size.width,1024),MIN(root.bounds.size.height,2048)) format:format];
+    UIWindow *window=root.window;CGRect visible=[root convertRect:root.bounds toView:window];visible=CGRectIntersection(visible,window.bounds);
+    for (UIView *ancestor=root.superview;ancestor && ancestor!=window;ancestor=ancestor.superview) if (ancestor.clipsToBounds) visible=CGRectIntersection(visible,[ancestor convertRect:ancestor.bounds toView:window]);
+    if (CGRectIsEmpty(visible) || CGRectIsNull(visible)) {self.panel.hidden=panelHidden;self.button.hidden=buttonHidden;self.capturePending=NO;return;}
+    UIGraphicsImageRenderer *renderer=[[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(MIN(visible.size.width,1024),MIN(visible.size.height,2048)) format:format];
     [root layoutIfNeeded];
     __block BOOL drawn=NO;
-    UIImage *snapshot=[renderer imageWithActions:^(__unused UIGraphicsImageRendererContext *context) {drawn=[root drawViewHierarchyInRect:root.bounds afterScreenUpdates:YES];}];
+    UIImage *snapshot=[renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {CGContextTranslateCTM(context.CGContext,-visible.origin.x,-visible.origin.y);drawn=[window drawViewHierarchyInRect:window.bounds afterScreenUpdates:YES];}];
     self.panel.hidden=panelHidden;self.button.hidden=buttonHidden;if (DGRecordAI) DGRecordAI(@"AI local OCR started",1);
     if (!drawn || !snapshot.CGImage) {self.capturePending=NO;return;}
+#ifdef DG_GEMINI_FIXTURE
+    [UIImagePNGRepresentation(snapshot) writeToURL:[[NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject URLByAppendingPathComponent:@"ui-ai-ocr-capture.png"] atomically:YES];
+#endif
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^{
         VNRecognizeTextRequest *request=[VNRecognizeTextRequest new];request.recognitionLevel=VNRequestTextRecognitionLevelAccurate;request.recognitionLanguages=@[@"zh-Hans",@"en-US"];request.usesLanguageCorrection=YES;
         VNImageRequestHandler *handler=[[VNImageRequestHandler alloc] initWithCGImage:snapshot.CGImage options:@{}];NSError *error=nil;BOOL ok=[handler performRequests:@[request] error:&error];

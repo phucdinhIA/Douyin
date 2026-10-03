@@ -58,6 +58,8 @@ try:
         if not visual.exists():raise RuntimeError('Visual fixture output missing: '+name)
         shutil.copy2(visual,OUT/name)
     run('xcrun','simctl','io',device,'screenshot',str(OUT/'ui-fixture.png'))
+    captured=container/'Documents/ui-ai-ocr-capture.png'
+    if captured.exists():shutil.copy2(captured,OUT/captured.name)
     report=json.loads(result.read_text())
     print(json.dumps(report,ensure_ascii=True,indent=2),flush=True)
     if not report['passed']:raise RuntimeError('UIKit fixture regressions failed')
