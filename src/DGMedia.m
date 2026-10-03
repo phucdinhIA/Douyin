@@ -264,7 +264,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 @property(nonatomic,copy) NSString *videoTitle;
 @property(nonatomic,strong) DGSourceDownload *download;
 - (void)extractVideo;
-- (void)uploadSource:(NSURL *)url duration:(double)duration detectLanguage:(BOOL)detect;
+- (void)uploadSource:(NSURL *)url duration:(double)duration;
 - (void)requestNow:(NSURLRequest *)request completion:(void (^)(NSData *,NSInteger,NSString *))completion;
 - (void)translateNext;
 - (void)repairBatch:(NSMutableArray *)result source:(NSArray *)source at:(NSUInteger)index completion:(void (^)(NSArray *,NSString *))completion;
@@ -347,7 +347,7 @@ static NSString *DGCaptionDigest(NSString *source) {
     [self prepare];if (self.source) {[self translateNext];return;}
     if (DGSourceURLAllowed(url)) {
         if (self.event) self.event(@"Captions native source selected");
-        [self uploadSource:url duration:NAN detectLanguage:YES];return;
+        [self uploadSource:url duration:NAN];return;
     }
     [self extractVideo];
 }
@@ -397,13 +397,13 @@ static NSString *DGCaptionDigest(NSString *source) {
     [self request:request completion:^(NSData *data,NSInteger status,NSString *failure) {
         if (!failure && DGDeepgramNeedsUpload(data,status)) {
             if (self.event) self.event(status==200 ? @"Captions Deepgram empty remote recovery" : @"Captions Deepgram remote fetch rejected");
-            [self uploadSource:url duration:duration detectLanguage:status==200];return;
+            [self uploadSource:url duration:duration];return;
         }
         if (failure || status!=200) {[self fail:failure ?: @"Deepgram từ chối hoặc chưa đọc được video. Kiểm tra key/quota và thử lại."];return;}
         [self consumeASR:data duration:duration];
     }];
 }
-- (void)uploadSource:(NSURL *)url duration:(double)duration detectLanguage:(BOOL)detect {
+- (void)uploadSource:(NSURL *)url duration:(double)duration {
     [self emit:@"download" failure:nil];self.download=[DGSourceDownload new];
     NSUInteger generation=self.generation;__weak DGMediaClient *weakSelf=self;
     self.download.completion=^(NSURL *file,NSString *failure) {
@@ -415,13 +415,13 @@ static NSString *DGCaptionDigest(NSString *source) {
         }
         double verified=owner.download.duration;
         if (isfinite(duration) && fabs(verified-duration)>MAX(1.0,duration*0.02)) {[owner fail:@"Thời lượng tệp tải về không khớp video; không gửi âm thanh có thể lệch."];return;}
-        NSString *endpoint=detect ? @"https://api.deepgram.com/v1/listen?model=nova-3-general&detect_language=true&smart_format=true&punctuate=true&utterances=true&utt_split=0.5" : @"https://api.deepgram.com/v1/listen?model=nova-3&language=zh-CN&smart_format=true&punctuate=true&utterances=true&utt_split=0.5";
+        NSString *endpoint=@"https://api.deepgram.com/v1/listen?model=nova-3&language=zh-CN&smart_format=true&punctuate=true&utterances=true&utt_split=0.5";
         NSMutableURLRequest *request=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:endpoint]];
         request.HTTPMethod=@"POST";request.timeoutInterval=540;
         request.HTTPShouldHandleCookies=NO;
         [request setValue:[@"Token " stringByAppendingString:owner.config[@"deepgram_api_key"]] forHTTPHeaderField:@"Authorization"];
         [request setValue:[file.pathExtension isEqual:@"m4a"] ? @"audio/mp4" : @"video/mp4" forHTTPHeaderField:@"Content-Type"];
-        if (owner.event) {owner.event(@"Captions Deepgram binary upload");if (detect) owner.event(@"Captions Deepgram detect language");}[owner emit:@"deepgram" failure:nil];
+        if (owner.event) {owner.event(@"Captions Deepgram binary upload");owner.event(@"Captions Deepgram language Mandarin");}[owner emit:@"deepgram" failure:nil];
         owner.task=(NSURLSessionDataTask *)[owner.session uploadTaskWithRequest:request fromFile:file completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
             dispatch_async(dispatch_get_main_queue(),^{
                 DGMediaClient *current=weakSelf;if (!current || current.generation!=generation) return;

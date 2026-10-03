@@ -38,7 +38,7 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
     } else if ([host isEqual:@"api.deepgram.com"]) {
         atomic_fetch_add(&deepgramCalls,1);NSDictionary *body=[NSJSONSerialization JSONObjectWithData:requestData(request) options:0 error:NULL];
         BOOL binary=![[request valueForHTTPHeaderField:@"Content-Type"] isEqual:@"application/json"];
-        if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Token fixture-deepgram"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || (!binary && (![body[@"url"] containsString:@"www.douyin.com/aweme"] || ![request.URL.query containsString:@"language=zh-CN"])) || (binary && ![request.URL.query containsString:@"detect_language=true"])) atomic_fetch_add(&unsafeHeaders,1);
+        if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Token fixture-deepgram"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || (!binary && (![body[@"url"] containsString:@"www.douyin.com/aweme"] || ![request.URL.query containsString:@"language=zh-CN"])) || (binary && ![request.URL.query containsString:@"language=zh-CN"])) atomic_fetch_add(&unsafeHeaders,1);
         if (binary) atomic_fetch_add(&binaryCalls,1);
         if (asrMode && (!binary || asrMode==2)) data=timedWords(@[],2);
         else if (asrMode) data=timedWords(@[@{@"word":@"你好",@"start":@0.2,@"end":@1.5}],2);
@@ -98,7 +98,7 @@ int main(void) {@autoreleasepool {
     check(utteranceCues.count==2 && [utteranceCues[0][@"timing_utterance"] boolValue] && !DGCaptionTextAt(utteranceCues,3) && !DGDeepgramNeedsUpload(json(utterances),200),@"timed utterances retain provider speech intervals and silence without invented word timings or retry");
     AVURLAsset *toneAsset=[AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:@"tests/fixtures/tone.wav"] options:nil];
     check(!DGSourceAssetFailure(toneAsset),@"source verifier accepts a real two-second audio track");
-    AVMutableComposition *silent=[AVMutableComposition composition];[silent insertEmptyTimeRange:CMTimeRangeMake(kCMTimeZero,CMTimeMakeWithSeconds(2,600))];
+    AVURLAsset *silent=[AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:@"tests/fixtures/source-silent.mp4"] options:nil];
     check([DGSourceAssetFailure(silent) containsString:@"track âm thanh"],@"two-second container without audio is rejected before another paid transcription");
     check([DGSourceAssetFailure(nil) containsString:@"thời lượng"],@"unreadable source reports an asset error instead of silence");
     NSArray *tail=DGCaptionCoalesceShortCues(@[@{@"id":@0,@"start":@0,@"end":@3,@"text":@"这是最后一句"},@{@"id":@1,@"start":@3,@"end":@3.25,@"text":@"谢谢"}]);
@@ -183,7 +183,7 @@ int main(void) {@autoreleasepool {
     client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
     client.update=^(NSString *state,NSArray *track,NSString *failure) {stage=state;result=track;(void)failure;};
     [client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
-    check([stage isEqual:@"ready"] && result.count==1 && atomic_load(&deepgramCalls)==beforeASR+2 && atomic_load(&binaryCalls)==beforeBinary+1 && atomic_load(&sourceCalls)==beforeSource+1,@"HTTP 200 empty Mandarin result recovers once through verified aligned audio and language detection");
+    check([stage isEqual:@"ready"] && result.count==1 && atomic_load(&deepgramCalls)==beforeASR+2 && atomic_load(&binaryCalls)==beforeBinary+1 && atomic_load(&sourceCalls)==beforeSource+1,@"HTTP 200 empty Mandarin result recovers once through verified aligned audio with fixed Mandarin");
     asrMode=2;stage=nil;beforeASR=atomic_load(&deepgramCalls);int beforeTranslation=atomic_load(&claudeCalls);
     client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
     __block NSString *asrFailure=nil;client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;stage=state;asrFailure=failure;};
@@ -193,7 +193,7 @@ int main(void) {@autoreleasepool {
     client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;(void)failure;stage=state;};
     [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/verified-source.wav"] title:@"fixture title"];
     waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
-    check([stage isEqual:@"ready"] && atomic_load(&deepgramCalls)==beforeASR+1 && atomic_load(&apifyCalls)==apify,@"native verified source bypasses the entire actor and sends just one detected-language audio upload");
+    check([stage isEqual:@"ready"] && atomic_load(&deepgramCalls)==beforeASR+1 && atomic_load(&apifyCalls)==apify,@"native verified source bypasses the entire actor and sends just one fixed-Mandarin audio upload");
     stage=nil;__block BOOL staleNative=NO;[client cancel];client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)state;(void)track;(void)failure;staleNative=YES;};
     [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/verified-source.wav"] title:nil];staleNative=NO;[client cancel];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];
     check(!staleNative,@"native download cancellation cannot update a different video");asrMode=0;
