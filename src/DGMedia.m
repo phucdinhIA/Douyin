@@ -79,6 +79,10 @@ BOOL DGCaptionValidCues(NSArray *cues) {
     }return YES;
 }
 static BOOL DGLatin(unichar c) {return (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9');}
+static void DGAppendSpeech(NSMutableString *text,NSString *token) {
+    if (text.length && DGLatin([text characterAtIndex:text.length-1]) && DGLatin([token characterAtIndex:0])) [text appendString:@" "];
+    [text appendString:token];
+}
 NSArray *DGCaptionCoalesceShortCues(NSArray *cues) {
     if (!DGCaptionValidCues(cues)) return nil;NSMutableArray *result=[NSMutableArray new];
     for (NSDictionary *cue in cues) {
@@ -88,6 +92,7 @@ NSArray *DGCaptionCoalesceShortCues(NSArray *cues) {
             NSString *separator=DGHasHan(previous[@"text"]) && DGHasHan(cue[@"text"]) ? @"" : @" ";
             previous[@"text"]=[[previous[@"text"] stringByAppendingString:separator] stringByAppendingString:cue[@"text"]];previous[@"end"]=cue[@"end"];
             if ([cue[@"timing_clamped"] boolValue]) previous[@"timing_clamped"]=@YES;
+            if ([cue[@"timing_repaired"] boolValue]) previous[@"timing_repaired"]=@YES;
         }else {NSMutableDictionary *copy=[cue mutableCopy];copy[@"id"]=@(result.count);[result addObject:copy];}
     }return result;
 }
@@ -99,32 +104,47 @@ NSArray *DGCaptionSegments(NSData *data,NSString **failure) {
     if (![metadata isKindOfClass:NSDictionary.class] || !DGNumber(metadata[@"duration"]) || [metadata[@"duration"] doubleValue]<=0 || [metadata[@"duration"] doubleValue]>3600 || ![words isKindOfClass:NSArray.class] || ![words count] || [words count]>50000) {
         if (failure) *failure=@"Không có lời nói nhận dạng được hoặc video vượt giới hạn 60 phút.";return nil;
     }
-    NSMutableArray *cues=[NSMutableArray new];NSMutableString *text=[NSMutableString new];double start=0,end=0,previousStart=0;BOOL sentenceEnd=NO,clamped=NO;double duration=[metadata[@"duration"] doubleValue];
+    NSMutableArray *cues=[NSMutableArray new];NSMutableString *text=[NSMutableString new];__block double start=0,end=0;double previousStart=0;BOOL sentenceEnd=NO;__block BOOL clamped=NO,repaired=NO;double duration=[metadata[@"duration"] doubleValue];NSUInteger wordIndex=0;
+    void (^flush)(void)=^{[cues addObject:@{@"id":@(cues.count),@"start":@(start),@"end":@(end),@"text":[text copy],@"timing_clamped":@(clamped),@"timing_repaired":@(repaired)}];};
     for (id word in words) {
+        wordIndex++;
         NSString *token=[word isKindOfClass:NSDictionary.class] ? word[@"punctuated_word"] ?: word[@"word"] : nil;
         if (![word isKindOfClass:NSDictionary.class] || !DGString(token,80) || !DGNumber(word[@"start"]) || !DGNumber(word[@"end"])) {if (failure) *failure=@"Deepgram thiếu mốc thời gian hợp lệ.";return nil;}
         double a=[word[@"start"] doubleValue],b=[word[@"end"] doubleValue];
-        if (a<0 || a<previousStart || b<=a || b>duration+2.0) {if (failure) *failure=@"Mốc thời gian Deepgram không nhất quán.";return nil;}
+        if (a < -0.02 || b < -0.02 || a < previousStart-0.5 || b < a-0.02 || b>duration+2.0 || a>duration+2.0) {
+            NSString *reason=a < previousStart-0.5 ? @"mốc bắt đầu bị lùi quá 0,5 giây" : b < a-0.02 ? @"mốc kết thúc nằm trước bắt đầu" : (b>duration+2.0 || a>duration+2.0) ? @"mốc lời nói vượt quá thời lượng âm thanh" : @"mốc lời nói âm";
+            if (failure) *failure=[NSString stringWithFormat:@"Deepgram trả mốc không thể đồng bộ ở từ %lu (%@).",(unsigned long)wordIndex,reason];return nil;
+        }
+        BOOL wordRepaired=a<0 || b<0 || a<previousStart || b<=a;
+        a=MAX(0,MAX(a,previousStart));b=MAX(a,MAX(0,b));
         previousStart=a;
         BOOL wordClamped=b>duration;
         if (wordClamped) b=duration;
         if (a>=duration) {
-            if (text.length) {[text appendString:token];clamped=YES;}
-            else if (cues.count) {NSMutableDictionary *last=[cues.lastObject mutableCopy];last[@"text"]=[last[@"text"] stringByAppendingString:token];last[@"timing_clamped"]=@YES;cues[cues.count-1]=last;}
+            if (text.length) {DGAppendSpeech(text,token);clamped=YES;repaired=YES;}
+            else if (cues.count) {NSMutableDictionary *last=[cues.lastObject mutableCopy];NSMutableString *joined=[last[@"text"] mutableCopy];DGAppendSpeech(joined,token);last[@"text"]=joined;last[@"timing_clamped"]=@YES;last[@"timing_repaired"]=@YES;cues[cues.count-1]=last;}
             continue;
+        }
+        // Point timestamps are not independent speech intervals. Preserve their
+        // text in an adjacent real interval instead of inventing per-word timing.
+        if (b<=a) {
+            if (text.length && end>start && a-end>=0.55) {flush();[text setString:@""];clamped=NO;repaired=NO;}
+            if (!text.length) {start=a;end=a;}
+            DGAppendSpeech(text,token);repaired=YES;continue;
         }
         // Real Nova-3 Mandarin output may give overlapping word intervals. Keep
         // such words in one cue and use their interval envelope, never drop text.
-        if (text.length && a>=end-0.001 && (a-end>=0.55 || b-start>4.8 || text.length+token.length>28 || (sentenceEnd && end-start>=0.7))) {
-            [cues addObject:@{@"id":@(cues.count),@"start":@(start),@"end":@(end),@"text":[text copy],@"timing_clamped":@(clamped)}];[text setString:@""];clamped=NO;
+        if (text.length && end>start && a>=end && (a-end>=0.55 || b-start>4.8 || text.length+token.length>28 || (sentenceEnd && end-start>=0.7))) {
+            flush();[text setString:@""];clamped=NO;repaired=NO;
         }
-        if (!text.length) start=a;
-        else if (DGLatin([text characterAtIndex:text.length-1]) && DGLatin([token characterAtIndex:0])) [text appendString:@" "];
-        [text appendString:token];end=MAX(end,b);clamped=clamped || wordClamped;
+        if (!text.length || end<=start) {start=MAX(a,[cues.lastObject[@"end"] doubleValue]);end=b;}
+        DGAppendSpeech(text,token);end=MAX(end,b);clamped=clamped || wordClamped;repaired=repaired || wordRepaired;
         unichar last=[token characterAtIndex:token.length-1];
         sentenceEnd=[@"。！？!?；;" rangeOfString:[NSString stringWithCharacters:&last length:1]].location!=NSNotFound;
     }
-    if (text.length) [cues addObject:@{@"id":@(cues.count),@"start":@(start),@"end":@(end),@"text":[text copy],@"timing_clamped":@(clamped)}];
+    if (text.length && end>start) flush();
+    else if (text.length && cues.count) {NSMutableDictionary *last=[cues.lastObject mutableCopy];NSMutableString *joined=[last[@"text"] mutableCopy];DGAppendSpeech(joined,text);last[@"text"]=joined;last[@"timing_repaired"]=@YES;cues[cues.count-1]=last;}
+    if (!cues.count) {if (failure) *failure=@"Deepgram có chữ nhưng không trả khoảng thời gian lời nói hợp lệ để đồng bộ.";return nil;}
     if (!DGCaptionValidCues(cues)) {if (failure) *failure=@"Phụ đề quá dài hoặc mốc thời gian không hợp lệ.";return nil;}return cues;
 }
 NSString *DGCaptionTextAt(NSArray *cues,NSTimeInterval time) {
@@ -367,7 +387,7 @@ static NSString *DGCaptionDigest(NSString *source) {
             else cues=DGCaptionCoalesceShortCues(DGCaptionSegments(data,&parseFailure));
             dispatch_async(dispatch_get_main_queue(),^{
                 DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;
-                if (!cues) {[owner fail:parseFailure];return;}owner.source=cues;for (NSDictionary *cue in cues) if ([cue[@"timing_clamped"] boolValue] && owner.event) owner.event(@"Captions timing clamped");[owner save:cues kind:@"asr"];[owner translateNext];
+                if (!cues) {if (owner.event) owner.event(@"Captions timing rejected");[owner fail:parseFailure];return;}owner.source=cues;for (NSDictionary *cue in cues) if (owner.event) {if ([cue[@"timing_clamped"] boolValue]) owner.event(@"Captions timing clamped");if ([cue[@"timing_repaired"] boolValue]) owner.event(@"Captions timing repaired");}[owner save:cues kind:@"asr"];[owner translateNext];
             });
         });
 }
