@@ -15,6 +15,7 @@ static void (^DGMediaRecord)(NSString *,NSUInteger);
 static NSMutableSet *DGMediaHooks;
 static char DGCaptionKey,DGCommentKey,DGMediaWindowKey;
 static NSUInteger DGMediaWindowCount;
+static NSDictionary *DGLastCaptionTiming;
 static NSString *const DGNativeCommentLabel=@"_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel";
 static void DGMediaCount(NSString *name) {if (DGMediaRecord) DGMediaRecord(name,1);}
 static BOOL DGMediaGetterType(Method method,char result) {
@@ -185,6 +186,7 @@ static BOOL DGMediaPause(UIViewController *owner) {
     __weak DGCaptionEntry *weakSelf=self;
     self.client.update=^(NSString *stage,NSArray *cues,NSString *failure) {
         DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || !entry.owner.view.window || ![entry.videoID isEqual:DGVideoID(entry.owner)]) {[entry stop];return;}
+        DGLastCaptionTiming=entry.client.timingDiagnostics;
         entry.cues=cues;entry.running=!([stage isEqual:@"ready"] || [stage isEqual:@"cached"] || [stage isEqual:@"failed"]);
         entry.status.text=[stage isEqual:@"apify"] ? @"Đang lấy video · Apify" : [stage isEqual:@"deepgram"] ? @"Đang nhận dạng tiếng Trung · Nova-3" : [stage isEqual:@"claude"] ? @"Đang dịch phụ đề · Claude Sonnet 5" : [stage isEqual:@"partial"] ? @"Đã có một phần phụ đề · đang dịch tiếp" : [stage isEqual:@"cached"] ? @"Phụ đề đã lưu · không gọi API lại" : [stage isEqual:@"ready"] ? @"Phụ đề Việt đã sẵn sàng" : failure;
         [entry.button setTitle:entry.running ? @"Hủy phụ đề" : [stage isEqual:@"failed"] ? @"Bỏ qua · phát video" : @"Tắt phụ đề Việt" forState:UIControlStateNormal];
@@ -380,6 +382,8 @@ void DGMediaInstall(void (^record)(NSString *,NSUInteger)) {
 }
 NSDictionary *DGMediaSnapshot(void) {
     NSMutableDictionary *snapshot=[@{@"caption_configured":@([DGMediaConfig[@"apify_api_key"] length]>0 && [DGMediaConfig[@"deepgram_api_key"] length]>0 && [DGMediaBackend[@"email"] length]>0),@"actor":@"apple_yang/douyin-video-audio-downloader",@"asr_model":@"nova-3",@"source_language":@"zh-CN",@"target_language":@"vi",@"translation_model":DGClaudeModel,@"hooks_installed":@(DGMediaHooks.count),@"four_tap_windows":@(DGMediaWindowCount),@"caption_waiting":@(DGActiveCaption.waiting),@"caption_shortcut_taps":@4,@"caption_running":@(DGActiveCaption.running),@"caption_showing":@(DGActiveCaption.showing),@"automatic_retries":@0,@"maximum_video_seconds":@3600,@"gtx_automatic_visible":@YES,@"deepgram_upload_fallback":@YES,@"tts_enabled":@NO,@"deepgram_empty_recovery_max":@1,@"native_source_fast_path":@YES} mutableCopy];
+    snapshot[@"native_source_fast_path"]=@NO;
+    snapshot[@"last_caption_timing"]=DGActiveCaption.client.timingDiagnostics ?: DGLastCaptionTiming ?: @{};
     [snapshot addEntriesFromDictionary:DGAudioSnapshot()];[snapshot addEntriesFromDictionary:DGGTXSnapshot()];snapshot[@"caption_full_context_seconds"]=@600;return snapshot;
 }
 #ifdef DG_GEMINI_FIXTURE

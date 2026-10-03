@@ -7,6 +7,7 @@
 
 static BOOL DGString(id value,NSUInteger limit) {return [value isKindOfClass:NSString.class] && [value length]>0 && [value length]<=limit;}
 static BOOL DGNumber(id value) {return [value isKindOfClass:NSNumber.class] && CFGetTypeID((__bridge CFTypeRef)value)!=CFBooleanGetTypeID() && isfinite([value doubleValue]);}
+static BOOL DGDurationMatches(double audio,double expected) {return isfinite(audio) && audio>0 && isfinite(expected) && expected>0 && fabs(audio-expected)<=MAX(1.0,expected*0.02);}
 static BOOL DGHasHan(NSString *text) {
     for (NSUInteger i=0;i<text.length;i++) {unichar c=[text characterAtIndex:i];if ((c>=0x3400 && c<=0x4dbf) || (c>=0x4e00 && c<=0x9fff) || (c>=0xf900 && c<=0xfaff)) return YES;}
     return NO;
@@ -268,8 +269,11 @@ static NSString *DGCaptionDigest(NSString *source) {
 @property(nonatomic) NSTimeInterval preferredTime;
 @property(nonatomic,copy) NSString *videoTitle;
 @property(nonatomic,strong) DGSourceDownload *download;
+@property(nonatomic,strong) NSMutableDictionary *timingInfo;
 - (void)extractVideo;
 - (void)uploadSource:(NSURL *)url duration:(double)duration;
+- (void)consumeASR:(NSData *)data duration:(double)duration sourceURL:(NSURL *)url verified:(BOOL)verified;
+- (void)verifyASR:(NSData *)data sourceURL:(NSURL *)url;
 - (void)requestNow:(NSURLRequest *)request completion:(void (^)(NSData *,NSInteger,NSString *))completion;
 - (void)translateNext;
 - (void)repairBatch:(NSMutableArray *)result source:(NSArray *)source at:(NSUInteger)index completion:(void (^)(NSArray *,NSString *))completion;
@@ -329,7 +333,8 @@ static NSString *DGCaptionDigest(NSString *source) {
     id result=text ? DGJSON([text dataUsingEncoding:NSUTF8StringEncoding]) : nil;return DGCaptionValidCues(result) ? ([kind isEqual:@"asr"] ? DGCaptionCoalesceShortCues(result) : result) : nil;
 }
 - (void)save:(NSArray *)cues kind:(NSString *)kind {NSString *text=DGJSONText(cues);if (text) [self.store saveTranslation:text source:[self cacheKey:kind]];}
-- (void)emit:(NSString *)stage failure:(NSString *)failure {if (self.update) self.update(stage,self.translated ?: @[],failure);}
+- (NSDictionary *)timingDiagnostics {return [self.timingInfo copy] ?: @{};}
+- (void)emit:(NSString *)stage failure:(NSString *)failure {self.timingInfo[@"stage"]=stage;if (self.update) self.update(stage,self.translated ?: @[],failure);}
 - (void)fail:(NSString *)failure {
     [self.download cancel];self.download=nil;
     [self emit:@"failed" failure:failure ?: @"Không tạo được phụ đề. Bấm thử lại thủ công."];[self.session finishTasksAndInvalidate];self.session=nil;self.task=nil;
@@ -342,6 +347,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 }
 - (void)startVideo:(NSString *)videoID at:(NSTimeInterval)time sourceURL:(NSURL *)url title:(NSString *)title {
     [self cancel];self.videoID=videoID;self.translated=[NSMutableArray new];
+    self.timingInfo=[NSMutableDictionary dictionaryWithDictionary:@{@"input_mode":@"apify_remote"}];
     self.preferredTime=isfinite(time) && time>0 ? time : 0;
     self.videoTitle=[self.store translationForSource:[self cacheKey:@"title"]];
     if (DGString(title,2000)) self.videoTitle=title;
@@ -352,10 +358,10 @@ static NSString *DGCaptionDigest(NSString *source) {
     if (matched) [self.translated addObjectsFromArray:saved ?: @[]];
     if (self.source && self.translated.count==self.source.count) {[self emit:@"cached" failure:nil];return;}
     [self prepare];if (self.source) {[self translateNext];return;}
-    if (DGSourceURLAllowed(url)) {
-        if (self.event) self.event(@"Captions native source selected");
-        [self uploadSource:url duration:NAN];return;
-    }
+    // The 0.18.1 native-file shortcut fails on the user's device whereas the
+    // canonical actor URL completes. Retire that shortcut until device evidence
+    // can establish its decoded timeline; background playback keeps its getter.
+    if (DGSourceURLAllowed(url) && self.event) self.event(@"Captions native file shortcut bypassed");
     [self extractVideo];
 }
 - (void)extractVideo {
@@ -377,12 +383,15 @@ static NSString *DGCaptionDigest(NSString *source) {
             id items=DGJSON(data);id item=[items isKindOfClass:NSArray.class] && [items count]==1 ? items[0] : nil;
             if (failure || status!=200 || ![item isKindOfClass:NSDictionary.class] || !DGString(item[@"videoUrl"],8192) || (item[@"errMsg"] && ![item[@"errMsg"] isEqual:@""])) {[self fail:failure ?: @"Apify ch\u01b0a l\u1ea5y \u0111\u01b0\u1ee3c ngu\u1ed3n video \u0111ang xem."];return;}
             if (!DGNumber(item[@"duration"]) || [item[@"duration"] doubleValue]<=0) {[self fail:@"Apify kh\u00f4ng tr\u1ea3 th\u1eddi l\u01b0\u1ee3ng video h\u1ee3p l\u1ec7."];return;}
-            if ([item[@"duration"] doubleValue]>3600) {[self fail:@"Video v\u01b0\u1ee3t gi\u1edbi h\u1ea1n 60 ph\u00fat."];return;}
+            self.timingInfo[@"actor_video_seconds_hint"]=item[@"duration"];
             NSURL *media=[NSURL URLWithString:item[@"videoUrl"]];NSString *host=media.host.lowercaseString;
             BOOL allowed=[host isEqual:@"www.douyin.com"] || [host hasSuffix:@".douyinvod.com"] || [host hasSuffix:@".douyinstatic.com"] || [host hasSuffix:@".bytecdn.cn"];
             if (![media.scheme isEqual:@"https"] || !allowed || media.user || media.password || ![item[@"url"] isEqual:DGCaptionVideoURL(self.videoID).absoluteString]) {[self fail:@"Apify trả link video không khớp nguồn đang xem."];return;}
             self.videoTitle=DGString(item[@"title"],2000) ? item[@"title"] : nil;if (self.videoTitle) [self.store saveTranslation:self.videoTitle source:[self cacheKey:@"title"]];
-            [self transcribe:media duration:[item[@"duration"] doubleValue]];
+            double hint=[item[@"duration"] doubleValue];
+            // Check an apparently overlong source before a paid request: a
+            // millisecond hint must not falsely reject a short actual file.
+            if (hint>3600) [self uploadSource:media duration:hint];else [self transcribe:media duration:hint];
         }];return;
     }
     if (!([state isEqual:@"READY"] || [state isEqual:@"RUNNING"]) || NSProcessInfo.processInfo.systemUptime-self.started>100) {
@@ -407,22 +416,25 @@ static NSString *DGCaptionDigest(NSString *source) {
             [self uploadSource:url duration:duration];return;
         }
         if (failure || status!=200) {[self fail:failure ?: @"Deepgram từ chối hoặc chưa đọc được video. Kiểm tra key/quota và thử lại."];return;}
-        [self consumeASR:data duration:duration];
+        [self consumeASR:data duration:duration sourceURL:url verified:NO];
     }];
 }
 - (void)uploadSource:(NSURL *)url duration:(double)duration {
     [self emit:@"download" failure:nil];self.download=[DGSourceDownload new];
-    if (!isfinite(duration)) self.download.resourceTimeout=20; // Native shortcut must not delay actor fallback on a slow/expired CDN.
     NSUInteger generation=self.generation;__weak DGMediaClient *weakSelf=self;
     self.download.completion=^(NSURL *file,NSString *failure) {
         DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;
         if (!file) {
-            // Expired/native silent URLs fall back before any ASR/translation charge.
-            if (!isfinite(duration) && owner.download.duration<=3600) {[owner.download cancel];owner.download=nil;if (owner.event) owner.event(@"Captions native source fallback");[owner extractVideo];return;}
             [owner fail:failure];return;
         }
-        double verified=owner.download.duration;
-        if (isfinite(duration) && fabs(verified-duration)>MAX(1.0,duration*0.02)) {[owner fail:@"Thời lượng tệp tải về không khớp video; không gửi âm thanh có thể lệch."];return;}
+        double video=owner.download.duration,verified=owner.download.audioDuration;
+        owner.timingInfo[@"source_video_seconds"]=@(video);
+        owner.timingInfo[@"source_audio_seconds"]=@(verified);
+        owner.timingInfo[@"source_audio_start_seconds"]=@(owner.download.audioStart);
+        owner.timingInfo[@"input_mode"]=@"verified_binary";
+        if (!isfinite(verified) || verified<=0 || owner.download.audioStart>0.1) {[owner fail:@"Nguồn âm thanh có điểm bắt đầu không thể đối chiếu an toàn; không gửi âm thanh có thể lệch."];return;}
+        // Actor timing is a hint. The actual downloaded track is authoritative.
+        if (isfinite(duration) && !DGDurationMatches(video,duration) && owner.event) owner.event(@"Captions actor duration corrected from source");
         NSString *endpoint=@"https://api.deepgram.com/v1/listen?model=nova-3&language=zh-CN&smart_format=true&punctuate=true&utterances=true&utt_split=0.5";
         NSMutableURLRequest *request=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:endpoint]];
         request.HTTPMethod=@"POST";request.timeoutInterval=540;
@@ -441,20 +453,48 @@ static NSString *DGCaptionDigest(NSString *source) {
                     if (current.event) current.event(@"Captions Deepgram empty verified audio");
                     [current fail:@"Tệp đã có âm thanh nhưng Deepgram vẫn chưa nhận dạng được lời nói. Không tự gửi lại; bạn có thể thử lại thủ công."];return;
                 }
-                [current consumeASR:data duration:verified];
+                [current consumeASR:data duration:verified sourceURL:nil verified:YES];
             });
         }];[owner.task resume];
     };[self.download start:url configuration:self.configuration];
 }
-- (void)consumeASR:(NSData *)data duration:(double)duration {
+- (void)verifyASR:(NSData *)data sourceURL:(NSURL *)url {
+    if (self.event) self.event(@"Captions duration source verification");
+    [self emit:@"download" failure:nil];self.download=[DGSourceDownload new];
+    self.download.inspectionOnly=YES; // Inspect track ranges without an unnecessary M4A export.
+    NSUInteger generation=self.generation;__weak DGMediaClient *weakSelf=self;
+    self.download.completion=^(NSURL *file,NSString *failure) {
+        DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;
+        if (!file) {[owner fail:failure];return;}
+        double video=owner.download.duration,audio=owner.download.audioDuration,start=owner.download.audioStart;
+        owner.timingInfo[@"source_video_seconds"]=@(video);owner.timingInfo[@"source_audio_seconds"]=@(audio);owner.timingInfo[@"source_audio_start_seconds"]=@(start);
+        owner.timingInfo[@"input_mode"]=@"source_verified_remote";
+        [owner.download cancel];owner.download=nil;
+        if (!isfinite(audio) || audio<=0 || start>0.1) {[owner fail:@"Không xác minh được điểm bắt đầu âm thanh; dừng để tránh phụ đề lệch."];return;}
+        // Reuse the already successful response: verification makes no second
+        // Deepgram or translation request, and never rescales word timestamps.
+        [owner consumeASR:data duration:audio sourceURL:nil verified:YES];
+    };[self.download start:url configuration:self.configuration];
+}
+- (void)consumeASR:(NSData *)data duration:(double)duration sourceURL:(NSURL *)url verified:(BOOL)verified {
+        id root=DGJSON(data);id metadata=[root isKindOfClass:NSDictionary.class] ? root[@"metadata"] : nil;
+        double actual=[metadata isKindOfClass:NSDictionary.class] && DGNumber(metadata[@"duration"]) ? [metadata[@"duration"] doubleValue] : NAN;
+        if (isfinite(actual)) self.timingInfo[@"deepgram_audio_seconds"]=@(actual);
+        if (isfinite(duration)) self.timingInfo[@"compared_seconds"]=@(duration);
+        // Normalize only a factor of 1000 independently corroborated by audio.
+        if (!verified && duration>=1000 && !DGDurationMatches(actual,duration) && DGDurationMatches(actual,duration/1000.0)) {
+            duration/=1000.0;self.timingInfo[@"actor_duration_unit"]=@"milliseconds";
+            self.timingInfo[@"compared_seconds"]=@(duration);
+            if (self.event) self.event(@"Captions actor duration milliseconds normalized");
+        }
+        if (!verified && actual>0 && actual<=3600 && !DGDurationMatches(actual,duration)) {[self verifyASR:data sourceURL:url];return;}
+        self.timingInfo[@"duration_check"]=DGDurationMatches(actual,duration) ? @"matched_audio" : @"rejected";
         NSUInteger generation=self.generation;__weak DGMediaClient *weakSelf=self;
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^{
-            id root=DGJSON(data);id metadata=[root isKindOfClass:NSDictionary.class] ? root[@"metadata"] : nil;
-            double actual=[metadata isKindOfClass:NSDictionary.class] && DGNumber(metadata[@"duration"]) ? [metadata[@"duration"] doubleValue] : NAN;
             NSString *parseFailure=nil;NSArray *cues=nil;
             if (!isfinite(actual) || actual<=0) parseFailure=@"Deepgram không trả thời lượng âm thanh hợp lệ.";
-            else if (fabs(actual-duration)>MAX(1.0,duration*0.02)) parseFailure=@"Thời lượng âm thanh không khớp video; dừng để tránh phụ đề lệch.";
-            else if (actual>3600) parseFailure=@"Deepgram trả thời lượng vượt giới hạn xử lý; không khớp nguồn video đã kiểm tra.";
+            else if (!DGDurationMatches(actual,duration)) parseFailure=[NSString stringWithFormat:@"Không đối chiếu được âm thanh Deepgram (%.3f giây) với nguồn (%.3f giây).",actual,duration];
+            else if (actual>3600) parseFailure=@"Âm thanh video vượt giới hạn 60 phút.";
             else cues=DGCaptionCoalesceShortCues(DGCaptionSegments(data,&parseFailure));
             dispatch_async(dispatch_get_main_queue(),^{
                 DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;

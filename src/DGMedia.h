@@ -25,6 +25,8 @@ FOUNDATION_EXPORT NSArray<NSDictionary *> *DGCaptionTranslationAnswer(NSData *da
 @interface DGMediaClient : NSObject <NSURLSessionTaskDelegate>
 @property(nonatomic,copy) void (^update)(NSString *stage, NSArray<NSDictionary *> *cues, NSString *failure);
 @property(nonatomic,copy) void (^event)(NSString *name);
+// Numeric timings and stage only; no URLs, video IDs, transcript or credentials.
+@property(nonatomic,readonly,copy) NSDictionary *timingDiagnostics;
 - (instancetype)initWithConfig:(NSDictionary *)config geminiKey:(NSString *)key store:(DGTranslationStore *)store configuration:(NSURLSessionConfiguration *)configuration;
 - (void)startVideo:(NSString *)videoID;
 - (void)startVideo:(NSString *)videoID at:(NSTimeInterval)time;

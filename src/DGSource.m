@@ -20,6 +20,8 @@ NSString *DGSourceAssetFailure(AVAsset *asset) {
 @property(nonatomic,strong) NSURL *file;
 @property(atomic) BOOL cancelled;
 @property(nonatomic,readwrite) double duration;
+@property(nonatomic,readwrite) double audioStart;
+@property(nonatomic,readwrite) double audioDuration;
 @end
 @implementation DGSourceDownload
 - (void)finish:(NSURL *)url failure:(NSString *)failure {
@@ -51,6 +53,16 @@ NSString *DGSourceAssetFailure(AVAsset *asset) {
     self.duration=CMTimeGetSeconds(asset.duration);
     NSString *failure=DGSourceAssetFailure(asset);
     if (failure) {[self finish:nil failure:failure];[session finishTasksAndInvalidate];return;}
+    // Container/video duration can include seconds with no audio. Deepgram's
+    // duration measures decoded audio, so keep both quantities separately.
+    double first=INFINITY,last=0;
+    for (AVAssetTrack *track in [asset tracksWithMediaType:AVMediaTypeAudio]) {
+        double a=CMTimeGetSeconds(track.timeRange.start),b=CMTimeGetSeconds(CMTimeRangeGetEnd(track.timeRange));
+        if (isfinite(a) && isfinite(b) && b>a) {first=MIN(first,a);last=MAX(last,b);}
+    }
+    self.audioStart=first;self.audioDuration=last-first;
+    if (!isfinite(self.audioStart) || !isfinite(self.audioDuration) || self.audioDuration<=0) {[self finish:nil failure:@"Track âm thanh không có khoảng thời gian hợp lệ."];[session finishTasksAndInvalidate];return;}
+    if (self.inspectionOnly) {[self finish:file failure:nil];[session finishTasksAndInvalidate];return;}
     AVAssetExportSession *exporter=[[AVAssetExportSession alloc] initWithAsset:asset presetName:AVAssetExportPresetAppleM4A];self.exporter=exporter;
     if (!exporter) {[self finish:file failure:nil];[session finishTasksAndInvalidate];return;}
     NSURL *audio=[NSURL fileURLWithPath:[file.path stringByAppendingString:@".m4a"]];exporter.outputURL=audio;exporter.outputFileType=AVFileTypeAppleM4A;

@@ -265,6 +265,7 @@ static UIView *findID(UIView *root,NSString *identifier) {
 @property(nonatomic) BOOL muted;
 @property(nonatomic) float videoRate;
 @property(nonatomic) NSUInteger pauseCalls,resumeCalls;
+@property(nonatomic,strong) NSURL *currentPlayURL;
 - (double)currentPlaybackTime;
 - (BOOL)pause;
 - (BOOL)isPlaying;
@@ -418,7 +419,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
 - (void)showMediaSamples {
     NSURLSessionConfiguration *cfg=NSURLSessionConfiguration.ephemeralSessionConfiguration;cfg.protocolClasses=@[MediaFixtureProtocol.class];DGMediaFixtureConfiguration(cfg,nil);
     DGMediaInstall(nil);DGMediaFixtureBackend(@{});check([DGMediaSnapshot()[@"hooks_installed"] integerValue]==7,@"media installs only seven verified native ABI hooks");
-    AWEPlayVideoViewController *player=[AWEPlayVideoViewController new];AWEAwemeModel *model=[AWEAwemeModel new];model.itemID=@"7534679152504376595";player.model=model;player.playback=0.5;player.playing=YES;
+    AWEPlayVideoViewController *player=[AWEPlayVideoViewController new];AWEAwemeModel *model=[AWEAwemeModel new];model.itemID=@"7534679152504376595";player.model=model;player.playback=0.5;player.playing=YES;player.currentPlayURL=[NSURL URLWithString:@"https://www.douyin.com/native-fixture.mp4"];
     player.view.backgroundColor=UIColor.darkGrayColor;self.window.rootViewController=player;[player viewDidAppear:NO];[self.window layoutIfNeeded];
     UILabel *title=label(player.view,@"Video fixture · phụ đề theo thời gian phát",220);title.frame=CGRectMake(18,220,self.window.bounds.size.width-36,60);title.numberOfLines=0;title.textColor=UIColor.whiteColor;
     UIButton *button=(UIButton *)findID(self.window,@"vietnamese-captions-button");UILabel *caption=(UILabel *)findID(self.window,@"vietnamese-captions-text");
@@ -439,6 +440,9 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(player.playing && player.resumeCalls==1 && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"complete subtitles resume the same video once");
     check(!caption.hidden && [caption.text isEqual:@"Xin chào"],@"caption extraction transcription translation and overlay complete via mock pipeline");
     check(![DGMediaSnapshot()[@"tts_enabled"] boolValue] && !player.muted && fabs([player getCurrentPlaybackRate]-1)<0.01,@"translated subtitles resume immediately with original audio and unchanged user speed, without TTS");
+    NSDictionary *timing=DGMediaSnapshot()[@"last_caption_timing"];
+    check(![DGMediaSnapshot()[@"native_source_fast_path"] boolValue] && [timing[@"input_mode"] isEqual:@"apify_remote"] && [timing[@"deepgram_audio_seconds"] isEqual:@10],@"real caption button with a native play URL uses the canonical pipeline and exposes numeric timing diagnostics");
+    player.currentPlayURL=nil;
     check(caption.numberOfLines==3 && caption.font.pointSize>=19 && caption.frame.origin.y>CGRectGetMidY(self.window.bounds) && CGRectGetMaxX(caption.frame)<self.window.bounds.size.width-60 && CGRectGetMaxY(caption.frame)<self.window.bounds.size.height-144,@"portrait subtitles have at most three lines and clear right controls and bottom description");
     NSString *longSubtitle=@"Bản dịch tiếng Việt cần dễ đọc và giữ chính xác từng ý trong câu gốc. Mỗi trang chỉ có vài dòng, không che các nút và không dồn toàn bộ nội dung video vào một đoạn dài. Tiếng Việt có dấu và biểu tượng 👨‍👩‍👧‍👦 cũng phải được giữ đầy đủ.";
     UIFont *readingFont=[UIFont systemFontOfSize:24];NSArray *pages=DGSubtitlePages(longSubtitle,220,readingFont,3);

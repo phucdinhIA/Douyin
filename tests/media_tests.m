@@ -34,18 +34,20 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
     if ([host isEqual:@"api.apify.com"]) {
         atomic_fetch_add(&apifyCalls,1);if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Bearer fixture-apify"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);
         if ([request.URL.path containsString:@"/runs"]) {status=201;data=json(@{@"data":@{@"id":@"run1",@"status":@"SUCCEEDED",@"defaultDatasetId":@"data1"}});}
-        else data=json(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"audioUrl":@"https://wrong-track.example/music.mp3",@"duration":asrMode ? @2 : @10,@"errMsg":@""}]);
+        else data=json(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"audioUrl":@"https://wrong-track.example/music.mp3",@"duration":asrMode==5 ? @2000 : asrMode>=4 ? @8 : asrMode ? @2 : @10,@"errMsg":@""}]);
     } else if ([host isEqual:@"api.deepgram.com"]) {
         atomic_fetch_add(&deepgramCalls,1);NSDictionary *body=[NSJSONSerialization JSONObjectWithData:requestData(request) options:0 error:NULL];
         BOOL binary=![[request valueForHTTPHeaderField:@"Content-Type"] isEqual:@"application/json"];
         if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Token fixture-deepgram"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || (!binary && (![body[@"url"] containsString:@"www.douyin.com/aweme"] || ![request.URL.query containsString:@"language=zh-CN"])) || (binary && ![request.URL.query containsString:@"language=zh-CN"])) atomic_fetch_add(&unsafeHeaders,1);
         if (binary) atomic_fetch_add(&binaryCalls,1);
         if (asrMode==3) data=timedWords(@[@{@"word":@"你好",@"start":@0,@"end":@1}],3601);
+        else if (asrMode==7) data=timedWords(@[@{@"word":@"你好",@"start":@0.1,@"end":@0.2}],0.25);
+        else if (asrMode>=4 && asrMode!=6) data=timedWords(@[@{@"word":@"你好",@"start":@0.2,@"end":@1.5}],2);
         else if (asrMode && (!binary || asrMode==2)) data=timedWords(@[],2);
         else if (asrMode) data=timedWords(@[@{@"word":@"你好",@"start":@0.2,@"end":@1.5}],2);
         else data=json(transcript());
     } else if ([host isEqual:@"www.douyin.com"]) {
-        atomic_fetch_add(&sourceCalls,1);data=[NSData dataWithContentsOfFile:@"tests/fixtures/source-audio.mp4"];
+        atomic_fetch_add(&sourceCalls,1);data=[NSData dataWithContentsOfFile:asrMode>=4 && asrMode!=5 ? @"tests/fixtures/source-audio-tail.mp4" : @"tests/fixtures/source-audio.mp4"];
         if ([request.URL.path containsString:@"expired-native"]) {status=403;data=json(@{});}
         if ([request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || [request valueForHTTPHeaderField:@"Ck"]) atomic_fetch_add(&unsafeHeaders,1);
     } else if ([host isEqual:@"yd.transduck.com"]) {
@@ -215,20 +217,35 @@ int main(void) {@autoreleasepool {
     check([stage isEqual:@"failed"] && [asrFailure containsString:@"vẫn chưa nhận dạng"] && atomic_load(&deepgramCalls)==beforeASR+2 && atomic_load(&claudeCalls)==beforeTranslation,@"second empty result terminates without retry loops translating silence or a false duration message");
     asrMode=3;stage=nil;beforeASR=atomic_load(&deepgramCalls);client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
     client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;stage=state;asrFailure=failure;};[client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"failed"];});
-    check([stage isEqual:@"failed"] && [asrFailure containsString:@"không khớp video"] && ![asrFailure containsString:@"60 phút"] && atomic_load(&deepgramCalls)==beforeASR+1,@"provider duration overshoot on a verified short source reports mismatch instead of falsely declaring the video over one hour");
-    asrMode=1;stage=nil;beforeASR=atomic_load(&deepgramCalls);apify=atomic_load(&apifyCalls);
+    check([stage isEqual:@"failed"] && [asrFailure containsString:@"3601.000"] && ![asrFailure containsString:@"60 phút"] && atomic_load(&deepgramCalls)==beforeASR+1,@"provider duration overshoot on a short source reports numeric mismatch instead of falsely declaring the video over one hour");
+    asrMode=0;stage=nil;beforeASR=atomic_load(&deepgramCalls);beforeBinary=atomic_load(&binaryCalls);beforeSource=atomic_load(&sourceCalls);apify=atomic_load(&apifyCalls);
     client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;(void)failure;stage=state;};
     [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/verified-source.wav"] title:@"fixture title"];
     waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
-    check([stage isEqual:@"ready"] && atomic_load(&deepgramCalls)==beforeASR+1 && atomic_load(&apifyCalls)==apify,@"native verified source bypasses the entire actor and sends just one fixed-Mandarin audio upload");
+    check([stage isEqual:@"ready"] && atomic_load(&deepgramCalls)==beforeASR+1 && atomic_load(&apifyCalls)==apify+2 && atomic_load(&binaryCalls)==beforeBinary && atomic_load(&sourceCalls)==beforeSource,@"native source supplied by real UI uses the working canonical actor path without native extraction or binary upload");
     stage=nil;apify=atomic_load(&apifyCalls);beforeASR=atomic_load(&deepgramCalls);client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
     client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;(void)failure;stage=state;};
     [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/expired-native.mp4"] title:nil];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
-    check([stage isEqual:@"ready"] && atomic_load(&apifyCalls)==apify+2 && atomic_load(&deepgramCalls)==beforeASR+2,@"expired native source falls back once to the actor before any ASR charge and still completes bounded recovery");
+    check([stage isEqual:@"ready"] && atomic_load(&apifyCalls)==apify+2 && atomic_load(&deepgramCalls)==beforeASR+1,@"expired native source is bypassed without an extra download or paid recognition attempt");
     stage=nil;__block BOOL staleNative=NO;[client cancel];client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)state;(void)track;(void)failure;staleNative=YES;};
     [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/verified-source.wav"] title:nil];staleNative=NO;[client cancel];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];
-    check(!staleNative,@"native download cancellation cannot update a different video");asrMode=0;
+    check(!staleNative,@"caption cancellation with a native URL cannot update a different video");asrMode=0;
     check(atomic_load(&unsafeHeaders)==0,@"binary recovery and native downloads never share backend or Google credentials");
+    for (NSUInteger mode=4;mode<=7;mode++) {
+        asrMode=mode;stage=nil;asrFailure=nil;beforeASR=atomic_load(&deepgramCalls);beforeBinary=atomic_load(&binaryCalls);beforeSource=atomic_load(&sourceCalls);beforeTranslation=atomic_load(&claudeCalls);
+        client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
+        client.update=^(NSString *state,NSArray *track,NSString *failure) {stage=state;result=track;asrFailure=failure;};
+        [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/native.mp4"] title:nil];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
+        if (mode==7) check([stage isEqual:@"failed"] && [asrFailure containsString:@"0.250"] && atomic_load(&deepgramCalls)==beforeASR+1 && atomic_load(&claudeCalls)==beforeTranslation,@"genuinely truncated decoded audio is rejected after verification without a second ASR charge or misleading container error");
+        else {
+            check([stage isEqual:@"ready"] && result.count==1 && [result[0][@"start"] isEqual:@0.2] && [result[0][@"end"] isEqual:@1.5],@"verified audio duration never rescales or shifts original speech timestamps");
+            check(atomic_load(&deepgramCalls)==beforeASR+(mode==6 ? 2 : 1) && atomic_load(&binaryCalls)==beforeBinary+(mode==6 ? 1 : 0) && atomic_load(&claudeCalls)==beforeTranslation+1,@"duration reconciliation does not repeat successful ASR and translates once");
+            if (mode==5) check([client.timingDiagnostics[@"actor_duration_unit"] isEqual:@"milliseconds"] && atomic_load(&sourceCalls)==beforeSource,@"millisecond actor hint is corroborated by decoded seconds without downloading again");
+            else check([client.timingDiagnostics[@"source_video_seconds"] doubleValue]>7.9 && [client.timingDiagnostics[@"source_audio_seconds"] doubleValue]<2.1 && atomic_load(&sourceCalls)==beforeSource+1,@"eight-second video with two-second audio completes against the audio track instead of failing container equality");
+        }
+        NSDictionary *last=client.timingDiagnostics;[client cancel];check([client.timingDiagnostics isEqual:last] && !last[@"url"] && !last[@"text"] && !last[@"video_id"],@"numeric-only duration diagnostics survive cancellation without private source or speech");
+    }
+    asrMode=0;
     throttleGTX=YES;done=NO;gtx=atomic_load(&gtxCalls);int beforeFallback=atomic_load(&geminiCalls);
     [client translateComments:@[@"第一条",@"第二条"] completion:^(NSDictionary *answers,NSString *failure) {check(answers.count==2 && !failure,@"GTX 429 uses authorized structured Gemini comment fallback");done=YES;}];waitFor(^BOOL{return done;});
     check(done && atomic_load(&gtxCalls)==gtx+1 && atomic_load(&geminiCalls)==beforeFallback+1 && [DGGTXSnapshot()[@"gtx_cooldown_seconds"] doubleValue]>170,@"one throttled GTX batch respects provider Retry-After across clients");
