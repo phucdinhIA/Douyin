@@ -689,6 +689,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     legacy.hidden=YES;check(!DGGeminiReadSummary(drawnRoot).length,@"hidden custom-drawn renderer is still excluded");legacy.hidden=NO;
     UIView *zeroWrapper=[[UIView alloc] initWithFrame:CGRectZero];[legacy removeFromSuperview];[zeroWrapper addSubview:legacy];[drawnRoot addSubview:zeroWrapper];
     check([DGGeminiReadSummary(drawnRoot) isEqual:@"原始完整分析\n"],@"zero-size unclipped wrappers do not hide their visible AI renderer descendants");zeroWrapper.clipsToBounds=YES;check(!DGGeminiReadSummary(drawnRoot).length,@"clipped zero-size AI wrappers still exclude invisible content");
+    zeroWrapper.frame=CGRectMake(0,200,300,40);legacy.frame=CGRectMake(0,-200,300,100);check(!DGGeminiReadSummary(drawnRoot).length,@"AI renderer inside root but outside its clipping ancestor is not captured as visible analysis");
     ServalMarkdownView *markdown=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(12,100,width-24,180)];markdown.content=@"内容由AI生成。这个视频讨论摄影技巧。";[ai.view addSubview:markdown];
     UILabel *privateComment=label(ai.view,@"This unrelated comment must not be sent to Google",300);
     UILabel *aiTabs=label(ai.view,@"Bình luận     Phân tích AI",62);aiTabs.frame=CGRectMake(12,62,width-24,32);aiTabs.font=[UIFont boldSystemFontOfSize:18];

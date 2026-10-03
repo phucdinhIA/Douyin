@@ -63,6 +63,13 @@ static NSString *DGRendererText(id renderer,BOOL *complete) {
     }
     return [text isKindOfClass:NSString.class] ? text : nil;
 }
+static BOOL DGAIVisible(UIView *node,UIView *root) {
+    CGRect rect=CGRectIntersection([node convertRect:node.bounds toView:root],root.bounds);
+    for (UIView *ancestor=node;ancestor && ancestor!=root;ancestor=ancestor.superview) {
+        if (ancestor.hidden || ancestor.alpha<0.01) return NO;
+        if (ancestor.clipsToBounds) rect=CGRectIntersection(rect,[ancestor convertRect:ancestor.bounds toView:root]);
+    }return !CGRectIsEmpty(rect) && !CGRectIsNull(rect);
+}
 static NSString *DGReadSummary(UIView *root,BOOL *complete) {
     *complete=NO;
     if (!root || !NSThread.isMainThread) return @"";
@@ -72,7 +79,7 @@ static NSString *DGReadSummary(UIView *root,BOOL *complete) {
     while (pending.count && visited++<1200 && total<24000) {
         UIView *node=pending.lastObject;[pending removeLastObject];
         if (node.hidden || node.alpha<0.01) continue;
-        BOOL visible=!CGRectIsEmpty(node.bounds) && CGRectIntersectsRect([node convertRect:node.bounds toView:root],root.bounds);
+        BOOL visible=DGAIVisible(node,root);
         // Layout wrappers can have zero bounds while unclipped descendants draw normally.
         if (!visible && node.clipsToBounds) continue;
         if ([node.accessibilityIdentifier isEqual:@"gemini-translation-panel"]) continue;
@@ -89,9 +96,9 @@ static NSString *DGReadSummary(UIView *root,BOOL *complete) {
             NSMutableArray *children=[NSMutableArray arrayWithArray:node.subviews.reverseObjectEnumerator.allObjects];NSUInteger read=0;
             while (children.count && read++<200 && total<24000) {
                 UIView *child=children.lastObject;[children removeLastObject];
-                if (child.hidden || child.alpha<0.01) continue;
+                if (child.hidden || child.alpha<0.01 || (!DGAIVisible(child,root) && child.clipsToBounds)) continue;
                 NSString *value=[child isKindOfClass:UILabel.class] ? [(UILabel *)child text] : [child isKindOfClass:UITextView.class] ? [(UITextView *)child text] : nil;
-                if (value.length && ![seen containsObject:value]) {value=DGGeminiBoundText(value,24000-total);[segments addObject:value];[seen addObject:value];total+=value.length+2;allComplete=NO;}
+                if (DGAIVisible(child,root) && value.length && ![seen containsObject:value]) {value=DGGeminiBoundText(value,24000-total);[segments addObject:value];[seen addObject:value];total+=value.length+2;allComplete=NO;}
                 for (UIView *descendant in child.subviews.reverseObjectEnumerator) [children addObject:descendant];
             }
             continue;
@@ -292,7 +299,8 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     };
     NSMutableArray *nodes=[NSMutableArray arrayWithObject:root];WKWebView *web=nil;NSUInteger visited=0;
     while (nodes.count && visited++<1200) {UIView *view=nodes.lastObject;[nodes removeLastObject];if (view.hidden || view.alpha<0.01 || view==self.panel || view==self.button) continue;
-        if ([view isKindOfClass:WKWebView.class]) {web=(id)view;break;}[nodes addObjectsFromArray:view.subviews];
+        BOOL visible=DGAIVisible(view,root);if (!visible && view.clipsToBounds) continue;
+        if (visible && [view isKindOfClass:WKWebView.class]) {web=(id)view;break;}[nodes addObjectsFromArray:view.subviews];
     }
     if (web && self.captureAttempts<3) {
         if (DGRecordAI) DGRecordAI(@"AI scoped web capture",1);
