@@ -1,15 +1,17 @@
-# Douyin — bản thử cá nhân 0.16
+# Douyin — bản thử cá nhân 0.17
 
-Douyin 40.6.0/build 406019/arm64, tên ứng dụng **Douyin**. Bản này sửa các lỗi người dùng báo ở 0.15 và thêm lồng tiếng Việt Vbee.
+Douyin 40.6.0/build 406019/arm64, tên ứng dụng **Douyin**. Giữ phần phát nền 0.16 đã được người dùng xác nhận hoạt động trên iOS 18.5.
 
-- Mở biểu tượng bình luận: GTX tự dịch các bình luận đang nhìn thấy ngay tại chỗ. Cuộn tới bình luận mới để dịch tiếp. Bỏ qua tên tác giả, chữ đang nhập, phần AI và bình luận ngoài màn hình. Nút GTX cho biết đang dịch/lỗi và cho thử lại thủ công. Google GTX là endpoint miễn phí không có SLA; khi giới hạn mạng/quota, giữ chữ gốc và báo trạng thái.
-- **Chạm nhanh 4 lần bằng một ngón vào vùng video** để bật phụ đề/lồng tiếng cho video đó. Video dừng trước Apify → Nova-3 tiếng Trung → Gemini tiếng Việt → Vbee giọng nam Mạnh Dũng. Nếu CDN chặn Deepgram lấy URL, app tải nguồn và gửi âm thanh trực tiếp. Chỉ phát lại sau khi phụ đề hoàn chỉnh và audio đã tải, ghép, về đúng mốc. Nếu Vbee lỗi, thông báo lỗi và dùng phụ đề đã hoàn tất; không tự tổng hợp lại trả phí.
-- Audio từng câu được đặt đúng khoảng phụ đề, giữ khoảng lặng và điều chỉnh tốc độ bằng spectral time-pitch khi cần. Tua/dừng/lặp bám clock video; đổi video hủy công việc cũ và trả lại tiếng gốc. Audio không vừa khoảng ở mức tối đa 3x sẽ được báo lỗi và dùng phụ đề. Cần đợi lần xử lý đầu; cache giảm gọi API cho lần sau. Video không có lời nói nhận dạng được sẽ được báo rõ. Ưu tiên video dưới 10 phút; không hứa mọi clip có phụ đề hoặc lồng tiếng tức thì.
-- Phát nền dùng player riêng từ nguồn video hiện tại, audio playback session, điều khiển dừng/phát ở màn hình khóa và đồng bộ lại khi vào app. Tôn trọng trạng thái pause, thay đổi video, ngắt tai nghe và cuộc gọi. Phần này chưa được nghiệm thu trên iPhone thật.
-- Bản dịch phân tích AI bỏ thẻ `<mark>` nhưng giữ nội dung. Luồng hỏi đáp Gemini vẫn nhận bản phân tích gốc.
+- Mở biểu tượng bình luận: dịch các bình luận đang hiển thị, gộp tối đa 8 dòng mỗi lượt GTX. Giữ cache từng bình luận, giãn lượt dịch và chờ theo Retry-After khi Google giới hạn. Nếu GTX trả 429, dùng **Gemini dự phòng theo lựa chọn đã được người dùng chấp thuận**, kể cả trong thời gian GTX đang bị giới hạn. Trạng thái ghi Gemini khi dùng dự phòng; không xoay endpoint để né hạn mức. Chỉ gửi chữ bình luận đang thấy, bỏ qua tên tác giả, chữ nhập và phần AI.
+- **Chạm nhanh 4 lần bằng một ngón vào vùng video** để bật phụ đề/lồng tiếng. Video dừng trước Apify → Nova-3 tiếng Trung (`zh-CN`) → Gemini tiếng Việt → Vbee nam Mạnh Dũng. Video ngắn tối đa 10 phút được dịch toàn bộ transcript trong một lượt để giữ ngữ cảnh; giữ nguyên mọi ID/mốc. Nguồn video, ASR và bản dịch được cache để tránh lặp bước trả phí.
+- Áp dụng kỹ thuật từ extension Youtube Dubbing: chuẩn bị nhóm 3 câu tại vị trí đang xem, phát khi nhóm đó đã tải/xuất/đồng bộ xong, rồi tạo các nhóm sau trong lúc xem. Đệm tối đa 60 giây phía trước; audio đã có được xếp hàng bằng AVQueuePlayer, có khoảng lặng thật để khớp biên nhóm. Tua ưu tiên vị trí mới, dừng nếu chưa đủ audio; tắt/đổi video hủy job cũ và trả tiếng gốc.
+- Một nhóm Vbee lỗi 504 không hủy cả video: đoạn đó dùng phụ đề Việt và âm thanh gốc, các nhóm sau tiếp tục. Không tự lặp POST trả phí sau timeout mơ hồ. Audio quá dài để vừa mốc ở mức nén tối đa 3x cũng chuyển sang phụ đề/tiếng gốc. API, tốc độ mạng và nội dung ảnh hưởng thời gian chờ; không hứa mọi video có lời nói nhận dạng được.
+- Bản dịch phân tích AI tiếp tục bỏ thẻ `<mark>` nhưng giữ nội dung; hỏi đáp Gemini nhận phân tích gốc. Phát nền giữ nguồn native/companion và đồng bộ lại khi trở về app.
 
-Đã đạt 56 media, 10 audio timeline, 29 Gemini, 36 dịch AI, 21 Python và 193 UIKit checks trên iPhone 15 Simulator/iOS 18.2; build arm64 warnings-as-errors. Provider probes thực: clip 13,5 giây bị HTTP 460 ở CDN đã nhận dạng thành công bằng binary upload, Gemini dịch giữ mốc và Vbee tạo đủ ba câu; clip 67 giây được nhận dạng 209 từ. Các kiểm tra này **không thay thế việc chạy Douyin thật trên iPhone**.
+Kiểm thử thật: transcript Nova-3 67,454 giây/17 câu được Gemini dịch đủ trong 2,95 giây; Vbee tải đủ 3 câu đầu trong 6,56 giây, không cần đợi 14 câu sau. Đây là thời gian từng bước, **không phải tổng thời gian bật phụ đề**, và không chứng minh Douyin thật đã ổn định trên iPhone.
 
-IPA cá nhân: `dist/Douyin-40.6.0-0.16.0-VIETSUB-VBEE-PRIVATE-TEST.ipa`. SHA-256: `1bfe8a615ff3863527f6ddaf2a7295c6cc515a211d1d795ea3374bdf8f967139`. Key/token riêng chỉ nằm trong cấu hình ngoài Git và IPA riêng.
+Đạt 62 media, 18 audio, 29 Gemini, 36 dịch AI, 21 Python và 206 UIKit checks trên iPhone 15 Simulator/iOS 18.2; build arm64 warnings-as-errors. Chưa nghiệm thu 0.17 trên iPhone thật.
 
-[Kế hoạch](docs/PLAN-0.16.md) · [Nghiên cứu và probe](docs/evidence/0.16-service-probes.json) · [Test iPhone](docs/DEVICE_TESTS.md) · [Trạng thái](docs/STATUS.md) · [Validation](docs/VALIDATION.json) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37021955203).
+IPA cá nhân: `dist/Douyin-40.6.0-0.17.0-PROGRESSIVE-VBEE-PRIVATE-TEST.ipa`. SHA-256: `e274a660a580bfbc51f988935ef8477c335818baba21ab9c62d3207134602743`. Cấu hình riêng đã được đối chiếu đúng với IPA; không nằm trong Git.
+
+[Kế hoạch và nghiên cứu extension](docs/PLAN-0.17.md) · [Probe](docs/evidence/0.17-service-probes.json) · [Test iPhone](docs/DEVICE_TESTS.md) · [Trạng thái](docs/STATUS.md) · [Validation](docs/VALIDATION.json) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37093712664).

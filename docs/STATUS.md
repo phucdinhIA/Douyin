@@ -1,19 +1,19 @@
-# Trạng thái 0.16.0-test
+# Trạng thái 0.17.0-test
 
-Đã triển khai GTX tự dịch trong bảng bình luận, sửa tải nguồn Deepgram bị CDN chặn, thêm Vbee ghép audio theo cue và player phát nền, đồng thời bỏ thẻ mark khỏi bản dịch AI. 0.15 đã được người dùng báo lỗi trên iPhone; bản 0.16 chưa được người dùng xác nhận trên thiết bị thật.
+0.16: người dùng xác nhận phát nền tốt; GTX bị 429 và lồng tiếng gặp 504. 0.17 thêm Gemini dự phòng đã được chấp thuận, dịch toàn bộ transcript ngắn và phát Vbee từng nhóm theo kỹ thuật extension. Một nhóm lỗi giữ phụ đề/âm thanh gốc và không hủy các nhóm sau.
 
-IPA: `dist/Douyin-40.6.0-0.16.0-VIETSUB-VBEE-PRIVATE-TEST.ipa`; 704,980,031 byte. SHA-256 `1bfe8a615ff3863527f6ddaf2a7295c6cc515a211d1d795ea3374bdf8f967139`. Library `0b1924111a509f61784c2ba7bfccaa92d2f7125ca6c8334c3e4016327adc58c1`. Source biên dịch `5291cace67d9318e2a45faf6fafe6b02907b1cca`.
+IPA: `dist/Douyin-40.6.0-0.17.0-PROGRESSIVE-VBEE-PRIVATE-TEST.ipa`; 704,997,922 byte. SHA-256 `e274a660a580bfbc51f988935ef8477c335818baba21ab9c62d3207134602743`. Library `83ac4f52139bbe569ee5fa68f12011ec8c3e0b12757b87685322742abb38fc24`. Source `029a68903c69b870890908dd6a8dcead22fc1d5a`.
 
 | Kiểm tra | Kết quả |
 |---|---|
 | Python đóng gói | 21 đạt |
 | Gemini / dịch AI | 29 / 36 đạt |
-| Media / Vbee audio timeline | 56 / 10 đạt |
-| UIKit iPhone 15 Simulator | 193 đạt, không overflow |
-| API thật | GTX 200; Nova-3 binary 200; Gemini 200; ba câu Vbee 200 |
+| Media / audio timeline và progressive | 62 / 18 đạt |
+| UIKit iPhone 15 Simulator | 206 đạt, không overflow |
+| API thật | GTX batch 200, markers đúng; Gemini full-context 200 và comment fallback 200; 3 Vbee 200 |
 | Đối chiếu IPA | 5,632 mục, 0 mismatch; core gốc giữ nguyên |
-| Douyin thật trên iPhone | Chưa nghiệm thu |
+| Douyin 0.17 thật trên iPhone | Chưa nghiệm thu |
 
-Phát nền có đường AVPlayer/audio session mới và kiểm tra điều khiển audio cục bộ, nhưng các chuyển trạng thái native trên iOS 18.5 cần kiểm tra thiết bị. GTX miễn phí có thể trả 429; Vbee có thể lỗi token/số dư hoặc câu quá dài để khớp mốc. App báo lỗi, không tự gọi lại các API trả phí. Video dừng trong lúc chuẩn bị; có nút hủy/bỏ qua để xem tiếp.
+Fixture kiểm tra nhóm đầu phát trước các nhóm sau, đệm khi thiếu audio, tua/loop, biên nhóm đã preload, lỗi 504 cô lập, đổi video, cache, hủy, GTX 429/cooldown/Gemini dự phòng. Timing API thật không bao gồm Apify/ASR/xuất audio/player. Phát nền đã được người dùng xác nhận ở 0.16; đồng bộ lồng tiếng khi khóa máy vẫn cần kiểm tra thiết bị.
 
-[Kế hoạch](PLAN-0.16.md) · [Validation](VALIDATION.json) · [Hướng dẫn nghiệm thu](DEVICE_TESTS.md) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37021955203).
+[Kế hoạch](PLAN-0.17.md) · [Validation](VALIDATION.json) · [Hướng dẫn nghiệm thu](DEVICE_TESTS.md) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37093712664).

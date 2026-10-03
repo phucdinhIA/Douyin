@@ -1,0 +1,89 @@
+{
+  "gtx_batch": {
+    "http": 200,
+    "seconds": 1.2,
+    "markers_preserved": true
+  },
+  "gemini_comments": {
+    "http": 200,
+    "comments": 2,
+    "seconds": 1.28,
+    "ids_preserved": true,
+    "finish_reason": "STOP",
+    "automatic_retries": 0
+  },
+  "full_context_and_first_tts_group": {
+    "gemini_http": 200,
+    "full_context_requests": 1,
+    "cues": 17,
+    "asr_seconds": 67.454,
+    "translation_seconds": 2.95,
+    "all_ids_preserved": true,
+    "finish_reason": "STOP",
+    "usage": {
+      "promptTokenCount": 620,
+      "candidatesTokenCount": 743,
+      "totalTokenCount": 1363,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 620
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "vbee_first_group_seconds": 6.56,
+    "vbee_first_group": [
+      {
+        "cue": 0,
+        "http": 200,
+        "seconds": 5.23,
+        "success": true,
+        "bytes": 75694,
+        "total_seconds": 5.67
+      },
+      {
+        "cue": 1,
+        "http": 200,
+        "seconds": 4.44,
+        "success": true,
+        "bytes": 92413,
+        "total_seconds": 5.03
+      },
+      {
+        "cue": 2,
+        "http": 200,
+        "seconds": 6.0,
+        "success": true,
+        "bytes": 93248,
+        "total_seconds": 6.53
+      }
+    ],
+    "later_cues_not_required_for_startup": 14,
+    "automatic_paid_retries": 0
+  },
+  "voice_timing": [
+    {
+      "cue": 0,
+      "audio_seconds": 4.702041,
+      "slot_seconds": 3.44,
+      "required_rate": 1.367
+    },
+    {
+      "cue": 1,
+      "audio_seconds": 5.746939,
+      "slot_seconds": 3.84,
+      "required_rate": 1.497
+    },
+    {
+      "cue": 2,
+      "audio_seconds": 5.799184,
+      "slot_seconds": 3.92,
+      "required_rate": 1.479
+    }
+  ],
+  "date": "2026-10-03",
+  "scope": "Live GTX/Gemini/Vbee probes; full-context translation reused the previously verified 67.454-second Nova-3 transcript. Apify/Deepgram code and zh-CN unchanged. Timings exclude extraction/ASR, native export and player preparation.",
+  "asr_evidence": "0.16-service-probes.json",
+  "physical_device_verified": false
+}
