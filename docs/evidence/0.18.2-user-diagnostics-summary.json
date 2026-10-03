@@ -1,0 +1,11 @@
+{
+  "reported_patch": "0.18.1-test",
+  "ios": "18.5",
+  "native_binary_upload_HTTP_200": 11,
+  "asr_rejected": 11,
+  "failed_waiting_for_user": 11,
+  "remote_Deepgram_HTTP_200": 2,
+  "claude_full_context": 2,
+  "caption_stage_ready": 2,
+  "caveat": "Counters identify the failing native-file branch; old diagnostics do not contain numerical duration values or exact ASR responses."
+}

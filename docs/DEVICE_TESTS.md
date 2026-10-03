@@ -1,14 +1,12 @@
-# Nghiệm thu Douyin thật — 0.18.1
+# Nghiệm thu iPhone — 0.18.2
 
-Các bước này còn cần chạy trên iPhone thật. Ký/cài IPA riêng như trước, kiểm tra Copy diagnostics là `0.18.1-test`, `tts_enabled: false`, `source_language: zh-CN`.
+Chưa thực hiện trên máy thật. Ký/cài IPA riêng; kiểm tra Copy diagnostics là `0.18.2-test`, `native_source_fast_path: false`, `tts_enabled: false`.
 
-1. Mở các video tiếng Trung 10–30 giây, 1–3 phút và 5–9 phút, đặc biệt video từng báo rỗng/mốc không nhất quán. Chạm nhanh 4 lần. Video phải dừng, có phụ đề rồi mới phát tiếng gốc; không tạo giọng và không đổi tốc độ. Bấm Hủy/Bỏ qua phải phát lại chủ động.
-2. Xem video kế tiếp liên tục, quay lại video cũ, tắt/bật phụ đề: không giữ chữ/video/job cũ, cache thành công không gọi lại API. Thử nguồn native hết hạn: dùng Apify hữu hạn, không bị kẹt sau video đầu.
-3. Đọc câu dài, thoại nhanh, khoảng lặng, nhiều người nói và lời ở cuối video. Mỗi màn hình chỉ có tối đa 3 dòng dọc/2 dòng ngang. Trang chỉ hiện trong mốc câu gốc; khoảng im lặng không giữ chữ câu trước. Pause không chuyển trang; tua lùi/loop đưa đúng câu/trang theo đồng hồ video.
-4. Kéo phụ đề lên/xuống, xoay ngang/dọc, đổi cỡ chữ hệ thống. Không che rail nút phải/thanh điều hướng; mô tả mở rộng có thể cần kéo phụ đề cao hơn. Không cắt dấu tiếng Việt hoặc hiện dấu ba chấm thay phần nội dung chưa đọc.
-5. Video trên 10 phút: đoạn đầu đã dịch có thể phát khi phần sau đang dịch. Tua vào đoạn chưa có bản Việt phải dừng chờ đúng đoạn; đoạn dịch xong thì phát lại, không hiện câu của đoạn khác. Hủy/đổi video trong lúc tải/dịch không áp dụng kết quả trễ.
-6. Mất mạng, quota, tệp không có audio, kết quả ASR rỗng: thông báo phân biệt đúng lỗi. Remote rỗng có tối đa một lượt gửi audio kiểm chứng; rỗng lần nữa dừng, không gọi API liên tục. Không được báo quá 60 phút chỉ vì không nhận ra lời.
-7. Kiểm tra lại bình luận GTX/Gemini, bảng Việt có cuộn, Bản gốc có ảnh/trả lời; phân tích AI không hiện `<mark>`, native/web/OCR chỉ lấy đúng vùng đang thấy. Các chức năng giữ từ 0.18 đã có kiểm thử Simulator.
-8. Phát nền tiếng gốc: khóa máy/chuyển app, pause/play màn hình khóa, quay lại đúng mốc, dừng trước khóa, rút tai nghe và cuộc gọi. Không chồng tiếng, không giữ mute từ video cũ.
+1. Bấm Phụ đề Việt trên các video trước đây đều báo duration mismatch. Chờ Apify → Nova-3 → Claude, sau đó video phát tiếng gốc và phụ đề. Không được có counter native source selected/binary upload chỉ vì player có currentPlayURL.
+2. Kiểm tra liên tiếp ít nhất 5 video, video 10–30 giây, 1–3 phút và 5–9 phút; quay lại clip đã thành công phải dùng cache. So start/end với lời nói, khoảng lặng, cuối video, pause, tua và loop.
+3. Video có đoạn cuối không có audio: khi cần, chỉ kiểm tra nguồn một lần rồi dùng lại ASR. Diagnostics có `input_mode: source_verified_remote`, `source_video_seconds`, `source_audio_seconds`, `deepgram_audio_seconds`, `duration_check: matched_audio`; không gửi lại Deepgram khi kết quả đã thành công.
+4. Phụ đề chỉ 3 dòng dọc/2 ngang, kéo không vượt vùng an toàn; câu dài phân trang trong chính mốc câu gốc. Video dài đang dịch tiếp phải dừng khi tua vào lời nói chưa dịch và tiếp tục khi đúng đoạn đã sẵn sàng.
+5. Hủy/đổi video/mất mạng lúc kiểm tra nguồn: không nhận kết quả cũ, không tự retry trả phí. Track không có audio hoặc audio thực sự không khớp phải báo lỗi rõ. Nếu lỗi mới, gửi Copy diagnostics ngay sau đó; phần `last_caption_timing` có các con số và stage để chẩn đoán đúng bước.
+6. Kiểm tra lại GTX/Gemini bình luận, dịch phân tích AI và phát nền/khóa máy. Giữ âm thanh gốc, không tạo TTS.
 
-Sau lỗi, gửi Copy diagnostics, link video và thao tác/mốc xảy ra. Counters mới gồm `Captions native source selected/fallback`, `Captions Deepgram empty remote recovery`, `Captions Deepgram binary upload`, `Captions Deepgram empty verified audio`, `Captions ASR rejected`, `Captions timed utterance fallback`, `Captions timing repaired`, `Captions translation buffer waiting/ready`. Không gửi key, session hoặc signed URL.
+Phân trang không khẳng định forced alignment từng từ Việt; mốc câu vẫn lấy từ ASR. Không cần gửi key/session hoặc URL CDN có chữ ký.

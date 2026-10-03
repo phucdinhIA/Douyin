@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-03",
+  "live_requests": 2,
+  "cases": [
+    {
+      "case": "long-video-short-audio",
+      "status": 200,
+      "seconds": 30.047,
+      "source": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_type": "video",
+            "start_time": "0.000000",
+            "duration": "19.533333"
+          },
+          {
+            "codec_type": "audio",
+            "start_time": "0.000000",
+            "duration": "13.537007"
+          }
+        ],
+        "format": {
+          "duration": "19.533333"
+        }
+      },
+      "deepgram_duration": 13.537,
+      "words": 34,
+      "max_word_end": 13.44,
+      "transcript_private": true
+    },
+    {
+      "case": "delayed-audio",
+      "status": 200,
+      "seconds": 36.14,
+      "source": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_type": "video",
+            "start_time": "0.000000",
+            "duration": "19.533333"
+          },
+          {
+            "codec_type": "audio",
+            "start_time": "2.838005",
+            "duration": "13.698367"
+          }
+        ],
+        "format": {
+          "duration": "19.533333"
+        }
+      },
+      "deepgram_duration": 10.866938,
+      "words": 26,
+      "first_word_start": 0.16,
+      "max_word_end": 9.5199995,
+      "transcript_private": true
+    }
+  ],
+  "scope": "Two local Mandarin file uploads; raw speech and audio excluded. Not the exact failing user clips.",
+  "finding": "A successful 13.537-second audio response can legitimately accompany a 19.533333-second video. Delayed-track probe also exposes decode truncation, so verification guards remain.",
+  "physical_device_tested": false
+}
