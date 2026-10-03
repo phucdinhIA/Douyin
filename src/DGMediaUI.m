@@ -223,7 +223,7 @@ static BOOL DGMediaPause(UIViewController *owner) {
     UIWindow *surface=self.owner.view.window;if (!surface) return;
     CGRect safe=UIEdgeInsetsInsetRect(surface.bounds,surface.safeAreaInsets);BOOL vertical=safe.size.height>safe.size.width;NSUInteger lines=vertical ? 3 : 2;
     self.buttonTop.constant=vertical ? 58 : 8;
-    CGFloat width=MAX(40,safe.size.width-24-(vertical ? 64 : 24));
+    CGFloat width=MAX(40,safe.size.width-24-64); // Preserve the action rail in both orientations.
     UIFont *font=[[UIFontMetrics metricsForTextStyle:UIFontTextStyleBody] scaledFontForFont:[UIFont systemFontOfSize:19 weight:UIFontWeightMedium] maximumPointSize:24];
     NSString *source=cue[@"text"];
     if (![source isEqual:self.pageSource] || fabs(width-self.pageWidth)>0.5 || fabs(font.pointSize-self.pageFont)>0.1 || lines!=self.pageLines) {
