@@ -40,6 +40,7 @@ static char DGAChunkIndexKey;
 @property(nonatomic) BOOL rollingReported;
 @property(nonatomic) NSUInteger voiceGeneration;
 @property(nonatomic) double voiceOffset;
+@property(nonatomic,weak) AVPlayerItem *observedItem;
 - (void)rollingTick:(double)time playing:(BOOL)playing foreground:(BOOL)foreground;
 - (void)tick;
 - (void)resign;
@@ -143,12 +144,19 @@ static DGAudioController *DGAudio;
         [self.voice pause];self.voice=nil;self.voiceGeneration++;self.seeking=NO;[self rollingMute:NO];if (foreground) [self rollingReport:NO];return;
     }
     NSNumber *current=objc_getAssociatedObject(self.voice.currentItem,&DGAChunkIndexKey);
-    if (!current || current.unsignedIntegerValue!=index) {
+    BOOL boundary=NO;
+    if (current && current.unsignedIntegerValue<self.chunks.count && current.unsignedIntegerValue!=index) {
+        double offset=[self.chunks[current.unsignedIntegerValue][@"start"] doubleValue],clock=CMTimeGetSeconds(self.voice.currentTime)+offset;
+        double edge=MAX(offset,[chunk[@"start"] doubleValue]);
+        boundary=labs((long)current.unsignedIntegerValue-(long)index)==1 && isfinite(clock) && fabs(clock-time)<0.18 && fabs(time-edge)<0.15;
+    }
+    if (!current || (current.unsignedIntegerValue!=index && !boundary)) {
         [self.voice pause];self.voiceGeneration++;self.seeking=NO;AVQueuePlayer *queue=[AVQueuePlayer new];self.voice=queue;self.readyStarted=NSProcessInfo.processInfo.systemUptime;
         AVPlayerItem *item=[AVPlayerItem playerItemWithURL:file];objc_setAssociatedObject(item,&DGAChunkIndexKey,@(index),OBJC_ASSOCIATION_RETAIN_NONATOMIC);[queue insertItem:item afterItem:nil];
         if (self.record) self.record(@"Dubbing rolling anchor",1);
     }
-    self.voiceOffset=[chunk[@"start"] doubleValue];AVQueuePlayer *queue=(AVQueuePlayer *)self.voice;
+    current=objc_getAssociatedObject(self.voice.currentItem,&DGAChunkIndexKey);self.voiceOffset=[self.chunks[current.unsignedIntegerValue][@"start"] doubleValue];AVQueuePlayer *queue=(AVQueuePlayer *)self.voice;
+    if (self.observedItem!=self.voice.currentItem) {self.observedItem=self.voice.currentItem;self.readyStarted=NSProcessInfo.processInfo.systemUptime;}
     // Queue consecutive local exports before their boundary; no whole-video export.
     NSArray *items=queue.items;NSUInteger tail=[objc_getAssociatedObject(items.lastObject,&DGAChunkIndexKey) unsignedIntegerValue];
     while (queue.items.count<4 && tail+1<self.chunks.count) {
@@ -181,7 +189,7 @@ static DGAudioController *DGAudio;
 - (void)route:(NSNotification *)note {if ([note.userInfo[AVAudioSessionRouteChangeReasonKey] unsignedIntegerValue]==AVAudioSessionRouteChangeReasonOldDeviceUnavailable) {[self.background pause];[self.voice pause];self.interrupted=YES;}}
 - (void)stop {
     self.ready=nil;
-    self.voiceGeneration++;self.buffering=nil;self.rollingReported=NO;self.rollingWaiting=NO;
+    self.voiceGeneration++;self.buffering=nil;self.rollingReported=NO;self.rollingWaiting=NO;self.observedItem=nil;
     for (NSDictionary *chunk in self.chunks) if (chunk[@"file"]) [NSFileManager.defaultManager removeItemAtURL:chunk[@"file"] error:NULL];self.chunks=nil;self.voiceOffset=0;
     self.generation++;[self.background pause];self.background=nil;[self.voice pause];self.voice=nil;self.seeking=NO;
     if (self.ownsMute) {DGAMute(self.owner,self.mutedBefore);self.ownsMute=NO;}
