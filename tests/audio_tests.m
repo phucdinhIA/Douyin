@@ -30,6 +30,7 @@ static NSData *wave(void) {
         else data=json(@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://static-ja.youtube-dubbing.com/audio/fixture.wav",@"translateResult":@"Fixture",@"useAiTranslate":@YES}]});
         NSData *body=self.request.HTTPBody;if (!body) {NSInputStream *stream=self.request.HTTPBodyStream;NSMutableData *read=[NSMutableData new];[stream open];uint8_t bytes[4096];NSInteger n;while ((n=[stream read:bytes maxLength:sizeof(bytes)])>0) [read appendBytes:bytes length:(NSUInteger)n];[stream close];body=read;}
         NSDictionary *input=[NSJSONSerialization JSONObjectWithData:body options:0 error:NULL];if ([input[@"subtitles"][0][@"text"] containsString:@"FAIL504"]) {status=504;data=json(@{});}
+        else if (!authFailure) data=json(@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://static-ja.youtube-dubbing.com/audio/fixture.wav",@"translateResult":input[@"subtitles"][0][@"text"],@"useAiTranslate":@YES}]});
     } else if ([self.request.URL.path isEqual:@"/login"]) {status=401;data=json(@{});}
     else {atomic_fetch_add(&audioCalls,1);if ([self.request valueForHTTPHeaderField:@"Authorization"] || [self.request valueForHTTPHeaderField:@"Ck"]) atomic_fetch_add(&unsafe,1);data=wave();}
     [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:self.request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];

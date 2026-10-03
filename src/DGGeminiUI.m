@@ -4,6 +4,7 @@
 #import "DGTransduck.h"
 #import <WebKit/WebKit.h>
 #import <Vision/Vision.h>
+#import <CommonCrypto/CommonDigest.h>
 #import <objc/runtime.h>
 #include <string.h>
 
@@ -358,7 +359,8 @@ static __weak DGGeminiEntry *DGActiveTranslation;
             NSUInteger index=cues.count;[cues addObject:@{@"id":@(index),@"start":@(index),@"end":@(index+1),@"text":[source substringWithRange:range]}];offset=NSMaxRange(range);
         }
         if (DGRecordAI) DGRecordAI(@"AI Claude translation sent",1);
-        [entry.translator post:@"/api/v2/ai-translate/translate" body:DGClaudeBody(cues,@"douyin_ai_analysis",@"Douyin AI analysis") completion:^(NSData *data,NSInteger status,NSString *failure) {
+        NSData *sourceBytes=[source dataUsingEncoding:NSUTF8StringEncoding];unsigned char digest[CC_SHA256_DIGEST_LENGTH];CC_SHA256(sourceBytes.bytes,(CC_LONG)sourceBytes.length,digest);NSMutableString *identity=[NSMutableString stringWithString:@"douyin_ai_"];for (NSUInteger i=0;i<sizeof(digest);i++) [identity appendFormat:@"%02x",digest[i]];
+        [entry.translator post:@"/api/v2/ai-translate/translate" body:DGClaudeBody(cues,identity,@"Douyin AI analysis") completion:^(NSData *data,NSInteger status,NSString *failure) {
             NSArray *translated=failure ? nil : DGClaudeAnswer(data,status,cues,&failure);NSMutableArray *pieces=[NSMutableArray new];for (NSDictionary *cue in translated) [pieces addObject:cue[@"text"]];NSString *answer=translated ? [pieces componentsJoinedByString:@"\n\n"] : nil;
             DGGeminiEntry *current=weakSelf;[current.translator cancel];current.translator=nil;
             if (!DGOn() || !current.tabEntered || !current.owner.view.window || current.owner.view.hidden) {[current stop];return;}

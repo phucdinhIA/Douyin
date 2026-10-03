@@ -22,8 +22,8 @@ NSDictionary *DGClaudeBody(NSArray *cues,NSString *videoID,NSString *title) {
         NSDictionary *cue=cues[i];total+=[cue[@"text"] length];if (total>60000) return nil;
         NSMutableDictionary *item=[@{@"index":cue[@"id"],@"text":cue[@"text"],@"start":cue[@"start"],@"end":cue[@"end"],@"googleTranslation":@""} mutableCopy];
         NSMutableArray *before=[NSMutableArray new],*after=[NSMutableArray new];
-        for (NSUInteger j=i>3 ? i-3 : 0;j<i;j++) [before addObject:cues[j][@"text"]];
-        for (NSUInteger j=i+1;j<MIN(i+3,cues.count);j++) [after addObject:cues[j][@"text"]];
+        for (NSUInteger j=i>3 ? i-3 : 0;j<i;j++) [before addObject:@{@"text":cues[j][@"text"]}];
+        for (NSUInteger j=i+1;j<MIN(i+3,cues.count);j++) [after addObject:@{@"text":cues[j][@"text"]}];
         if (before.count) item[@"contextBefore"]=before;if (after.count) item[@"contextAfter"]=after;[items addObject:item];
     }
     return @{@"videoId":videoID,@"title":title ?: @"",@"model":DGClaudeModel,@"toLanguage":@"vi-VN",@"translationRulesEnabled":@NO,@"skipTranslation":@NO,@"subtitles":items};
@@ -59,6 +59,12 @@ NSURL *DGNamMinhAudioURL(NSData *data,NSInteger status,NSString **failure) {
     id value=[item isKindOfClass:NSDictionary.class] ? item[@"ttsUrl"] : nil;
     NSURL *url=DGBackendString(value,4096) ? [NSURL URLWithString:value] : nil;
     if (status!=200 || !DGBackendAudioURL(url)) {if (failure) *failure=DGBackendFailure(status);return nil;}return url;
+}
+NSURL *DGNamMinhAudioForText(NSData *data,NSInteger status,NSString *text,NSString **failure) {
+    NSURL *url=DGNamMinhAudioURL(data,status,failure);if (!url) return nil;
+    NSDictionary *root=DGBackendJSON(data);NSDictionary *item=root[@"subtitleDubbingResults"][0];
+    if (![item[@"translateResult"] isEqual:text] || ![item[@"useAiTranslate"] isEqual:@YES]) {if (failure) *failure=@"Giọng trả về chưa khớp câu phụ đề. Giữ tiếng gốc để tránh đọc sai đoạn.";return nil;}
+    return url;
 }
 @interface DGTransduckClient ()
 @property(nonatomic,strong) NSDictionary *config;

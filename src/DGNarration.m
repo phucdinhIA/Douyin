@@ -65,7 +65,7 @@ static NSString *DGVoiceDigest(NSString *text) {
         [self.backend post:@"/api/v2/dubbing/generateDubbing" body:DGNamMinhBodyForCue(cue,self.config[@"video_id"]) completion:^(NSData *data,NSInteger status,NSString *error) {
             dispatch_async(dispatch_get_main_queue(),^{
                 DGNarration *owner=weakSelf;if (!owner || owner.generation!=generation) return;
-                                if (owner.event) owner.event([NSString stringWithFormat:@"Nam Minh HTTP %ld",(long)status]);NSString *failure=nil;NSURL *url=error ? nil : DGNamMinhAudioURL(data,status,&failure);
+                if (owner.event) owner.event([NSString stringWithFormat:@"Nam Minh HTTP %ld",(long)status]);NSString *failure=nil;NSURL *url=error ? nil : DGNamMinhAudioForText(data,status,cue[@"text"],&failure);
                 if (!url) {[owner finish:nil failure:failure ?: @"Kết nối Nam Minh bị gián đoạn."];return;}
                 NSURLSessionDataTask *download=[owner.session dataTaskWithURL:url completionHandler:^(NSData *audio,NSURLResponse *audioResponse,NSError *audioError) {
                     BOOL valid=!audioError && [(NSHTTPURLResponse *)audioResponse statusCode]==200 && DGVoiceURL(audioResponse.URL);

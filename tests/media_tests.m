@@ -115,6 +115,9 @@ int main(void) {@autoreleasepool {
     check(fullInput.count==150 && [fullInput.lastObject[@"id"] isEqual:@149] && [fullBody[@"generationConfig"][@"maxOutputTokens"] unsignedIntegerValue]>8192,@"short-video request contains entire 150-cue context with expanded output budget");
     NSDictionary *claudeBody=DGClaudeBody(shortTrack,@"douyin_test",@"Whole context");
     check([claudeBody[@"model"] isEqual:DGClaudeModel] && [claudeBody[@"toLanguage"] isEqual:@"vi-VN"] && [claudeBody[@"subtitles"] count]==150 && [claudeBody[@"subtitles"][149][@"contextBefore"] count]==3,@"Claude receives the entire short track and neighboring context in one fixed-language request");
+    check([claudeBody[@"subtitles"][149][@"contextBefore"][0][@"text"] isEqual:shortTrack[146][@"text"]] && [claudeBody[@"subtitles"][0][@"contextAfter"][0][@"text"] isEqual:shortTrack[1][@"text"]],@"live backend context contract uses text objects rather than rejected strings");
+    NSDictionary *echo=@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://static-ja.youtube-dubbing.com/audio/sample.mp3",@"translateResult":@"Expected",@"useAiTranslate":@YES}]};
+    check(DGNamMinhAudioForText(json(echo),200,@"Expected",NULL) && !DGNamMinhAudioForText(json(echo),200,@"Different",NULL),@"voice must echo the exact requested translation before audio can enter its timeline");
     NSArray *one=@[@{@"id":@0,@"start":@0,@"end":@1,@"text":@"你好"}];
     NSArray *parsedClaude=DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"translateResult":@"Xin chào",@"useAiTranslate":@YES}]}),200,one,&error);
     check([parsedClaude[0][@"id"] isEqual:@0] && [parsedClaude[0][@"start"] isEqual:@0] && [parsedClaude[0][@"end"] isEqual:@1],@"Claude output retains authoritative local IDs and timestamps");

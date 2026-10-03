@@ -7,6 +7,7 @@ FOUNDATION_EXPORT NSArray *DGClaudeAnswer(NSData *data,NSInteger status,NSArray 
 FOUNDATION_EXPORT NSDictionary *DGNamMinhBody(NSString *text);
 FOUNDATION_EXPORT NSDictionary *DGNamMinhBodyForCue(NSDictionary *cue,NSString *videoID);
 FOUNDATION_EXPORT NSURL *DGNamMinhAudioURL(NSData *data,NSInteger status,NSString **failure);
+FOUNDATION_EXPORT NSURL *DGNamMinhAudioForText(NSData *data,NSInteger status,NSString *text,NSString **failure);
 FOUNDATION_EXPORT BOOL DGBackendAudioURL(NSURL *url);
 @interface DGTransduckClient : NSObject <NSURLSessionTaskDelegate>
 @property(nonatomic,copy) void (^event)(NSString *);
