@@ -31,6 +31,7 @@ NSString *DGSourceAssetFailure(AVAsset *asset) {
     cfg.HTTPCookieStorage=nil;cfg.URLCredentialStorage=nil;cfg.URLCache=nil;cfg.HTTPShouldSetCookies=NO;cfg.timeoutIntervalForResource=180;
     self.session=[NSURLSession sessionWithConfiguration:cfg delegate:self delegateQueue:nil];
     NSMutableURLRequest *request=[NSMutableURLRequest requestWithURL:url];request.timeoutInterval=60;
+    request.HTTPShouldHandleCookies=NO;
     [request setValue:@"Mozilla/5.0" forHTTPHeaderField:@"User-Agent"];
     [[self.session downloadTaskWithRequest:request] resume];
 }

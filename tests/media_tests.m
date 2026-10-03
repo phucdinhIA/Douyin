@@ -96,6 +96,9 @@ int main(void) {@autoreleasepool {
     NSDictionary *utterances=@{@"metadata":@{@"duration":@10},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[],@"transcript":@"你好。谢谢。"}]}],@"utterances":@[@{@"transcript":@"你好。",@"start":@1,@"end":@2},@{@"transcript":@"谢谢。",@"start":@5,@"end":@6}]}};
     NSArray *utteranceCues=DGCaptionSegments(json(utterances),&error);
     check(utteranceCues.count==2 && [utteranceCues[0][@"timing_utterance"] boolValue] && !DGCaptionTextAt(utteranceCues,3) && !DGDeepgramNeedsUpload(json(utterances),200),@"timed utterances retain provider speech intervals and silence without invented word timings or retry");
+    NSMutableDictionary *pointRoot=[utterances mutableCopy],*pointResults=[utterances[@"results"] mutableCopy];pointResults[@"channels"]=@[@{@"alternatives":@[@{@"words":@[@{@"word":@"你好。谢谢。",@"start":@0,@"end":@0}]}]}];pointRoot[@"results"]=pointResults;
+    check(DGCaptionSegments(json(pointRoot),&error).count==2,@"all-point word timestamps fall back to real utterance timing when the provider supplies it");
+    check(DGCaptionSegments(timedWords(@[@{@"word":@"你好",@"punctuated_word":NSNull.null,@"start":@0,@"end":@1}],2),&error).count==1,@"null optional punctuation uses actual word text instead of rejecting valid speech");
     AVURLAsset *toneAsset=[AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:@"tests/fixtures/tone.wav"] options:nil];
     check(!DGSourceAssetFailure(toneAsset),@"source verifier accepts a real two-second audio track");
     AVURLAsset *silent=[AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:@"tests/fixtures/source-silent.mp4"] options:nil];
@@ -125,6 +128,23 @@ int main(void) {@autoreleasepool {
     NSMutableString *expected=[NSMutableString new],*retained=[NSMutableString new];for (NSDictionary *w in realWords) [expected appendString:w[@"word"]];for (NSDictionary *c in realCues) [retained appendString:c[@"text"]];check([expected isEqual:retained],@"real-track replay preserves every speech token and its order");
     NSMutableDictionary *point=realWords[30],*backwards=realWords[65];point[@"end"]=point[@"start"];backwards[@"start"]=@([realWords[64][@"start"] doubleValue]-0.01);
     NSArray *replayed=DGCaptionCoalesceShortCues(DGCaptionSegments(json(realRoot),&error));[retained setString:@""];BOOL hasRepair=NO;for (NSDictionary *c in replayed) {[retained appendString:c[@"text"]];hasRepair=hasRepair || [c[@"timing_repaired"] boolValue];}
+    for (NSString *name in @[@"mandarin-aligned-short",@"mandarin-context-audio",@"silent-first-channel"]) {
+        NSData *sample=[NSData dataWithContentsOfFile:[NSString stringWithFormat:@"tests/fixtures/deepgram-%@.json",name]];
+        NSArray *track=DGCaptionCoalesceShortCues(DGCaptionSegments(sample,&error));
+        check(DGCaptionValidCues(track),[NSString stringWithFormat:@"live binary timing replay %@ accepts speech and preserves valid boundaries",name]);
+        id response=[NSJSONSerialization JSONObjectWithData:sample options:0 error:NULL];NSMutableString *all=[NSMutableString new];
+        for (id channel in response[@"results"][@"channels"]) for (NSDictionary *w in channel[@"alternatives"][0][@"words"]) [all appendString:w[@"word"]];
+        NSMutableString *visible=[NSMutableString new];for (NSDictionary *cue in track) [visible appendString:cue[@"text"]];
+        check([all isEqual:visible],[NSString stringWithFormat:@"live binary timing replay %@ loses no speech text, including provider tail overshoot",name]);
+    }
+    // Repeat real intervals with deterministic bounded rounding/point mutations.
+    // Assert contract properties rather than a duplicate segmentation algorithm.
+    for (NSUInteger seed=0;seed<128;seed++) {
+        id sample=[NSJSONSerialization JSONObjectWithData:realTiming options:NSJSONReadingMutableContainers error:NULL];NSMutableArray *words=sample[@"results"][@"channels"][0][@"alternatives"][0][@"words"];
+        for (NSUInteger i=seed%11;i<words.count;i+=17) {NSMutableDictionary *word=words[i];if (seed%2) word[@"end"]=word[@"start"];else if (i>0) word[@"start"]=@(MAX(0,[words[i-1][@"start"] doubleValue]-0.005));}
+        NSArray *track=DGCaptionCoalesceShortCues(DGCaptionSegments(json(sample),&error));NSMutableString *speech=[NSMutableString new];for (NSDictionary *cue in track) [speech appendString:cue[@"text"]];
+        check(DGCaptionValidCues(track) && [speech isEqual:expected],@"bounded ASR mutation retains every token with ordered nonoverlapping cue intervals");
+    }
     check(DGCaptionValidCues(replayed) && [expected isEqual:retained] && hasRepair,@"real-length transcript with point and regressive words repairs without losing text or breaking the cue timeline");
     check([DGCaptionTextAt(cues,0) isEqual:@"你好"] && !DGCaptionTextAt(cues,1) && !DGCaptionTextAt(cues,1.5),@"cue start included end excluded and silence hides captions");
     check([DGCaptionTextAt(cues,5.5) isEqual:@"谢谢"] && [DGCaptionTextAt(cues,0.5) isEqual:@"你好"],@"seek backwards and loop use playback time not wall clock");

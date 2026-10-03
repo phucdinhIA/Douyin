@@ -13,15 +13,20 @@ static BOOL DGHasHan(NSString *text) {
 }
 static id DGJSON(NSData *data) {return [data isKindOfClass:NSData.class] && data.length<=16*1024*1024 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL] : nil;}
 // Select actual speech, not simply the first (possibly silent) channel.
+static BOOL DGDeepgramTimedWords(NSArray *words) {
+    for (id word in words) if ([word isKindOfClass:NSDictionary.class] && DGNumber(word[@"start"]) && DGNumber(word[@"end"]) && [word[@"end"] doubleValue]>[word[@"start"] doubleValue]) return YES;
+    return NO;
+}
 static NSArray *DGDeepgramWords(NSDictionary *results) {
+    NSArray *points=nil;
     id channels=results[@"channels"];
     if ([channels isKindOfClass:NSArray.class]) for (id channel in channels) {
         id alternatives=[channel isKindOfClass:NSDictionary.class] ? channel[@"alternatives"] : nil;
         if ([alternatives isKindOfClass:NSArray.class]) for (id alternative in alternatives) {
             id words=[alternative isKindOfClass:NSDictionary.class] ? alternative[@"words"] : nil;
-            if ([words isKindOfClass:NSArray.class] && [words count]) return words;
+            if ([words isKindOfClass:NSArray.class] && [words count]) {if (DGDeepgramTimedWords(words)) return words;if (!points) points=words;}
         }
-    }return nil;
+    }return points;
 }
 static NSArray *DGDeepgramUtterances(NSDictionary *results) {
     id utterances=results[@"utterances"];
@@ -131,14 +136,14 @@ NSArray *DGCaptionSegments(NSData *data,NSString **failure) {
     if ([metadata[@"duration"] doubleValue]>3600) {if (failure) *failure=@"Video vượt giới hạn 60 phút.";return nil;}
     if (![results isKindOfClass:NSDictionary.class] || ![channels isKindOfClass:NSArray.class] || ![channels count]) {if (failure) *failure=@"Deepgram trả cấu trúc nhận dạng không hợp lệ.";return nil;}
     BOOL utteranceFallback=NO;NSArray *words=DGDeepgramWords(results);
-    if (!words) {words=DGDeepgramUtterances(results);utteranceFallback=words.count>0;}
+    if (!words || !DGDeepgramTimedWords(words)) {NSArray *timed=DGDeepgramUtterances(results);if (timed) {words=timed;utteranceFallback=words.count>0;}}
     if (!words.count) {if (failure) *failure=@"Deepgram chưa trả lời nói có mốc thời gian từ âm thanh video này.";return nil;}
     if (words.count>50000) {if (failure) *failure=@"Kết quả Deepgram vượt giới hạn số từ nhận dạng.";return nil;}
     NSMutableArray *cues=[NSMutableArray new];NSMutableString *text=[NSMutableString new];__block double start=0,end=0;double previousStart=0;BOOL sentenceEnd=NO;__block BOOL clamped=NO,repaired=NO;double duration=[metadata[@"duration"] doubleValue];NSUInteger wordIndex=0;
     void (^flush)(void)=^{[cues addObject:@{@"id":@(cues.count),@"start":@(start),@"end":@(end),@"text":[text copy],@"timing_clamped":@(clamped),@"timing_repaired":@(repaired)}];};
     for (id word in words) {
         wordIndex++;
-        NSString *token=[word isKindOfClass:NSDictionary.class] ? word[@"punctuated_word"] ?: word[@"word"] : nil;
+        NSString *token=[word isKindOfClass:NSDictionary.class] ? (DGString(word[@"punctuated_word"],utteranceFallback ? 500 : 80) ? word[@"punctuated_word"] : word[@"word"]) : nil;
         if (![word isKindOfClass:NSDictionary.class] || !DGString(token,utteranceFallback ? 500 : 80) || !DGNumber(word[@"start"]) || !DGNumber(word[@"end"])) {if (failure) *failure=@"Deepgram thiếu mốc thời gian hợp lệ.";return nil;}
         double a=[word[@"start"] doubleValue],b=[word[@"end"] doubleValue];
         if (a < -0.02 || b < -0.02 || a < previousStart-0.5 || b < a-0.02 || b>duration+2.0 || a>duration+2.0) {
