@@ -18,12 +18,13 @@ static NSData *wave(void) {
     int16_t *samples=(int16_t *)(p+44);for (NSUInteger i=0;i<frames;i++) samples[i]=(int16_t)(10000*sin(2*M_PI*800*i/44100.0));return data;
 }
 @interface VoiceMock : NSURLProtocol
+@property(nonatomic) BOOL stopped;
 @end
 @implementation VoiceMock
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {(void)request;return YES;}
 + (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request {return request;}
 - (void)startLoading {
-    NSInteger status=200;NSData *data;
+    NSInteger status=200;NSData *data;BOOL delay=NO;
     if ([self.request.URL.path isEqual:@"/api/v2/dubbing/generateDubbing"]) {
         atomic_fetch_add(&synthCalls,1);if (![[self.request valueForHTTPHeaderField:@"Ck"] isEqual:@"synthetic-backend"]) atomic_fetch_add(&unsafe,1);
         if (authFailure) {status=401;data=json(@{@"error_message":@"private contents must never display"});}
@@ -31,11 +32,13 @@ static NSData *wave(void) {
         NSData *body=self.request.HTTPBody;if (!body) {NSInputStream *stream=self.request.HTTPBodyStream;NSMutableData *read=[NSMutableData new];[stream open];uint8_t bytes[4096];NSInteger n;while ((n=[stream read:bytes maxLength:sizeof(bytes)])>0) [read appendBytes:bytes length:(NSUInteger)n];[stream close];body=read;}
         NSDictionary *input=[NSJSONSerialization JSONObjectWithData:body options:0 error:NULL];if ([input[@"subtitles"][0][@"text"] containsString:@"FAIL504"]) {status=504;data=json(@{});}
         else if (!authFailure) data=json(@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://static-ja.youtube-dubbing.com/audio/fixture.wav",@"translateResult":input[@"subtitles"][0][@"text"],@"useAiTranslate":@YES}]});
+        delay=[input[@"subtitles"][0][@"text"] containsString:@"DELAY_FIRST"];
     } else if ([self.request.URL.path isEqual:@"/login"]) {status=401;data=json(@{});}
     else {atomic_fetch_add(&audioCalls,1);if ([self.request valueForHTTPHeaderField:@"Authorization"] || [self.request valueForHTTPHeaderField:@"Ck"]) atomic_fetch_add(&unsafe,1);data=wave();}
-    [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:self.request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
+    void (^deliver)(void)=^{if (self.stopped) return;[self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:self.request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];};
+    if (delay) dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(),deliver);else deliver();
 }
-- (void)stopLoading {}
+- (void)stopLoading {self.stopped=YES;}
 @end
 static void waitFor(BOOL (^finished)(void)) {NSDate *deadline=[NSDate dateWithTimeIntervalSinceNow:20];while (!finished() && deadline.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
 static double rms(AVAudioPCMBuffer *buffer,double seconds) {
@@ -73,6 +76,11 @@ int main(void) {@autoreleasepool {
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];check(ready.count==1,@"prefetch backpressure stops beyond 60 seconds from playback");
     [rolling prioritizeTime:180];waitFor(^BOOL{return ready.count==2;});check([ready[1][@"index"] isEqual:@2],@"forward seek prioritizes its chunk instead of synthesizing skipped narration");
     [rolling prioritizeTime:0];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];check(ready.count==2,@"backward seek reuses ready chunk without another synthesis");
+    [rolling cancel];for (NSDictionary *chunk in ready) if (chunk[@"file"]) [NSFileManager.defaultManager removeItemAtURL:chunk[@"file"] error:NULL];
+    ready=[NSMutableArray new];NSMutableArray *seekCues=[NSMutableArray new];NSString *seekPrefix=NSUUID.UUID.UUIDString;
+    for (NSUInteger i=0;i<12;i++) [seekCues addObject:@{@"id":@(i),@"start":@(i*30),@"end":@(i*30+2),@"text":[NSString stringWithFormat:@"%@ %@ %lu",seekPrefix,i<3 ? @"DELAY_FIRST" : @"now",(unsigned long)(i/3)]}];
+    rolling.chunkReady=^(NSDictionary *chunk) {[ready addObject:chunk];};before=atomic_load(&synthCalls);[rolling start:seekCues at:0];waitFor(^BOOL {return atomic_load(&synthCalls)>before;});[rolling prioritizeTime:180];waitFor(^BOOL {return ready.count>0;});
+    check(ready.count==1 && [ready[0][@"index"] isEqual:@2] && ready[0][@"file"],@"seek cancels an in-flight obsolete group and immediately prepares the requested position");[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.1]];check(ready.count==1,@"cancelled old synthesis cannot publish a stale chunk after seek");
     [rolling cancel];for (NSDictionary *chunk in ready) if (chunk[@"file"]) [NSFileManager.defaultManager removeItemAtURL:chunk[@"file"] error:NULL];
     ready=[NSMutableArray new];NSMutableArray *faultCues=[NSMutableArray new];NSString *faultPrefix=NSUUID.UUID.UUIDString;
     for (NSUInteger i=0;i<9;i++) [faultCues addObject:@{@"id":@(i),@"start":@(i*4),@"end":@(i*4+2),@"text":[NSString stringWithFormat:@"%@ %@ %lu",faultPrefix,i/3==1 ? @"FAIL504" : @"ok",(unsigned long)(i/3)]}];

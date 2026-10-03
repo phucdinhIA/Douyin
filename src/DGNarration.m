@@ -148,6 +148,7 @@ NSArray *DGVoiceChunks(NSArray *cues) {
 @property(nonatomic,strong) NSArray *chunks;
 @property(nonatomic,strong) NSMutableSet *done;
 @property(nonatomic,strong) DGNarration *job;
+@property(nonatomic,strong) NSDictionary *activeChunk;
 @property(nonatomic) NSTimeInterval time;
 @property(nonatomic) NSUInteger generation;
 - (void)pump;
@@ -157,21 +158,28 @@ NSArray *DGVoiceChunks(NSArray *cues) {
 - (void)start:(NSArray *)cues at:(NSTimeInterval)time {
     [self cancel];self.chunks=DGVoiceChunks(cues);self.done=[NSMutableSet new];self.time=isfinite(time) && time>=0 ? time : 0;[self pump];
 }
-- (void)prioritizeTime:(NSTimeInterval)time {if (isfinite(time) && time>=0) {self.time=time;[self pump];}}
+- (void)prioritizeTime:(NSTimeInterval)time {
+    if (!isfinite(time) || time<0) return;self.time=time;
+    if (self.job) for (NSDictionary *chunk in self.chunks) {
+        if ([chunk[@"start"] doubleValue]<=time && time<[chunk[@"end"] doubleValue] && ![self.done containsObject:chunk[@"index"]] && ![chunk[@"index"] isEqual:self.activeChunk[@"index"]]) {
+            self.generation++;[self.job cancel];self.job=nil;self.activeChunk=nil;if (self.event) self.event(@"Nam Minh seek reprioritized");break;
+        }
+    }[self pump];
+}
 - (void)pump {
     if (self.job || !self.chunks.count) return;NSDictionary *next=nil;
     for (NSDictionary *chunk in self.chunks) {
         if ([chunk[@"end"] doubleValue]<=self.time || [chunk[@"start"] doubleValue]>self.time+60 || [self.done containsObject:chunk[@"index"]]) continue;
         next=chunk;break;
     }if (!next) return;
-    DGNarration *job=[[DGNarration alloc] initWithConfig:self.config configuration:self.configuration];self.job=job;job.timelineDuration=[next[@"end"] doubleValue]-[next[@"start"] doubleValue];
+    DGNarration *job=[[DGNarration alloc] initWithConfig:self.config configuration:self.configuration];self.job=job;self.activeChunk=next;job.timelineDuration=[next[@"end"] doubleValue]-[next[@"start"] doubleValue];
     job.event=self.event;NSUInteger generation=self.generation;__weak DGRollingVoice *weakSelf=self;
     job.completion=^(NSURL *file,NSString *failure) {
         DGRollingVoice *owner=weakSelf;if (!owner || owner.generation!=generation) {if (file) [NSFileManager.defaultManager removeItemAtURL:file error:NULL];return;}
-        double factor=owner.job.videoRateFactor;owner.job=nil;[owner.done addObject:next[@"index"]];NSMutableDictionary *ready=[next mutableCopy];if (file) {ready[@"file"]=file;ready[@"video_rate_factor"]=@(factor);}else ready[@"failure"]=failure ?: @"Nam Minh chưa tạo được đoạn này.";
+        double factor=owner.job.videoRateFactor;owner.job=nil;owner.activeChunk=nil;[owner.done addObject:next[@"index"]];NSMutableDictionary *ready=[next mutableCopy];if (file) {ready[@"file"]=file;ready[@"video_rate_factor"]=@(factor);}else ready[@"failure"]=failure ?: @"Nam Minh chưa tạo được đoạn này.";
         if (owner.event) owner.event(file ? @"Nam Minh rolling chunk ready" : @"Nam Minh rolling chunk failed");if (owner.chunkReady) owner.chunkReady(ready);[owner pump];
     };[job start:next[@"cues"]];
 }
-- (void)cancel {self.generation++;[self.job cancel];self.job=nil;self.chunks=nil;self.done=nil;}
+- (void)cancel {self.generation++;[self.job cancel];self.job=nil;self.activeChunk=nil;self.chunks=nil;self.done=nil;}
 - (void)dealloc {[_job cancel];}
 @end
