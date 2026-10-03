@@ -303,6 +303,7 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     __block BOOL drawn=NO;
     UIImage *snapshot=[renderer imageWithActions:^(__unused UIGraphicsImageRendererContext *context) {drawn=[root drawViewHierarchyInRect:root.bounds afterScreenUpdates:YES];}];
     self.panel.hidden=panelHidden;self.button.hidden=buttonHidden;if (DGRecordAI) DGRecordAI(@"AI local OCR started",1);
+    if (!drawn || !snapshot.CGImage) {self.capturePending=NO;return;}
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^{
         VNRecognizeTextRequest *request=[VNRecognizeTextRequest new];request.recognitionLevel=VNRequestTextRecognitionLevelAccurate;request.recognitionLanguages=@[@"zh-Hans",@"en-US"];request.usesLanguageCorrection=YES;
         VNImageRequestHandler *handler=[[VNImageRequestHandler alloc] initWithCGImage:snapshot.CGImage options:@{}];NSError *error=nil;BOOL ok=[handler performRequests:@[request] error:&error];

@@ -278,7 +278,7 @@ static NSString *DGCaptionDigest(NSString *source) {
     [self cancel];self.videoID=videoID;self.translated=[NSMutableArray new];
     self.preferredTime=isfinite(time) && time>0 ? time : 0;
     self.videoTitle=[self.store translationForSource:[self cacheKey:@"title"]];
-    if (!DGCaptionVideoURL(videoID) || !DGKey(self.config[@"apify_api_key"]) || !DGKey(self.config[@"deepgram_api_key"]) || ![(self.config[@"backend"] ?: DGBackendConfig())[@"email"] length] || ![self.config[@"apify_actor"] isEqual:@"apple_yang~douyin-video-audio-downloader"]) {[self fail:@"Chưa cấu hình đủ Apify, Deepgram và Gemini cho phụ đề."];return;}
+    if (!DGCaptionVideoURL(videoID) || !DGKey(self.config[@"apify_api_key"]) || !DGKey(self.config[@"deepgram_api_key"]) || ![(self.config[@"backend"] ?: DGBackendConfig())[@"email"] length] || ![self.config[@"apify_actor"] isEqual:@"apple_yang~douyin-video-audio-downloader"]) {[self fail:@"Chưa cấu hình đủ Apify, Deepgram và Claude cho phụ đề."];return;}
     self.source=[self cached:@"asr"];NSArray *saved=[self cached:@"vi"];
     BOOL matched=self.source && saved.count<=self.source.count;
     if (matched) for (NSDictionary *cue in saved) {NSUInteger i=[cue[@"id"] unsignedIntegerValue];if (i>=self.source.count || ![cue[@"start"] isEqual:self.source[i][@"start"]] || ![cue[@"end"] isEqual:self.source[i][@"end"]]) matched=NO;}

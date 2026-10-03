@@ -80,11 +80,11 @@ static BOOL DGHan(NSString *text) {for (NSUInteger i=0;i<text.length;i++) {unich
 - (void)provider:(NSNotification *)note {if ([note.object isKindOfClass:NSString.class]) [self.status setTitle:note.object forState:UIControlStateNormal];}
 - (void)languageChanged {BOOL original=self.language.selectedSegmentIndex==1;self.table.hidden=original;self.status.hidden=original;self.panel.backgroundColor=original ? UIColor.clearColor : UIColor.systemBackgroundColor;
     // Original mode exposes the native list below a small language switch.
-    if (original && self.nativeScroll && !self.reservedOriginalSpace) {UIEdgeInsets inset=self.nativeScroll.contentInset;inset.top+=48;self.nativeScroll.contentInset=inset;UIEdgeInsets indicator=self.nativeScroll.scrollIndicatorInsets;indicator.top+=48;self.nativeScroll.scrollIndicatorInsets=indicator;CGPoint offset=self.nativeScroll.contentOffset;offset.y-=48;self.nativeScroll.contentOffset=offset;self.reservedOriginalSpace=YES;}
+    if (original && self.nativeScroll && !self.reservedOriginalSpace) {UIEdgeInsets inset=self.nativeScroll.contentInset;inset.top+=48;self.nativeScroll.contentInset=inset;UIEdgeInsets indicator=self.nativeScroll.verticalScrollIndicatorInsets;indicator.top+=48;self.nativeScroll.verticalScrollIndicatorInsets=indicator;CGPoint offset=self.nativeScroll.contentOffset;offset.y-=48;self.nativeScroll.contentOffset=offset;self.reservedOriginalSpace=YES;}
     if (!original) [self restoreOriginalSpace];
     self.panel.userInteractionEnabled=YES;
 }
-- (void)restoreOriginalSpace {if (!self.reservedOriginalSpace) return;self.reservedOriginalSpace=NO;UIEdgeInsets inset=self.nativeScroll.contentInset;inset.top-=48;self.nativeScroll.contentInset=inset;UIEdgeInsets indicator=self.nativeScroll.scrollIndicatorInsets;indicator.top-=48;self.nativeScroll.scrollIndicatorInsets=indicator;CGPoint offset=self.nativeScroll.contentOffset;offset.y+=48;self.nativeScroll.contentOffset=offset;}
+- (void)restoreOriginalSpace {if (!self.reservedOriginalSpace) return;self.reservedOriginalSpace=NO;UIEdgeInsets inset=self.nativeScroll.contentInset;inset.top-=48;self.nativeScroll.contentInset=inset;UIEdgeInsets indicator=self.nativeScroll.verticalScrollIndicatorInsets;indicator.top-=48;self.nativeScroll.verticalScrollIndicatorInsets=indicator;CGPoint offset=self.nativeScroll.contentOffset;offset.y+=48;self.nativeScroll.contentOffset=offset;}
 - (void)retry {self.blocked=NO;[self.attempted removeAllObjects];[self scan];}
 - (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section {(void)table;(void)section;return self.sources.count+(self.nativeScroll ? 1 : 0);}
 - (UITableViewCell *)tableView:(UITableView *)table cellForRowAtIndexPath:(NSIndexPath *)path {
