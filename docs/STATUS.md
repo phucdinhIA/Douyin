@@ -1,20 +1,20 @@
-# Trạng thái 0.18.0-test
+# Trạng thái 0.18.1-test
 
-Đã đóng gói IPA riêng `Douyin-40.6.0-0.18.0-CLAUDE-NAMMINH-PRIVATE-TEST.ipa` sau khi build và toàn bộ kiểm tra CI đạt. Source `545ee7b58df77d1788e283a928930af967b9594c`; library SHA-256 `20b97d53ef55714b5ba6082cb596819fcec9e345d9d0ebbdd46ac4dfd25033a9`; IPA SHA-256 `a97c939667c6a310f007146c5e9ad82d76f4492928228f4c6e4830c5879f51e4`; kích thước 705,023,982 byte.
+IPA `Douyin-40.6.0-0.18.1-SUBTITLES-PRIVATE-TEST.ipa` đã đóng gói sau khi các bước CI đạt. Source `7998308bc5d78a605e450077b27a3f510cdd013e`; library SHA-256 `4e50eb6cea1e63e61666388632b041f98a1c99ef44187cdf07cf4728aeaa944a`; IPA SHA-256 `ddb08e263315ac5014d66d100ec700edebc501a2ffb18b251cc238e1ea8135ad`; kích thước 705,006,639 byte.
 
 | Kiểm tra | Kết quả |
 |---|---|
 | Python đóng gói | 21 đạt |
 | Gemini / dịch AI | 29 / 38 đạt |
-| Media / audio progressive | 69 / 22 đạt |
-| UIKit iPhone 15 Simulator | 225 đạt, không overflow theo fixture |
-| Backend thật | Claude dịch đủ 15 câu; Nam Minh tải đủ 15 audio, echo đúng chữ |
-| Đối chiếu IPA độc lập | 5,632 mục, 0 mismatch; core gốc giữ nguyên |
-| Vbee trong mã/gói mới | Đã loại bỏ |
-| Douyin 0.18 trên iPhone thật | Chưa nghiệm thu |
+| Media/ASR/source/cache | 229 đạt, gồm 128 biến thể mốc thật |
+| UIKit iPhone 15 Simulator / iOS 18.2 | 219 đạt, không overflow theo fixture |
+| Nova-3 thật | Fixed Mandarin nhận 35 từ/13,538 giây và 197 từ/67,78 giây; stereo kênh đầu rỗng/kênh sau 34 từ |
+| TTS trong thư viện mới | Không có mã tạo giọng, endpoint, Nam Minh, Vbee hoặc đổi tốc độ theo giọng |
+| Đối chiếu IPA độc lập | 5,632 mục, 0 mismatch; core và background modes gốc giữ nguyên |
+| Douyin 0.18.1 trên iPhone thật | Chưa nghiệm thu |
 
-Sửa nguyên nhân đã kiểm chứng: khung cố định của chữ Trung không đủ cho bản Việt; bảng/nút trùng do controller lồng nhau; view wrapper zero-size và snapshot view con không lấy được chữ; ngữ cảnh backend sai kiểu gây HTTP 400; mảnh ASR quá ngắn gây nén giọng cực lớn; tua giữa job TTS chưa ưu tiên ngay vị trí mới. OCR chỉ dịch vùng thấy và không bảo đảm đọc đủ phần phân tích chưa cuộn. Hạn mức, mạng, đăng nhập và chất lượng ASR vẫn ảnh hưởng kết quả.
+Diagnostics 0.18 chỉ chứng minh ba lần HTTP 200 rồi thất bại; chưa có phản hồi/video cụ thể để quy một nguyên nhân duy nhất. Các lỗi bộ đọc kênh/mốc và thông báo gộp đã tái hiện bằng fixture; tự đoán ngôn ngữ sai được tái hiện bằng API thật và không được đưa vào bản giao. Khi nguồn có audio nhưng ASR vẫn rỗng, app báo đúng trạng thái và dừng sau phục hồi hữu hạn.
 
-Giữ phát nền đã được người dùng xác nhận ở bản trước. Chưa xác minh đồng bộ lồng tiếng khi khóa máy trên thiết bị thật.
+Các mốc chính được giữ từ ASR. Phân trang bản Việt giữ trong khoảng câu gốc; vị trí từng từ dịch chưa được forced-align. Nguồn/CDN, hạn mức, dialect, nhạc át lời và thời gian backend vẫn ảnh hưởng kết quả. Phát nền giữ cơ chế trước đã được người dùng xác nhận; chưa kiểm tra thiết bị thật cho bản này.
 
-[Kế hoạch](PLAN-0.18.md) · [API thật](evidence/0.18-service-probes.json) · [Validation](VALIDATION.json) · [Nghiệm thu](DEVICE_TESTS.md) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37099954414).
+[Chi tiết](PLAN-0.18.1.md) · [Ảnh phụ đề ngắn](evidence/ui-captions-0.18.1.png) · [Ảnh trang phụ đề dài](evidence/ui-captions-long-0.18.1.png) · [API thật](evidence/0.18.1-service-probes.json) · [Validation](VALIDATION.json) · [Nghiệm thu](DEVICE_TESTS.md) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37105020512).

@@ -1,17 +1,17 @@
-# Douyin — bản thử cá nhân 0.18
+# Douyin 40.6.0 — 0.18.1-test
 
-Douyin 40.6.0/build 406019/arm64, tên ứng dụng **Douyin**. Bản này sửa bố trí bình luận, mở rộng đọc phân tích AI và thay Vbee bằng luồng Claude/Nam Minh từ backend của extension Youtube Dubbing.
+Bản mới chỉ hiển thị phụ đề Việt và giữ tiếng gốc. Đã loại bỏ toàn bộ tạo/phát TTS, Nam Minh, Vbee và việc đổi tốc độ video để khớp giọng. Giữ dịch bình luận GTX/Gemini dự phòng, dịch phân tích AI bằng Claude và phát nền từ bản trước.
 
-- **Bình luận:** GTX tự dịch chữ đang thấy; Google 429 thì dùng Gemini dự phòng đã được chấp thuận. Bản Việt nằm trong bảng cuộn có chiều cao từng dòng tự đo, tránh ghi đè vào khung chữ Trung. Một bảng/nút trạng thái duy nhất. Chọn **Bản gốc** để trả lời, xem ảnh hoặc cuộn danh sách native; nút **Đọc thêm bình luận** đưa các dòng tiếp theo vào vùng dịch.
-- **Phân tích AI:** đọc renderer native đã đối chiếu ABI, nội dung web trong vùng AI, rồi OCR tiếng Trung tại máy nếu chữ chỉ được vẽ. Hai lần OCR giống nhau mới gửi chữ tới Claude; ảnh không được tải lên. OCR ghi rõ chỉ dịch vùng đang hiển thị. Bản Việt cuộn riêng, bỏ thẻ `<mark>` và giữ nội dung; hỏi đáp Gemini vẫn dùng nguồn gốc.
-- **Phụ đề/lồng tiếng:** chạm nhanh **4 lần** vùng video. Video dừng trước Apify → Nova-3 `zh-CN` → Claude `claude-sonnet-5` → **Nam Minh** `vi-VN-NamMinhNeural`. Transcript tối đa 10 phút được dịch toàn bộ một lượt, giữ ngữ cảnh; ASR/cache độc lập với nhà cung cấp dịch. Vbee đã bỏ khỏi mã chạy và gói IPA.
-- **Phát từng nhóm:** chuẩn bị ba câu ở vị trí đang xem, cho phát khi nhóm đầu đã tải/xuất/đồng bộ, rồi chuẩn bị tối đa 60 giây tiếp theo. Tua ưu tiên ngay vị trí mới và hủy job cũ; đổi video hủy kết quả cũ. Thiếu nhóm thì dừng để đệm; nhóm lỗi giữ phụ đề Việt và tiếng gốc.
-- **Khớp giọng:** ghép các mảnh ASR quá ngắn vào câu liền trước, đệm khoảng lặng thật, xếp hàng audio và sửa dao động đồng hồ bằng tốc độ nhỏ. Câu dài có thể làm video chậm lại để giữ đủ lời; app trả tốc độ cũ khi tắt và tôn trọng tốc độ bạn tự chọn. Phát nền được giữ từ bản đã được người dùng xác nhận hoạt động.
+- Sửa thông báo gộp “không có lời nói hoặc quá 60 phút”: phân biệt thời lượng, cấu trúc phản hồi, track âm thanh và kết quả nhận dạng rỗng. Đọc nhánh/kênh có lời nói và mốc câu thật khi thiếu mốc từ.
+- Sửa mốc bằng 0, làm tròn và lùi nhỏ trong giới hạn kiểm chứng, giữ chữ và khoảng im lặng. Mốc hỏng nghiêm trọng vẫn báo lỗi rõ để tránh hiển thị sai thời gian.
+- Giữ Nova-3 `zh-CN`. Thử thật phát hiện tự đoán ngôn ngữ nhận nhầm đoạn Mandarin 13,5 giây thành `pt` và trả rỗng; chế độ đó đã loại khỏi mã chạy.
+- Tăng tốc bằng nguồn video trực tiếp khi lấy được từ player, bỏ qua Apify. Tệp được kiểm tra track/thời lượng và trích âm thanh có mốc khớp. Nguồn hết hạn hoặc tải chậm quá 20 giây thì dùng Apify trước khi gọi ASR.
+- Kết quả remote rỗng cho phép **một** lần gửi âm thanh trực tiếp sau kiểm tra, có thể phát sinh thêm một lượt phí ASR; rỗng lần nữa thì dừng. Không lặp yêu cầu vô hạn. Cache hợp lệ của bản cũ được dùng lại.
+- Transcript dưới 10 phút vẫn dịch toàn ngữ cảnh với Claude. Video dài có thể phát đoạn đã dịch trong khi dịch tiếp; tua vào lời nói chưa dịch thì dừng chờ đúng đoạn.
+- Phụ đề dọc tối đa 3 dòng, ngang tối đa 2 dòng, nền tối/chữ trắng có đệm và chừa nút/mô tả. Kéo lên/xuống để đổi vị trí. Câu dài chia trang trong chính mốc câu gốc; không dồn toàn video lên màn hình. Chuyển trang dựa trên độ dài chữ, không khẳng định đồng bộ từng từ dịch.
 
-API thật: mẫu Mandarin Nova-3 67,454 giây được ghép từ 17 thành 15 câu, giữ đủ chữ. Claude dịch đủ trong **12,078 giây**; tải ba câu Nam Minh đầu **3,234 giây**; cả 15 audio đều thành công và khớp chữ yêu cầu. Đây là một mẫu và thời gian từng bước, chưa tính lấy video, ASR, xuất audio/player.
+Đạt **21 kiểm thử Python, 29 Gemini, 38 dịch AI, 229 media và 219 UIKit checks**. Bao gồm 128 biến thể mốc thật, source MP4 có/không có audio, rỗng/khôi phục/hủy, kênh đầu im lặng, tua lúc dịch tiếp, trang phụ đề dài và giới hạn kéo. Nova-3 tải âm thanh thật xử lý mẫu 13,538 giây trong 1,938 giây và mẫu 67,78 giây trong 2,891 giây; chỉ là hai mẫu, chưa tính tải/trích/dịch/giao diện.
 
-Đạt **21 Python, 29 Gemini, 38 dịch AI, 69 media, 22 audio và 225 UIKit checks**; build arm64 với warnings-as-errors. Simulator iPhone 15/iOS 18.2 kiểm tra chữ dài, ảnh/trả lời, bảng lồng nhau, web/OCR, tua giữa TTS, biên nhóm, cache/hủy, lỗi API và tốc độ người dùng. **Chưa nghiệm thu 0.18 trên iPhone thật**, nên chưa thể cam kết mọi video/mạng đều ổn định.
+IPA riêng: `dist/Douyin-40.6.0-0.18.1-SUBTITLES-PRIVATE-TEST.ipa`. Cần ký/cài như các bản trước. **Chưa nghiệm thu bản này trên iPhone thật**, nên chưa thể cam kết mọi video và mạng đều không lỗi.
 
-IPA riêng: `dist/Douyin-40.6.0-0.18.0-CLAUDE-NAMMINH-PRIVATE-TEST.ipa`; cần ký lại như các bản trước. SHA-256: `a97c939667c6a310f007146c5e9ad82d76f4492928228f4c6e4830c5879f51e4`. Cấu hình tài khoản/key riêng được đối chiếu với IPA, không đưa vào Git/CI.
-
-[Nghiên cứu và phương án chi tiết](docs/PLAN-0.18.md) · [Kết quả API thật](docs/evidence/0.18-service-probes.json) · [Nghiệm thu iPhone](docs/DEVICE_TESTS.md) · [Trạng thái](docs/STATUS.md) · [Validation](docs/VALIDATION.json) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37099954414).
+[Chi tiết sửa và nghiên cứu](docs/PLAN-0.18.1.md) · [Trạng thái/kiểm thử](docs/STATUS.md) · [API thật](docs/evidence/0.18.1-service-probes.json) · [Nghiệm thu iPhone](docs/DEVICE_TESTS.md) · [Validation](docs/VALIDATION.json) · [CI](https://github.com/phucdinhIA/Douyin/actions/runs/37105020512).

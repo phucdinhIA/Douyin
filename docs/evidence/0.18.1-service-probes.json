@@ -1,0 +1,137 @@
+{
+  "cases": [
+    {
+      "case": "mandarin-mp4",
+      "status": 200,
+      "seconds": 6.094,
+      "duration": 13.537,
+      "channels": [
+        {
+          "detected_language": null,
+          "words": 34,
+          "confidence": 0.99609375,
+          "han_present": true,
+          "points": 0,
+          "start_regressions": 0,
+          "max_end": 13.44
+        }
+      ],
+      "utterances": 1,
+      "speech_found": true
+    },
+    {
+      "case": "detected-short-audio",
+      "status": 200,
+      "seconds": 4.875,
+      "duration": 13.538,
+      "channels": [
+        {
+          "detected_language": "pt",
+          "words": 0,
+          "confidence": 0.0,
+          "han_present": false,
+          "points": 0,
+          "start_regressions": 0,
+          "max_end": 0
+        }
+      ],
+      "utterances": 0,
+      "speech_found": false
+    },
+    {
+      "case": "detected-context-audio",
+      "status": 200,
+      "seconds": 2.875,
+      "duration": 67.78,
+      "channels": [
+        {
+          "detected_language": "zh",
+          "words": 197,
+          "confidence": 1.0,
+          "han_present": true,
+          "points": 0,
+          "start_regressions": 0,
+          "max_end": 69.18494
+        }
+      ],
+      "utterances": 6,
+      "speech_found": true
+    },
+    {
+      "case": "silent-first-channel",
+      "status": 200,
+      "seconds": 2.234,
+      "duration": 13.538,
+      "channels": [
+        {
+          "detected_language": null,
+          "words": 0,
+          "confidence": 0.0,
+          "han_present": false,
+          "points": 0,
+          "start_regressions": 0,
+          "max_end": 0
+        },
+        {
+          "detected_language": null,
+          "words": 34,
+          "confidence": 0.9951172,
+          "han_present": true,
+          "points": 0,
+          "start_regressions": 0,
+          "max_end": 13.44
+        }
+      ],
+      "utterances": 1,
+      "speech_found": true
+    }
+  ],
+  "physical_device_tested": false,
+  "fixed_mandarin_followups": [
+    {
+      "case": "mandarin-aligned-short",
+      "status": 200,
+      "seconds": 1.938,
+      "duration": 13.538,
+      "channels": [
+        {
+          "detected_language": null,
+          "words": 35,
+          "confidence": 0.9951172,
+          "han_present": true,
+          "points": 0,
+          "start_regressions": 0,
+          "max_end": 13.44
+        }
+      ],
+      "utterances": 1,
+      "speech_found": true
+    },
+    {
+      "case": "mandarin-context-audio",
+      "status": 200,
+      "seconds": 2.891,
+      "duration": 67.78,
+      "channels": [
+        {
+          "detected_language": null,
+          "words": 197,
+          "confidence": 1.0,
+          "han_present": true,
+          "points": 0,
+          "start_regressions": 0,
+          "max_end": 69.18494
+        }
+      ],
+      "utterances": 6,
+      "speech_found": true
+    }
+  ],
+  "date": "2026-10-03",
+  "live_asr_requests": 10,
+  "request_scope": "Four comparison configurations on two saved Mandarin samples, run twice, then two fixed-zh-CN followups. Includes expected empty detection output; no TTS requests.",
+  "timing_scope": "Provider upload/transcription wall time only; excludes app download, extraction, translation and display.",
+  "final_language": "zh-CN",
+  "language_detection_shipped": false,
+  "latest_failing_user_video_reproduced": false
+}
