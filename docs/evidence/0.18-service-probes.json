@@ -1,0 +1,331 @@
+{
+  "source": "previously verified Mandarin Nova-3 transcript; final app coalescing rules",
+  "source_seconds": 67.454,
+  "original_cues": 17,
+  "final_cues": 15,
+  "all_source_text_retained": true,
+  "all_ids_and_times_retained_after_coalescing": true,
+  "model_requested": "claude-sonnet-5",
+  "translation_seconds": 12.078,
+  "all_results_ai": true,
+  "remaining_han_characters": 0,
+  "voice": "vi-VN-NamMinhNeural",
+  "startup_voice_seconds": 3.234,
+  "startup_cues": [
+    {
+      "cue": 0,
+      "seconds": 3.234,
+      "audio_seconds": 5.28,
+      "slot_seconds": 3.44,
+      "fit_ratio": 1.535,
+      "video_rate_factor": 0.977,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 1,
+      "seconds": 2.125,
+      "audio_seconds": 7.104,
+      "slot_seconds": 3.84,
+      "fit_ratio": 1.85,
+      "video_rate_factor": 0.811,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 2,
+      "seconds": 2.078,
+      "audio_seconds": 6.936,
+      "slot_seconds": 3.92,
+      "fit_ratio": 1.769,
+      "video_rate_factor": 0.848,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    }
+  ],
+  "remaining_cues_not_required_for_startup": 12,
+  "all_voice_cues": [
+    {
+      "cue": 0,
+      "seconds": 3.234,
+      "audio_seconds": 5.28,
+      "slot_seconds": 3.44,
+      "fit_ratio": 1.535,
+      "video_rate_factor": 0.977,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 1,
+      "seconds": 2.125,
+      "audio_seconds": 7.104,
+      "slot_seconds": 3.84,
+      "fit_ratio": 1.85,
+      "video_rate_factor": 0.811,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 2,
+      "seconds": 2.078,
+      "audio_seconds": 6.936,
+      "slot_seconds": 3.92,
+      "fit_ratio": 1.769,
+      "video_rate_factor": 0.848,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 3,
+      "seconds": 2.297,
+      "audio_seconds": 7.272,
+      "slot_seconds": 4.545,
+      "fit_ratio": 1.6,
+      "video_rate_factor": 0.938,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 4,
+      "seconds": 1.907,
+      "audio_seconds": 5.928,
+      "slot_seconds": 4.72,
+      "fit_ratio": 1.256,
+      "video_rate_factor": 1,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 5,
+      "seconds": 2.062,
+      "audio_seconds": 6.648,
+      "slot_seconds": 4.8,
+      "fit_ratio": 1.385,
+      "video_rate_factor": 1,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 6,
+      "seconds": 1.921,
+      "audio_seconds": 7.944,
+      "slot_seconds": 6.775,
+      "fit_ratio": 1.173,
+      "video_rate_factor": 1,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 7,
+      "seconds": 2.016,
+      "audio_seconds": 5.712,
+      "slot_seconds": 4.56,
+      "fit_ratio": 1.253,
+      "video_rate_factor": 1,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 8,
+      "seconds": 2.0,
+      "audio_seconds": 6.264,
+      "slot_seconds": 4.8,
+      "fit_ratio": 1.305,
+      "video_rate_factor": 1,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 9,
+      "seconds": 2.11,
+      "audio_seconds": 8.112,
+      "slot_seconds": 5.495,
+      "fit_ratio": 1.476,
+      "video_rate_factor": 1,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 10,
+      "seconds": 1.218,
+      "audio_seconds": 1.872,
+      "slot_seconds": 3.36,
+      "fit_ratio": 0.557,
+      "video_rate_factor": 1,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 11,
+      "seconds": 1.953,
+      "audio_seconds": 6.264,
+      "slot_seconds": 4.56,
+      "fit_ratio": 1.374,
+      "video_rate_factor": 1,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 12,
+      "seconds": 1.985,
+      "audio_seconds": 8.52,
+      "slot_seconds": 4.654,
+      "fit_ratio": 1.831,
+      "video_rate_factor": 0.819,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 13,
+      "seconds": 1.828,
+      "audio_seconds": 6.024,
+      "slot_seconds": 4.48,
+      "fit_ratio": 1.345,
+      "video_rate_factor": 1,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    },
+    {
+      "cue": 14,
+      "seconds": 3.141,
+      "audio_seconds": 7.392,
+      "slot_seconds": 3.425,
+      "fit_ratio": 2.158,
+      "video_rate_factor": 0.695,
+      "reused_exact_voice_text_cache": false,
+      "translation_echo_exact": true
+    }
+  ],
+  "physical_device_tested": false,
+  "date": "2026-10-03",
+  "scope": "Live whole-context Claude translation and all Nam Minh cues; prior verified Mandarin Nova-3 transcript reused. Times exclude extraction, ASR, local export and player preparation.",
+  "asr_evidence": "0.16-service-probes.json",
+  "backend_model_identity": "Requested claude-sonnet-5 accepted with useAiTranslate true; underlying model not independently inspectable.",
+  "audio_integrity": {
+    "all_cues_decoded": 15,
+    "all_audible_nonempty": true,
+    "scope": "Raw provider MP3 decode/signal checks; simulator validates exported timing. Listening and physical iPhone playback not established by this check.",
+    "cues": [
+      {
+        "cue": 0,
+        "full_decode_success": true,
+        "decoded_seconds": 5.28,
+        "rms": 0.09961,
+        "peak": 0.54999,
+        "near_silence_fraction": 0.3078
+      },
+      {
+        "cue": 1,
+        "full_decode_success": true,
+        "decoded_seconds": 7.104,
+        "rms": 0.10018,
+        "peak": 0.66116,
+        "near_silence_fraction": 0.307
+      },
+      {
+        "cue": 2,
+        "full_decode_success": true,
+        "decoded_seconds": 6.936,
+        "rms": 0.10028,
+        "peak": 0.61829,
+        "near_silence_fraction": 0.2571
+      },
+      {
+        "cue": 3,
+        "full_decode_success": true,
+        "decoded_seconds": 7.272,
+        "rms": 0.09836,
+        "peak": 0.66531,
+        "near_silence_fraction": 0.4453
+      },
+      {
+        "cue": 4,
+        "full_decode_success": true,
+        "decoded_seconds": 5.928,
+        "rms": 0.09419,
+        "peak": 0.67001,
+        "near_silence_fraction": 0.4211
+      },
+      {
+        "cue": 5,
+        "full_decode_success": true,
+        "decoded_seconds": 6.648,
+        "rms": 0.09448,
+        "peak": 0.65897,
+        "near_silence_fraction": 0.3846
+      },
+      {
+        "cue": 6,
+        "full_decode_success": true,
+        "decoded_seconds": 7.944,
+        "rms": 0.09445,
+        "peak": 0.62881,
+        "near_silence_fraction": 0.3754
+      },
+      {
+        "cue": 7,
+        "full_decode_success": true,
+        "decoded_seconds": 5.712,
+        "rms": 0.09118,
+        "peak": 0.59244,
+        "near_silence_fraction": 0.3123
+      },
+      {
+        "cue": 8,
+        "full_decode_success": true,
+        "decoded_seconds": 6.264,
+        "rms": 0.10563,
+        "peak": 0.6058,
+        "near_silence_fraction": 0.3082
+      },
+      {
+        "cue": 9,
+        "full_decode_success": true,
+        "decoded_seconds": 8.112,
+        "rms": 0.0962,
+        "peak": 0.62637,
+        "near_silence_fraction": 0.3976
+      },
+      {
+        "cue": 10,
+        "full_decode_success": true,
+        "decoded_seconds": 1.872,
+        "rms": 0.0724,
+        "peak": 0.60477,
+        "near_silence_fraction": 0.7404
+      },
+      {
+        "cue": 11,
+        "full_decode_success": true,
+        "decoded_seconds": 6.264,
+        "rms": 0.10272,
+        "peak": 0.65002,
+        "near_silence_fraction": 0.2823
+      },
+      {
+        "cue": 12,
+        "full_decode_success": true,
+        "decoded_seconds": 8.52,
+        "rms": 0.092,
+        "peak": 0.73575,
+        "near_silence_fraction": 0.4028
+      },
+      {
+        "cue": 13,
+        "full_decode_success": true,
+        "decoded_seconds": 6.024,
+        "rms": 0.09732,
+        "peak": 0.62366,
+        "near_silence_fraction": 0.3079
+      },
+      {
+        "cue": 14,
+        "full_decode_success": true,
+        "decoded_seconds": 7.392,
+        "rms": 0.10228,
+        "peak": 0.61978,
+        "near_silence_fraction": 0.3124
+      }
+    ]
+  }
+}
