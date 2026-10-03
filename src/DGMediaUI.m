@@ -151,6 +151,7 @@ static void DGAttachComments(UIViewController *owner);
 - (void)background;
 - (void)layoutCaption:(NSDictionary *)cue time:(double)time;
 - (void)drag:(UIPanGestureRecognizer *)pan;
+- (void)moveCaptionBy:(CGFloat)dy;
 @end
 static __weak DGCaptionEntry *DGActiveCaption;
 static __weak DGCaptionEntry *DGVisibleCaption;
@@ -240,11 +241,14 @@ static BOOL DGMediaPause(UIViewController *owner) {
     self.caption.frame=CGRectMake(CGRectGetMinX(safe)+12,y,width,height);
 }
 - (void)drag:(UIPanGestureRecognizer *)pan {
+    [self moveCaptionBy:[pan translationInView:self.owner.view.window].y];[pan setTranslation:CGPointZero inView:self.owner.view.window];
+}
+- (void)moveCaptionBy:(CGFloat)dy {
     if (!self.showing || self.caption.hidden) return;
     UIWindow *surface=self.owner.view.window;CGRect safe=UIEdgeInsetsInsetRect(surface.bounds,surface.safeAreaInsets);BOOL vertical=safe.size.height>safe.size.width;
     CGFloat top=CGRectGetMinY(safe)+(vertical ? 164 : 62),bottom=CGRectGetMaxY(safe)-(vertical ? MIN(230,MAX(144,safe.size.height*0.22)) : 48),range=MAX(1,bottom-self.caption.bounds.size.height-top);
-    CGFloat y=self.caption.frame.origin.y+[pan translationInView:surface].y;
-    [NSUserDefaults.standardUserDefaults setDouble:MAX(0,MIN(1,(y-top)/range)) forKey:@"DGSubtitlePosition"];[pan setTranslation:CGPointZero inView:surface];[self tick];
+    CGFloat y=self.caption.frame.origin.y+dy;
+    [NSUserDefaults.standardUserDefaults setDouble:MAX(0,MIN(1,(y-top)/range)) forKey:@"DGSubtitlePosition"];[self tick];
 }
 - (void)stop {
     [self.client cancel];self.client=nil;[self.timer invalidate];self.timer=nil;self.running=NO;self.showing=NO;self.waiting=NO;self.failed=NO;self.caption.hidden=YES;self.cues=@[];self.status.text=@"";[self.button setTitle:@"Phụ đề Việt" forState:UIControlStateNormal];
@@ -384,5 +388,5 @@ void DGMediaFixtureTick(UIViewController *owner) {[objc_getAssociatedObject(owne
 BOOL DGMediaFixtureShortcut(UIWindow *window,CGPoint point) {return DGMediaStartShortcut(window,point);}
 void DGMediaFixtureBackend(NSDictionary *config) {DGMediaBackend=config;}
 NSArray *DGMediaFixtureTrack(UIViewController *owner,NSArray *cues) {DGCaptionEntry *entry=objc_getAssociatedObject(owner,&DGCaptionKey);NSArray *previous=entry.cues;entry.cues=cues;[entry tick];return previous;}
-void DGMediaFixtureDrag(UIViewController *owner,CGFloat dy) {DGCaptionEntry *entry=objc_getAssociatedObject(owner,&DGCaptionKey);UIPanGestureRecognizer *pan=(id)entry.caption.gestureRecognizers.firstObject;[pan setTranslation:CGPointMake(0,dy) inView:owner.view.window];[entry drag:pan];}
+void DGMediaFixtureDrag(UIViewController *owner,CGFloat dy) {[objc_getAssociatedObject(owner,&DGCaptionKey) moveCaptionBy:dy];}
 #endif
