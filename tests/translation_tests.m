@@ -48,6 +48,7 @@ int main(void) {@autoreleasepool {
     check(sends==before+1,@"explicit Retry permits one new request after debounce");
     [session leave];[session enterAt:60];[session observeSource:@"" at:120];
     check(!session.waiting && [state isEqual:@"failed"] && sends==before+1,@"bounded waiting ends without empty paid request");
+    [session leave];session.sourceWaitTimeout=60;[session enterAt:200];[session observeSource:@"" at:225];check(session.waiting && sends==before+1,@"cold local OCR can initialize beyond the native renderer's short deadline without a paid request");[session observeSource:@"" at:260];check(!session.waiting && [state isEqual:@"failed"] && sends==before+1,@"extended OCR capture still has a finite sixty-second deadline");
     check(cancels>=4,@"all leave paths call transport cancellation");
     NSDictionary *persisted=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:url] options:0 error:NULL];
     check([persisted[@"entries"] count]==1,@"cache contains digest-keyed completed entries");
