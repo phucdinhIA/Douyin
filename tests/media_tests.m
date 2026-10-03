@@ -44,7 +44,7 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
         else if (asrMode) data=timedWords(@[@{@"word":@"你好",@"start":@0.2,@"end":@1.5}],2);
         else data=json(transcript());
     } else if ([host isEqual:@"www.douyin.com"]) {
-        atomic_fetch_add(&sourceCalls,1);data=[NSData dataWithContentsOfFile:@"tests/fixtures/tone.wav"];
+        atomic_fetch_add(&sourceCalls,1);data=[NSData dataWithContentsOfFile:@"tests/fixtures/source-audio.mp4"];
         if ([request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || [request valueForHTTPHeaderField:@"Ck"]) atomic_fetch_add(&unsafeHeaders,1);
     } else if ([host isEqual:@"yd.transduck.com"]) {
         if ([request.URL.path isEqual:@"/login"]) {atomic_fetch_add(&loginCalls,1);headers=@{@"Set-Cookie":@"SESSION=fresh-backend; Path=/; Secure; HttpOnly"};data=json(@{@"message":@"ok"});}
