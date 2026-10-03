@@ -196,7 +196,8 @@ static BOOL DGMediaPause(UIViewController *owner) {
 - (void)prepareVoice {
     if (self.preparingVoice) return;self.preparingVoice=YES;self.running=YES;self.status.text=@"Đang tạo lồng tiếng Việt · Nam Minh";
     [self.button setTitle:@"Hủy lồng tiếng" forState:UIControlStateNormal];
-    self.narration=[[DGRollingVoice alloc] initWithConfig:DGMediaBackend configuration:DGMediaConfiguration];self.narration.event=^(NSString *name) {DGMediaCount(name);};
+    NSMutableDictionary *voiceConfig=[DGMediaBackend mutableCopy];voiceConfig[@"video_id"]=self.videoID;
+    self.narration=[[DGRollingVoice alloc] initWithConfig:voiceConfig configuration:DGMediaConfiguration];self.narration.event=^(NSString *name) {DGMediaCount(name);};
     NSString *identifier=self.videoID;__weak DGCaptionEntry *weakSelf=self;
     BOOL started=DGAudioBeginRolling(self.owner,DGVoiceChunks(self.cues),^(BOOL waiting) {
         DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || ![identifier isEqual:DGVideoID(entry.owner)]) return;

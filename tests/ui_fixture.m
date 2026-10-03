@@ -9,6 +9,7 @@
 #import "DGMediaUI.h"
 #import "DGComments.h"
 #import "DGTransduck.h"
+#import <WebKit/WebKit.h>
 #import "DGAudioUI.h"
 static atomic_int translationRequests;
 @interface TranslationFixtureProtocol : NSURLProtocol
@@ -261,6 +262,7 @@ static UIView *findID(UIView *root,NSString *identifier) {
 @property(nonatomic) double playback;
 @property(nonatomic) BOOL playing;
 @property(nonatomic) BOOL muted;
+@property(nonatomic) float videoRate;
 @property(nonatomic) NSUInteger pauseCalls,resumeCalls;
 - (double)currentPlaybackTime;
 - (BOOL)pause;
@@ -273,6 +275,8 @@ static UIView *findID(UIView *root,NSString *identifier) {
 - (double)currentPlaybackTime {return self.playback;}
 - (BOOL)pause {self.playing=NO;self.pauseCalls++;return YES;}
 - (BOOL)isPlaying {return self.playing;}
+- (float)getCurrentPlaybackRate {return self.videoRate>0 ? self.videoRate : 1;}
+- (void)updatePlaybackRate:(double)rate {self.videoRate=(float)rate;}
 - (BOOL)isMute {return self.muted;}
 - (void)setPlayerSeekTime:(double)time completion:(void (^)(BOOL))completion {self.playback=time;if (completion) completion(YES);}
 - (void)resumePlayVideo {self.playing=YES;self.resumeCalls++;}
@@ -406,7 +410,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
 
 - (void)showMediaSamples {
     NSURLSessionConfiguration *cfg=NSURLSessionConfiguration.ephemeralSessionConfiguration;cfg.protocolClasses=@[MediaFixtureProtocol.class];DGMediaFixtureConfiguration(cfg,nil);
-    DGMediaInstall(nil);check([DGMediaSnapshot()[@"hooks_installed"] integerValue]==7,@"media installs only seven verified native ABI hooks");
+    DGMediaInstall(nil);DGMediaFixtureNarration(@{});check([DGMediaSnapshot()[@"hooks_installed"] integerValue]==7,@"media installs only seven verified native ABI hooks");
     AWEPlayVideoViewController *player=[AWEPlayVideoViewController new];AWEAwemeModel *model=[AWEAwemeModel new];model.itemID=@"7534679152504376595";player.model=model;player.playback=0.5;player.playing=YES;
     player.view.backgroundColor=UIColor.darkGrayColor;self.window.rootViewController=player;[player viewDidAppear:NO];[self.window layoutIfNeeded];
     UILabel *title=label(player.view,@"Video fixture · phụ đề theo thời gian phát",220);title.frame=CGRectMake(18,220,self.window.bounds.size.width-36,60);title.numberOfLines=0;title.textColor=UIColor.whiteColor;
@@ -523,7 +527,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *offscreen=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,1500,320,40)];offscreen.text=@"\u8fd8\u6709\u4e00\u6761";[comments.view addSubview:offscreen];
     translatedRequests=atomic_load(&commentRequests);[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
     check(atomic_load(&commentRequests)==translatedRequests,@"offscreen comment is not translated or charged a request");
-    offscreen.frame=CGRectMake(18,300,320,40);mediaWait(^BOOL{return countText(comments.view,@"Video rất hay, cảm ơn bạn!")>0;});
+    offscreen.frame=CGRectMake(18,300,320,40);mediaWait(^BOOL{return atomic_load(&commentRequests)>translatedRequests && countText(comments.view,@"Video rất hay, cảm ơn bạn!")>0;});
     check(atomic_load(&commentRequests)==translatedRequests+1,@"scrolling another comment into view starts automatic GTX");
     DGCommentsStop(comments);translatedRequests=atomic_load(&commentRequests);native.text=@"\u505c\u6b62\u540e\u4e0d\u53d1\u9001";
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
@@ -666,6 +670,8 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [v2 removeFromSuperview];LynxMarkdownView *legacy=[[LynxMarkdownView alloc] initWithFrame:CGRectMake(0,0,300,100)];legacy.bundle=[LynxMarkdownBundle new];legacy.bundle.node=[[LynxMarkdownShadowNode alloc] initWithContent:@"原始完整分析\n"];legacy.bundle.content_complete=YES;[drawnRoot addSubview:legacy];
     check([DGGeminiReadSummary(drawnRoot) isEqual:@"原始完整分析\n"] && legacy.subviews.count==0,@"legacy custom-drawn markdown captures exact shadow-node source without UILabel scanning");
     legacy.hidden=YES;check(!DGGeminiReadSummary(drawnRoot).length,@"hidden custom-drawn renderer is still excluded");legacy.hidden=NO;
+    UIView *zeroWrapper=[[UIView alloc] initWithFrame:CGRectZero];[legacy removeFromSuperview];[zeroWrapper addSubview:legacy];[drawnRoot addSubview:zeroWrapper];
+    check([DGGeminiReadSummary(drawnRoot) isEqual:@"原始完整分析\n"],@"zero-size unclipped wrappers do not hide their visible AI renderer descendants");zeroWrapper.clipsToBounds=YES;check(!DGGeminiReadSummary(drawnRoot).length,@"clipped zero-size AI wrappers still exclude invisible content");
     ServalMarkdownView *markdown=[[ServalMarkdownView alloc] initWithFrame:CGRectMake(12,100,width-24,180)];markdown.content=@"内容由AI生成。这个视频讨论摄影技巧。";[ai.view addSubview:markdown];
     UILabel *privateComment=label(ai.view,@"This unrelated comment must not be sent to Google",300);
     UILabel *aiTabs=label(ai.view,@"Bình luận     Phân tích AI",62);aiTabs.frame=CGRectMake(12,62,width-24,32);aiTabs.font=[UIFont boldSystemFontOfSize:18];
@@ -742,6 +748,18 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([contextText.text isEqualToString:captured] && contextText.editable,@"captured context can be reviewed and edited separately from Douyin's analysis");
     [self saveWindowImage:@"ui-gemini-context.png"];
     check([markdown.content isEqualToString:captured],@"Gemini UI does not rewrite original Douyin analysis");
+    AWEFeedDoubleColumnCommentAIParseViewController *webAI=[AWEFeedDoubleColumnCommentAIParseViewController new];self.window.rootViewController=webAI;webAI.view.backgroundColor=UIColor.systemBackgroundColor;
+    webAI.contentVC=[UIViewController new];[webAI addChildViewController:webAI.contentVC];webAI.contentVC.view.frame=webAI.view.bounds;[webAI.view addSubview:webAI.contentVC.view];[webAI.contentVC didMoveToParentViewController:webAI];
+    WKWebView *web=[[WKWebView alloc] initWithFrame:CGRectMake(12,100,width-24,300)];[webAI.contentVC.view addSubview:web];[web loadHTMLString:@"<html><body><article>这是独立的网页分析内容。</article></body></html>" baseURL:nil];mediaWait(^BOOL{return !web.loading;});
+    DGGeminiTranslationFixtureConfiguration(translationMock,nil);int beforeWeb=atomic_load(&translationRequests);[webAI commentAIParseTabDidEnter];
+    mediaWait(^BOOL {DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);return atomic_load(&translationRequests)>beforeWeb && [((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"];});
+    check(atomic_load(&translationRequests)==beforeWeb+1 && [((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"],@"scoped web-rendered analysis translates through Claude without requiring Markdown native labels");[webAI commentAIParseTabWillLeave];
+    [web removeFromSuperview];UILabel *drawnText=[[UILabel alloc] initWithFrame:CGRectMake(16,140,width-32,120)];drawnText.font=[UIFont systemFontOfSize:28];drawnText.numberOfLines=0;drawnText.text=@"这是屏幕上显示的中文分析内容。";[webAI.contentVC.view addSubview:drawnText];[self.window layoutIfNeeded];
+    DGGeminiTranslationFixtureConfiguration(translationMock,nil);int beforeOCR=atomic_load(&translationRequests);[webAI commentAIParseTabDidEnter];
+    mediaWait(^BOOL {DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);return atomic_load(&translationRequests)>beforeOCR && [((UITextView *)findID(webAI.view,@"gemini-translation-text")).text containsString:@"kỹ thuật chụp ảnh"];});
+    check(atomic_load(&translationRequests)==beforeOCR+1 && [((UILabel *)findID(webAI.view,@"gemini-translation-status")).text containsString:@"đang hiển thị"],@"local Chinese OCR waits for matching captures then translates visible AI content without image upload");[webAI commentAIParseTabWillLeave];
+    drawnText.text=@"这是另一个尚未翻译的分析。";DGGeminiTranslationFixtureConfiguration(translationMock,nil);int beforeStaleOCR=atomic_load(&translationRequests);[webAI commentAIParseTabDidEnter];DGGeminiTranslationFixtureTick(webAI,NSProcessInfo.processInfo.systemUptime+4);[webAI commentAIParseTabWillLeave];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
+    check(atomic_load(&translationRequests)==beforeStaleOCR,@"leaving AI rejects in-flight OCR and cannot spend a stale translation request");
     }
 }
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {

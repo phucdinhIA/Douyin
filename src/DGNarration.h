@@ -3,6 +3,7 @@
 @property(nonatomic,copy) void (^event)(NSString *);
 @property(nonatomic,copy) void (^completion)(NSURL *,NSString *);
 @property(nonatomic) NSTimeInterval timelineDuration;
+@property(nonatomic,readonly) double videoRateFactor;
 - (instancetype)initWithConfig:(NSDictionary *)config configuration:(NSURLSessionConfiguration *)configuration;
 - (void)start:(NSArray<NSDictionary *> *)cues;
 - (void)cancel;

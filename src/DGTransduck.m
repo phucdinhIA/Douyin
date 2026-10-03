@@ -1,5 +1,6 @@
 #import "DGTransduck.h"
 #import "DGMedia.h"
+#import <CommonCrypto/CommonDigest.h>
 NSString *const DGClaudeModel=@"claude-sonnet-5";
 NSString *const DGNamMinhVoice=@"vi-VN-NamMinhNeural";
 static BOOL DGBackendString(id text,NSUInteger max) {return [text isKindOfClass:NSString.class] && [text length]>0 && [text length]<=max;}
@@ -40,7 +41,12 @@ NSArray *DGClaudeAnswer(NSData *data,NSInteger status,NSArray *source,NSString *
 }
 NSDictionary *DGNamMinhBody(NSString *text) {
     if (!DGBackendString(text,2000)) return nil;
-    return @{@"subtitles":@[@{@"index":@0,@"text":text,@"aiTranslation":text,@"googleTranslation":@"",@"start":@0,@"end":@10}],@"config":@{@"model":DGClaudeModel,@"voice":DGNamMinhVoice,@"voiceType":@"azure",@"toLanguage":@"vi-VN",@"skipTranslation":@YES},@"videoDetails":@{@"videoId":@"douyin_voice",@"title":@""},@"v2Version":@YES};
+    NSData *bytes=[[DGNamMinhVoice stringByAppendingString:text] dataUsingEncoding:NSUTF8StringEncoding];unsigned char hash[CC_SHA256_DIGEST_LENGTH];CC_SHA256(bytes.bytes,(CC_LONG)bytes.length,hash);NSMutableString *identity=[NSMutableString stringWithString:@"douyin_tts_"];for (NSUInteger i=0;i<sizeof(hash);i++) [identity appendFormat:@"%02x",hash[i]];
+    return @{@"subtitles":@[@{@"index":@0,@"text":text,@"aiTranslation":text,@"googleTranslation":@"",@"start":@0,@"end":@10}],@"config":@{@"model":DGClaudeModel,@"voice":DGNamMinhVoice,@"voiceType":@"azure",@"toLanguage":@"vi-VN",@"skipTranslation":@YES},@"videoDetails":@{@"videoId":identity,@"title":@""},@"v2Version":@YES};
+}
+NSDictionary *DGNamMinhBodyForCue(NSDictionary *cue,NSString *videoID) {
+    NSMutableDictionary *body=[DGNamMinhBody(cue[@"text"]) mutableCopy];if (!body) return nil;
+    if (DGCaptionVideoURL(videoID)) {body[@"videoDetails"]=@{@"videoId":[@"douyin_" stringByAppendingString:videoID],@"title":@""};NSMutableDictionary *item=[body[@"subtitles"][0] mutableCopy];item[@"index"]=cue[@"id"];item[@"start"]=cue[@"start"];item[@"end"]=cue[@"end"];body[@"subtitles"]=@[item];}return body;
 }
 BOOL DGBackendAudioURL(NSURL *url) {
     NSString *host=url.host.lowercaseString;
@@ -104,7 +110,10 @@ NSURL *DGNamMinhAudioURL(NSData *data,NSInteger status,NSString **failure) {
             DGTransduckClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;
             NSInteger status=[response isKindOfClass:NSHTTPURLResponse.class] ? [(NSHTTPURLResponse *)response statusCode] : 0;
             if (owner.event) owner.event([NSString stringWithFormat:@"Backend HTTP %ld",(long)status]);
-            if (status==401 && renew && !error) {[owner login:^(BOOL ok) {if (ok) [owner send:path body:body renew:NO completion:completion];else completion(nil,401,DGBackendFailure(401));}];return;}
+            if (status==401 && renew && !error) {
+                if (owner.token.length && ![[r valueForHTTPHeaderField:@"Ck"] isEqual:owner.token]) {[owner send:path body:body renew:NO completion:completion];return;}
+                [owner login:^(BOOL ok) {if (ok) [owner send:path body:body renew:NO completion:completion];else completion(nil,401,DGBackendFailure(401));}];return;
+            }
             completion(data,status,error ? @"Kết nối dịch/lồng tiếng bị gián đoạn. Bấm thử lại." : nil);
         });
     }];[self.tasks addObject:task];[task resume];

@@ -25,6 +25,7 @@ static NSString *DGVoiceDigest(NSString *text) {
 @property(nonatomic) NSUInteger next;
 @property(nonatomic) NSUInteger inflight;
 @property(nonatomic) BOOL assembling;
+@property(nonatomic,readwrite) double videoRateFactor;
 @end
 @implementation DGNarration
 - (instancetype)initWithConfig:(NSDictionary *)config configuration:(NSURLSessionConfiguration *)configuration {
@@ -61,7 +62,7 @@ static NSString *DGVoiceDigest(NSString *text) {
         if ([NSFileManager.defaultManager fileExistsAtPath:file.path]) {for (NSNumber *i in self.groups[digest]) self.files[i]=file;if (self.event) self.event(@"Nam Minh cached cue");continue;}
         self.inflight++;NSUInteger generation=self.generation;__weak DGNarration *weakSelf=self;
         if (self.event) self.event(@"Nam Minh sent");
-        [self.backend post:@"/api/v2/dubbing/generateDubbing" body:DGNamMinhBody(cue[@"text"]) completion:^(NSData *data,NSInteger status,NSString *error) {
+        [self.backend post:@"/api/v2/dubbing/generateDubbing" body:DGNamMinhBodyForCue(cue,self.config[@"video_id"]) completion:^(NSData *data,NSInteger status,NSString *error) {
             dispatch_async(dispatch_get_main_queue(),^{
                 DGNarration *owner=weakSelf;if (!owner || owner.generation!=generation) return;
                                 if (owner.event) owner.event([NSString stringWithFormat:@"Nam Minh HTTP %ld",(long)status]);NSString *failure=nil;NSURL *url=error ? nil : DGNamMinhAudioURL(data,status,&failure);
@@ -85,11 +86,12 @@ static NSString *DGVoiceDigest(NSString *text) {
     self.assembling=YES;NSUInteger generation=self.generation;NSArray *cues=self.cues;NSDictionary *files=[self.files copy];double timelineDuration=self.timelineDuration;
     __weak DGNarration *weakSelf=self;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^{
-        AVMutableComposition *composition=[AVMutableComposition composition];AVMutableCompositionTrack *track=[composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];NSString *failure=nil;
+        AVMutableComposition *composition=[AVMutableComposition composition];AVMutableCompositionTrack *track=[composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];NSString *failure=nil;double maximumFit=1;
         for (NSUInteger i=0;i<cues.count;i++) {
             AVURLAsset *asset=[AVURLAsset URLAssetWithURL:files[@(i)] options:nil];AVAssetTrack *source=[asset tracksWithMediaType:AVMediaTypeAudio].firstObject;
             double duration=CMTimeGetSeconds(asset.duration),start=[cues[i][@"start"] doubleValue],slot=(i+1<cues.count ? [cues[i+1][@"start"] doubleValue] : MAX([cues[i][@"end"] doubleValue],timelineDuration))-start;
-            if (!source || !isfinite(duration) || duration<=0 || slot<=0 || duration/slot>1.65) {failure=@"Một câu lồng tiếng quá dài so với mốc video. Giữ phụ đề để tránh giọng đọc bị méo hoặc lệch.";break;}
+            if (!source || !isfinite(duration) || duration<=0 || slot<=0 || duration/slot>3.0) {failure=@"Một câu lồng tiếng quá dài so với mốc video. Giữ phụ đề để tránh giọng đọc bị méo hoặc lệch.";break;}
+            maximumFit=MAX(maximumFit,duration/slot);
             CMTime position=CMTimeMakeWithSeconds(start,600),length=asset.duration;
             if (![track insertTimeRange:CMTimeRangeMake(kCMTimeZero,length) ofTrack:source atTime:position error:NULL]) {failure=@"Không ghép được mốc audio Nam Minh.";break;}
             if (duration>slot) [track scaleTimeRange:CMTimeRangeMake(position,length) toDuration:CMTimeMakeWithSeconds(slot,600)];
@@ -110,6 +112,7 @@ static NSString *DGVoiceDigest(NSString *text) {
         dispatch_async(dispatch_get_main_queue(),^{
             DGNarration *owner=weakSelf;if (!owner || owner.generation!=generation) {if (padding) [NSFileManager.defaultManager removeItemAtURL:padding error:NULL];return;}
             if (failure) {if (padding) [NSFileManager.defaultManager removeItemAtURL:padding error:NULL];[owner finish:nil failure:failure];return;}
+            owner.videoRateFactor=MAX(0.5,MIN(1,1.5/maximumFit));
             AVAssetExportSession *exporter=[[AVAssetExportSession alloc] initWithAsset:composition presetName:AVAssetExportPresetAppleM4A];owner.exporter=exporter;
             NSURL *file=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@"-vi.m4a"]]];exporter.outputURL=file;exporter.outputFileType=AVFileTypeAppleM4A;
             AVMutableAudioMixInputParameters *parameters=[AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:track];parameters.audioTimePitchAlgorithm=AVAudioTimePitchAlgorithmSpectral;
@@ -165,7 +168,7 @@ NSArray *DGVoiceChunks(NSArray *cues) {
     job.event=self.event;NSUInteger generation=self.generation;__weak DGRollingVoice *weakSelf=self;
     job.completion=^(NSURL *file,NSString *failure) {
         DGRollingVoice *owner=weakSelf;if (!owner || owner.generation!=generation) {if (file) [NSFileManager.defaultManager removeItemAtURL:file error:NULL];return;}
-        owner.job=nil;[owner.done addObject:next[@"index"]];NSMutableDictionary *ready=[next mutableCopy];if (file) ready[@"file"]=file;else ready[@"failure"]=failure ?: @"Nam Minh chưa tạo được đoạn này.";
+        double factor=owner.job.videoRateFactor;owner.job=nil;[owner.done addObject:next[@"index"]];NSMutableDictionary *ready=[next mutableCopy];if (file) {ready[@"file"]=file;ready[@"video_rate_factor"]=@(factor);}else ready[@"failure"]=failure ?: @"Nam Minh chưa tạo được đoạn này.";
         if (owner.event) owner.event(file ? @"Nam Minh rolling chunk ready" : @"Nam Minh rolling chunk failed");if (owner.chunkReady) owner.chunkReady(ready);[owner pump];
     };[job start:next[@"cues"]];
 }

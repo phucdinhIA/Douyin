@@ -7,11 +7,12 @@
 static NSUInteger checks;
 static atomic_int synthCalls,audioCalls,unsafe;
 static BOOL authFailure;
+static BOOL longSpeech;
 static NSDictionary *config;
 static void check(BOOL value,NSString *name) {checks++;if (!value) {NSLog(@"FAIL: %@",name);exit(1);}}
 static NSData *json(id object) {return [NSJSONSerialization dataWithJSONObject:object options:0 error:NULL];}
 static NSData *wave(void) {
-    NSUInteger frames=66150;NSMutableData *data=[NSMutableData dataWithLength:44+frames*2];uint8_t *p=data.mutableBytes;
+    NSUInteger frames=longSpeech ? 264600 : 66150;NSMutableData *data=[NSMutableData dataWithLength:44+frames*2];uint8_t *p=data.mutableBytes;
     memcpy(p,"RIFF",4);uint32_t size=(uint32_t)data.length-8;memcpy(p+4,&size,4);memcpy(p+8,"WAVEfmt ",8);uint32_t fmt=16;memcpy(p+16,&fmt,4);
     uint16_t pcm=1,channels=1,bits=16,align=2;uint32_t rate=44100,bytes=88200;memcpy(p+20,&pcm,2);memcpy(p+22,&channels,2);memcpy(p+24,&rate,4);memcpy(p+28,&bytes,4);memcpy(p+32,&align,2);memcpy(p+34,&bits,2);memcpy(p+36,"data",4);uint32_t count=(uint32_t)frames*2;memcpy(p+40,&count,4);
     int16_t *samples=(int16_t *)(p+44);for (NSUInteger i=0;i<frames;i++) samples[i]=(int16_t)(10000*sin(2*M_PI*800*i/44100.0));return data;
@@ -57,6 +58,9 @@ int main(void) {@autoreleasepool {
     finished=NO;[client start:cues];[client cancel];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];check(!finished,@"cancellation rejects old async export completion");
     NSArray *tooShort=@[@{@"id":@0,@"start":@0,@"end":@0.1,@"text":text}];finished=NO;[client start:tooShort];waitFor(^BOOL{return finished;});
     check(!file && failure && atomic_load(&synthCalls)==1,@"extreme speech compression fails explicitly using cached audio rather than drifting");
+    longSpeech=YES;finished=NO;NSArray *dense=@[@{@"id":@0,@"start":@0,@"end":@3,@"text":NSUUID.UUID.UUIDString}];[client start:dense];waitFor(^BOOL{return finished;});longSpeech=NO;
+    check(file && !failure && fabs(client.videoRateFactor-0.75)<0.001,@"dense narration balances a 2x timeline with 0.75x video rather than dropping speech");
+    check(fabs(CMTimeGetSeconds([AVURLAsset URLAssetWithURL:file options:nil].duration)-3)<0.1,@"balanced dense audio retains exact three-second source timeline");[NSFileManager.defaultManager removeItemAtURL:file error:NULL];
     authFailure=YES;finished=NO;NSArray *authCues=@[@{@"id":@0,@"start":@0,@"end":@5,@"text":NSUUID.UUID.UUIDString}];[client start:authCues];waitFor(^BOOL{return finished;});int calls=atomic_load(&synthCalls);
     check(failure && !file && ![failure containsString:@"private contents"],@"Nam Minh auth failure is sanitized");[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];
     check(atomic_load(&synthCalls)==calls,@"failed Nam Minh synthesis does not trigger automatic paid retries");

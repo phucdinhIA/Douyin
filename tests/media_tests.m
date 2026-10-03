@@ -7,7 +7,8 @@
 #include <stdatomic.h>
 #include <math.h>
 static NSUInteger checks;
-static atomic_int apifyCalls,deepgramCalls,geminiCalls,claudeCalls,gtxCalls,unsafeHeaders;
+static atomic_int apifyCalls,deepgramCalls,geminiCalls,claudeCalls,gtxCalls,unsafeHeaders,loginCalls;
+static BOOL sessionRenew;
 static BOOL failGemini;
 static BOOL residueGemini;
 static BOOL throttleGTX;
@@ -27,7 +28,7 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {(void)request;return YES;}
 + (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request {return request;}
 - (void)startLoading {
-    NSURLRequest *request=self.request;NSString *host=request.URL.host;NSInteger status=200;NSData *data;
+    NSURLRequest *request=self.request;NSString *host=request.URL.host;NSInteger status=200;NSData *data;NSDictionary *headers=nil;
     if ([request valueForHTTPHeaderField:@"Cookie"] || request.HTTPShouldHandleCookies || [request.URL.absoluteString containsString:@"fixture-"]) atomic_fetch_add(&unsafeHeaders,1);
     if ([host isEqual:@"api.apify.com"]) {
         atomic_fetch_add(&apifyCalls,1);if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Bearer fixture-apify"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);
@@ -38,9 +39,11 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
         if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Token fixture-deepgram"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || ![body[@"url"] containsString:@"www.douyin.com/aweme"] || ![request.URL.query containsString:@"language=zh-CN"]) atomic_fetch_add(&unsafeHeaders,1);
         data=json(transcript());
     } else if ([host isEqual:@"yd.transduck.com"]) {
-        atomic_fetch_add(&claudeCalls,1);if (![[request valueForHTTPHeaderField:@"Ck"] isEqual:@"synthetic-backend"] || [request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);
+        if ([request.URL.path isEqual:@"/login"]) {atomic_fetch_add(&loginCalls,1);headers=@{@"Set-Cookie":@"SESSION=fresh-backend; Path=/; Secure; HttpOnly"};data=json(@{@"message":@"ok"});}
+        else {
+        atomic_fetch_add(&claudeCalls,1);if ((!sessionRenew && ![[request valueForHTTPHeaderField:@"Ck"] isEqual:@"synthetic-backend"]) || [request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);
         NSDictionary *body=[NSJSONSerialization JSONObjectWithData:requestData(request) options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];for (NSDictionary *cue in body[@"subtitles"]) [rows addObject:@{@"translateResult":residueGemini && cue==[body[@"subtitles"] lastObject] ? @"Xin ch\u00e0o \u4e2d\u56fd" : @"Xin ch\u00e0o Vi\u1ec7t Nam",@"useAiTranslate":@YES}];
-        status=failGemini ? 429 : 200;data=json(@{@"subtitleTranslateResults":rows});
+        status=failGemini ? 429 : sessionRenew && [[request valueForHTTPHeaderField:@"Ck"] isEqual:@"expired-backend"] ? 401 : 200;data=json(@{@"subtitleTranslateResults":rows});}
     } else if ([host isEqual:@"generativelanguage.googleapis.com"]) {
         atomic_fetch_add(&geminiCalls,1);if (![[request valueForHTTPHeaderField:@"x-goog-api-key"] isEqual:@"fixture-gemini"] || [request valueForHTTPHeaderField:@"Authorization"]) atomic_fetch_add(&unsafeHeaders,1);
         if (failGemini) {status=429;data=json(@{@"error":@{@"message":@"must not show raw credentials"}});}
@@ -50,7 +53,7 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
     } else if ([host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&gtxCalls,1);if ([request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);data=json(@[@[@[@"Xin chào",@"你好",NSNull.null,NSNull.null]],NSNull.null,@"zh-CN"]);}
     else {atomic_fetch_add(&unsafeHeaders,1);status=500;data=json(@{});}
     if ([host isEqual:@"translate.googleapis.com"] && throttleGTX) {status=429;data=json(@{});}
-    [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:status==429 ? @{@"Retry-After":@"180"} : nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
+    [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:status==429 ? @{@"Retry-After":@"180"} : headers] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
 - (void)stopLoading {}
 @end
@@ -79,6 +82,8 @@ int main(void) {@autoreleasepool {
     check([DGGTXBatchAnswer(commentBatch,200,commentSources,&error) isEqual:@[@"Xin chào",@"Cảm ơn"]],@"GTX markers map a batch to exact source comments");
     check(!DGGTXBatchAnswer(json(@[@[@[@"Cảm ơn, xin chào",@"source"]]]),200,commentSources,&error),@"missing GTX markers cannot put another comment's translation in a cell");
     NSArray *cues=DGCaptionSegments(json(transcript()),&error);check(cues.count==3 && DGCaptionValidCues(cues),@"word gaps create separately timed Chinese cues");
+    NSArray *tail=DGCaptionCoalesceShortCues(@[@{@"id":@0,@"start":@0,@"end":@3,@"text":@"这是最后一句"},@{@"id":@1,@"start":@3,@"end":@3.25,@"text":@"谢谢"}]);
+    check(tail.count==1 && [tail[0][@"end"] isEqual:@3.25] && [tail[0][@"text"] isEqual:@"这是最后一句谢谢"],@"tiny adjacent tail joins its sentence before translation and TTS instead of demanding impossible speech rate");
     check([cues[0][@"text"] isEqual:@"你好"] && [cues[2][@"start"] doubleValue]==5,@"original speech text and timestamp preserved");
     NSDictionary *overlap=@{@"metadata":@{@"duration":@8},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[@{@"word":@"甲",@"start":@0,@"end":@2},@{@"word":@"乙",@"start":@1,@"end":@3},@{@"word":@"丙",@"start":@5,@"end":@9},@{@"word":@"丁",@"start":@8.5,@"end":@9.5}]}]}]}};
     NSArray *merged=DGCaptionSegments(json(overlap),&error);
@@ -108,6 +113,12 @@ int main(void) {@autoreleasepool {
     NSURLRequest *full=DGCaptionTranslationRequest(@"fixture-gemini",shortTrack);NSDictionary *fullBody=[NSJSONSerialization JSONObjectWithData:full.HTTPBody options:0 error:NULL];
     NSArray *fullInput=[NSJSONSerialization JSONObjectWithData:[fullBody[@"contents"][0][@"parts"][0][@"text"] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
     check(fullInput.count==150 && [fullInput.lastObject[@"id"] isEqual:@149] && [fullBody[@"generationConfig"][@"maxOutputTokens"] unsignedIntegerValue]>8192,@"short-video request contains entire 150-cue context with expanded output budget");
+    NSDictionary *claudeBody=DGClaudeBody(shortTrack,@"douyin_test",@"Whole context");
+    check([claudeBody[@"model"] isEqual:DGClaudeModel] && [claudeBody[@"toLanguage"] isEqual:@"vi-VN"] && [claudeBody[@"subtitles"] count]==150 && [claudeBody[@"subtitles"][149][@"contextBefore"] count]==3,@"Claude receives the entire short track and neighboring context in one fixed-language request");
+    NSArray *one=@[@{@"id":@0,@"start":@0,@"end":@1,@"text":@"你好"}];
+    NSArray *parsedClaude=DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"translateResult":@"Xin chào",@"useAiTranslate":@YES}]}),200,one,&error);
+    check([parsedClaude[0][@"id"] isEqual:@0] && [parsedClaude[0][@"start"] isEqual:@0] && [parsedClaude[0][@"end"] isEqual:@1],@"Claude output retains authoritative local IDs and timestamps");
+    check(!DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[]}),200,one,&error) && !DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"index":@9,@"translateResult":@"Xin chào",@"useAiTranslate":@YES}]}),200,one,&error),@"Claude count mismatch and wrong explicit index fail before changing the track");
     NSString *largeAnswer=[@"x" stringByPaddingToLength:40000 withString:@"x" startingAtIndex:0];NSData *largeData=json(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":largeAnswer}]},@"finishReason":@"STOP"}]});
     check([DGGeminiTranslationAnswerLimit(largeData,200,500000,&error) length]==40000 && !DGGeminiTranslationAnswer(largeData,200,&error),@"subtitle output beyond 32k is complete while AI-analysis limit stays bounded");
     NSURL *cacheURL=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString]];DGCaptionStore *large=[[DGCaptionStore alloc] initWithURL:cacheURL];NSString *longText=[@"x" stringByPaddingToLength:40000 withString:@"x" startingAtIndex:0];[large saveTranslation:longText source:@"long-video"];
@@ -137,6 +148,12 @@ int main(void) {@autoreleasepool {
     DGMediaClient *newPanel=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:store configuration:config];done=NO;
     [newPanel translateComment:@"新的评论" completion:^(NSString *answer,NSString *failure) {check(answer.length && !failure,@"another panel translates during cooldown via Gemini");done=YES;}];waitFor(^BOOL{return done;});
     check(done && atomic_load(&gtxCalls)==gtx+1,@"panel reopen cannot bypass shared GTX cooldown");
+    sessionRenew=YES;[NSUserDefaults.standardUserDefaults removeObjectForKey:@"DGTransduckSession:renew@example.test"];
+    DGTransduckClient *backend=[[DGTransduckClient alloc] initWithConfig:@{@"email":@"renew@example.test",@"password":@"synthetic-password",@"session":@"expired-backend"} configuration:config];
+    __block NSUInteger renewed=0;for (NSUInteger i=0;i<3;i++) [backend post:@"/api/v2/ai-translate/translate" body:DGClaudeBody(one,@"douyin_auth_test",@"") completion:^(NSData *data,NSInteger status,NSString *failure) {if (!failure && DGClaudeAnswer(data,status,one,NULL)) renewed++;}];
+    waitFor(^BOOL{return renewed==3;});check(renewed==3 && atomic_load(&loginCalls)==1,@"concurrent expired requests renew the authorized account once and reuse its fresh session");
+    failGemini=YES;__block BOOL limited=NO;int beforeLimit=atomic_load(&claudeCalls);[backend post:@"/api/v2/ai-translate/translate" body:DGClaudeBody(one,@"douyin_auth_test",@"") completion:^(__unused NSData *data,NSInteger status,__unused NSString *failure) {limited=status==429;}];waitFor(^BOOL{return limited;});
+    check(limited && atomic_load(&claudeCalls)==beforeLimit+1,@"backend quota limit makes no automatic paid retry");[backend cancel];failGemini=NO;sessionRenew=NO;[NSUserDefaults.standardUserDefaults removeObjectForKey:@"DGTransduckSession:renew@example.test"];
     [NSUserDefaults.standardUserDefaults removeObjectForKey:@"DGGTXBlockedUntil"];
     printf("Media contract checks passed: %lu\n",(unsigned long)checks);
 }return 0;}

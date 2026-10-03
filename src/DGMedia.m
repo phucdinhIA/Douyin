@@ -79,6 +79,18 @@ BOOL DGCaptionValidCues(NSArray *cues) {
     }return YES;
 }
 static BOOL DGLatin(unichar c) {return (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9');}
+NSArray *DGCaptionCoalesceShortCues(NSArray *cues) {
+    if (!DGCaptionValidCues(cues)) return nil;NSMutableArray *result=[NSMutableArray new];
+    for (NSDictionary *cue in cues) {
+        NSMutableDictionary *previous=result.lastObject;double duration=[cue[@"end"] doubleValue]-[cue[@"start"] doubleValue];
+        BOOL adjacent=previous && [cue[@"start"] doubleValue]-[previous[@"end"] doubleValue]<=0.35;
+        if (adjacent && duration<0.9 && [previous[@"text"] length]+[cue[@"text"] length]<=120 && [cue[@"end"] doubleValue]-[previous[@"start"] doubleValue]<=12) {
+            NSString *separator=DGHasHan(previous[@"text"]) && DGHasHan(cue[@"text"]) ? @"" : @" ";
+            previous[@"text"]=[[previous[@"text"] stringByAppendingString:separator] stringByAppendingString:cue[@"text"]];previous[@"end"]=cue[@"end"];
+            if ([cue[@"timing_clamped"] boolValue]) previous[@"timing_clamped"]=@YES;
+        }else {NSMutableDictionary *copy=[cue mutableCopy];copy[@"id"]=@(result.count);[result addObject:copy];}
+    }return result;
+}
 NSArray *DGCaptionSegments(NSData *data,NSString **failure) {
     if (failure) *failure=nil;id root=DGJSON(data);id metadata=[root isKindOfClass:NSDictionary.class] ? root[@"metadata"] : nil;
     id results=[root isKindOfClass:NSDictionary.class] ? root[@"results"] : nil;id channels=[results isKindOfClass:NSDictionary.class] ? results[@"channels"] : nil;
@@ -247,9 +259,11 @@ static NSString *DGCaptionDigest(NSString *source) {
 - (NSURLRequest *)apify:(NSString *)path method:(NSString *)method body:(id)body {
     return DGRequest([@"https://api.apify.com/v2/" stringByAppendingString:path],method,body,[@"Bearer " stringByAppendingString:self.config[@"apify_api_key"]],@"Authorization");
 }
-- (NSString *)cacheKey:(NSString *)kind {return [NSString stringWithFormat:@"caption-v3|nova-3|zh-CN|%@|%@|%@",[kind isEqual:@"asr"] ? @"asr" : DGClaudeModel,kind,self.videoID];}
+- (NSString *)cacheKey:(NSString *)kind {if ([kind isEqual:@"asr"]) return [@"asr-v1|nova-3|zh-CN|" stringByAppendingString:self.videoID];return [NSString stringWithFormat:@"caption-v4|nova-3|zh-CN|%@|%@|%@",DGClaudeModel,kind,self.videoID];}
 - (NSArray *)cached:(NSString *)kind {
-    NSString *text=[self.store translationForSource:[self cacheKey:kind]];id result=text ? DGJSON([text dataUsingEncoding:NSUTF8StringEncoding]) : nil;return DGCaptionValidCues(result) ? result : nil;
+    NSString *text=[self.store translationForSource:[self cacheKey:kind]];
+    if (!text && [kind isEqual:@"asr"]) text=[self.store translationForSource:[NSString stringWithFormat:@"caption-v2|nova-3|zh-CN|%@|asr|%@",DGGeminiFastModel,self.videoID]];
+    id result=text ? DGJSON([text dataUsingEncoding:NSUTF8StringEncoding]) : nil;return DGCaptionValidCues(result) ? ([kind isEqual:@"asr"] ? DGCaptionCoalesceShortCues(result) : result) : nil;
 }
 - (void)save:(NSArray *)cues kind:(NSString *)kind {NSString *text=DGJSONText(cues);if (text) [self.store saveTranslation:text source:[self cacheKey:kind]];}
 - (void)emit:(NSString *)stage failure:(NSString *)failure {if (self.update) self.update(stage,self.translated ?: @[],failure);}
@@ -350,7 +364,7 @@ static NSString *DGCaptionDigest(NSString *source) {
             double actual=[metadata isKindOfClass:NSDictionary.class] && DGNumber(metadata[@"duration"]) ? [metadata[@"duration"] doubleValue] : NAN;
             NSString *parseFailure=nil;NSArray *cues=nil;
             if (!isfinite(actual) || fabs(actual-duration)>MAX(1.0,duration*0.02)) parseFailure=@"Thời lượng âm thanh không khớp video; dừng để tránh phụ đề lệch.";
-            else cues=DGCaptionSegments(data,&parseFailure);
+            else cues=DGCaptionCoalesceShortCues(DGCaptionSegments(data,&parseFailure));
             dispatch_async(dispatch_get_main_queue(),^{
                 DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;
                 if (!cues) {[owner fail:parseFailure];return;}owner.source=cues;for (NSDictionary *cue in cues) if ([cue[@"timing_clamped"] boolValue] && owner.event) owner.event(@"Captions timing clamped");[owner save:cues kind:@"asr"];[owner translateNext];
