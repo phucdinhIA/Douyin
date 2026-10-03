@@ -40,7 +40,8 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
         BOOL binary=![[request valueForHTTPHeaderField:@"Content-Type"] isEqual:@"application/json"];
         if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Token fixture-deepgram"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || (!binary && (![body[@"url"] containsString:@"www.douyin.com/aweme"] || ![request.URL.query containsString:@"language=zh-CN"])) || (binary && ![request.URL.query containsString:@"language=zh-CN"])) atomic_fetch_add(&unsafeHeaders,1);
         if (binary) atomic_fetch_add(&binaryCalls,1);
-        if (asrMode && (!binary || asrMode==2)) data=timedWords(@[],2);
+        if (asrMode==3) data=timedWords(@[@{@"word":@"你好",@"start":@0,@"end":@1}],3601);
+        else if (asrMode && (!binary || asrMode==2)) data=timedWords(@[],2);
         else if (asrMode) data=timedWords(@[@{@"word":@"你好",@"start":@0.2,@"end":@1.5}],2);
         else data=json(transcript());
     } else if ([host isEqual:@"www.douyin.com"]) {
@@ -212,6 +213,9 @@ int main(void) {@autoreleasepool {
     __block NSString *asrFailure=nil;client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;stage=state;asrFailure=failure;};
     [client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"failed"];});
     check([stage isEqual:@"failed"] && [asrFailure containsString:@"vẫn chưa nhận dạng"] && atomic_load(&deepgramCalls)==beforeASR+2 && atomic_load(&claudeCalls)==beforeTranslation,@"second empty result terminates without retry loops translating silence or a false duration message");
+    asrMode=3;stage=nil;beforeASR=atomic_load(&deepgramCalls);client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
+    client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;stage=state;asrFailure=failure;};[client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"failed"];});
+    check([stage isEqual:@"failed"] && [asrFailure containsString:@"không khớp video"] && ![asrFailure containsString:@"60 phút"] && atomic_load(&deepgramCalls)==beforeASR+1,@"provider duration overshoot on a verified short source reports mismatch instead of falsely declaring the video over one hour");
     asrMode=1;stage=nil;beforeASR=atomic_load(&deepgramCalls);apify=atomic_load(&apifyCalls);
     client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;(void)failure;stage=state;};
     [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/verified-source.wav"] title:@"fixture title"];

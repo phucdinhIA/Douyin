@@ -453,8 +453,8 @@ static NSString *DGCaptionDigest(NSString *source) {
             double actual=[metadata isKindOfClass:NSDictionary.class] && DGNumber(metadata[@"duration"]) ? [metadata[@"duration"] doubleValue] : NAN;
             NSString *parseFailure=nil;NSArray *cues=nil;
             if (!isfinite(actual) || actual<=0) parseFailure=@"Deepgram không trả thời lượng âm thanh hợp lệ.";
-            else if (actual>3600) parseFailure=@"Video vượt giới hạn 60 phút.";
             else if (fabs(actual-duration)>MAX(1.0,duration*0.02)) parseFailure=@"Thời lượng âm thanh không khớp video; dừng để tránh phụ đề lệch.";
+            else if (actual>3600) parseFailure=@"Deepgram trả thời lượng vượt giới hạn xử lý; không khớp nguồn video đã kiểm tra.";
             else cues=DGCaptionCoalesceShortCues(DGCaptionSegments(data,&parseFailure));
             dispatch_async(dispatch_get_main_queue(),^{
                 DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;
