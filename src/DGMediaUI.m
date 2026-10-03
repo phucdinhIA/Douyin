@@ -112,11 +112,12 @@ NSArray *DGMediaReadVisibleComments(UIView *root) {
 @interface DGCommentEntry : NSObject
 @property(nonatomic,weak) UIViewController *owner;
 @property(nonatomic,strong) UIButton *button;
+@property(nonatomic) BOOL gemini;
 - (void)open;
 @end
 static void DGAttachComments(UIViewController *owner);
 @implementation DGCommentEntry
-- (void)provider:(NSNotification *)note {if (self.owner.view.window && [note.object isKindOfClass:NSString.class]) [self.button setTitle:note.object forState:UIControlStateNormal];}
+- (void)provider:(NSNotification *)note {if (self.owner.view.window && [note.object isKindOfClass:NSString.class]) {self.gemini=YES;[self.button setTitle:note.object forState:UIControlStateNormal];}}
 - (void)open {
     if (!self.owner.view.window || self.owner.presentedViewController) return;
     DGCommentsStop(self.owner);DGAttachComments(self.owner);DGMediaCount(@"GTX manual queue restart");
@@ -261,7 +262,10 @@ static void DGAttachComments(UIViewController *owner) {
     __weak DGCommentEntry *weakEntry=entry;
     DGCommentsStart(owner,DGNewMediaClient(YES),^(NSString *name,NSUInteger count) {
         if (DGMediaRecord) DGMediaRecord(name,count);
+        if ([name isEqual:@"GTX visible source captured"]) weakEntry.gemini=NO;
         NSString *title=[name isEqual:@"GTX visible source captured"] ? @"GTX · đang dịch" : [name isEqual:@"GTX automatic ready"] ? @"GTX · đã dịch" : [name isEqual:@"GTX automatic failed"] ? @"GTX lỗi · thử lại" : [name isEqual:@"GTX automatic rate limited"] ? @"GTX giới hạn · thử lại" : nil;
+        if (weakEntry.gemini && [name isEqual:@"GTX automatic ready"]) title=@"Gemini · đã dịch";
+        if (weakEntry.gemini && [name isEqual:@"GTX automatic failed"]) title=@"Gemini lỗi · thử lại";
         if (title) [weakEntry.button setTitle:title forState:UIControlStateNormal];
     });
 }

@@ -521,9 +521,10 @@ static NSUInteger countText(UIView *view, NSString *text) {
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
     check(atomic_load(&commentRequests)==translatedRequests,@"closing comment session cancels automatic work");
     [self saveWindowImage:@"ui-gtx-comments.png"];
-    atomic_store(&gtxThrottle,YES);native.textLayout=nil;native.text=@"额度限制测试";int before429=atomic_load(&commentRequests);[button sendActionsForControlEvents:UIControlEventTouchUpInside];
+    atomic_store(&gtxThrottle,YES);native.textLayout=nil;native.text=@"额度限制测试";int before429=atomic_load(&commentRequests);UIButton *commentButton=(UIButton *)findID(self.window,@"gtx-comments-button");[commentButton sendActionsForControlEvents:UIControlEventTouchUpInside];
     mediaWait(^BOOL {return [native.text containsString:@"Xin chào"];});check([native.text containsString:@"Xin chào"] && atomic_load(&commentRequests)==before429+1,@"ordinary comment automatically uses Gemini when GTX returns 429");
     native.text=@"另一个限制测试";mediaWait(^BOOL {return [native.text containsString:@"Xin chào"];});check([native.text containsString:@"Xin chào"] && atomic_load(&commentRequests)==before429+1,@"new visible comment uses authorized fallback during shared cooldown without repeated GTX calls");
+    check([commentButton.currentTitle containsString:@"Gemini"],@"comment status names the paid fallback provider instead of claiming GTX success");
     DGCommentsStop(comments);atomic_store(&gtxThrottle,NO);
 
 }
