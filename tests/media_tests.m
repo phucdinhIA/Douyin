@@ -181,8 +181,10 @@ int main(void) {@autoreleasepool {
     check(atomic_load(&unsafeHeaders)==0,@"all provider credentials isolated no cookies no key-bearing URLs no audio-track mixup");
     asrMode=1;stage=nil;int beforeASR=atomic_load(&deepgramCalls),beforeBinary=atomic_load(&binaryCalls),beforeSource=atomic_load(&sourceCalls);
     client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
-    client.update=^(NSString *state,NSArray *track,NSString *failure) {stage=state;result=track;(void)failure;};
+    client.update=^(NSString *state,NSArray *track,NSString *failure) {stage=state;result=track;if (failure) NSLog(@"Recovery fixture failure: %@",failure);};
+    client.event=^(NSString *event) {NSLog(@"Recovery fixture: %@",event);};
     [client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
+    NSLog(@"Recovery fixture terminal=%@ cues=%lu ASR=%d binary=%d source=%d",stage,(unsigned long)result.count,atomic_load(&deepgramCalls)-beforeASR,atomic_load(&binaryCalls)-beforeBinary,atomic_load(&sourceCalls)-beforeSource);
     check([stage isEqual:@"ready"] && result.count==1 && atomic_load(&deepgramCalls)==beforeASR+2 && atomic_load(&binaryCalls)==beforeBinary+1 && atomic_load(&sourceCalls)==beforeSource+1,@"HTTP 200 empty Mandarin result recovers once through verified aligned audio with fixed Mandarin");
     asrMode=2;stage=nil;beforeASR=atomic_load(&deepgramCalls);int beforeTranslation=atomic_load(&claudeCalls);
     client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];

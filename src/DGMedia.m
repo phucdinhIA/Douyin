@@ -318,6 +318,8 @@ static NSString *DGCaptionDigest(NSString *source) {
 - (NSString *)cacheKey:(NSString *)kind {if ([kind isEqual:@"asr"]) return [@"asr-v2|nova-3|zh-CN|" stringByAppendingString:self.videoID];return [NSString stringWithFormat:@"caption-v5|nova-3|zh-CN|%@|%@|%@",DGClaudeModel,kind,self.videoID];}
 - (NSArray *)cached:(NSString *)kind {
     NSString *text=[self.store translationForSource:[self cacheKey:kind]];
+    if (!text && [kind isEqual:@"asr"]) text=[self.store translationForSource:[@"asr-v1|nova-3|zh-CN|" stringByAppendingString:self.videoID]];
+    if (!text && ![kind isEqual:@"asr"]) text=[self.store translationForSource:[NSString stringWithFormat:@"caption-v4|nova-3|zh-CN|%@|%@|%@",DGClaudeModel,kind,self.videoID]];
     if (!text && [kind isEqual:@"asr"]) text=[self.store translationForSource:[NSString stringWithFormat:@"caption-v2|nova-3|zh-CN|%@|asr|%@",DGGeminiFastModel,self.videoID]];
     id result=text ? DGJSON([text dataUsingEncoding:NSUTF8StringEncoding]) : nil;return DGCaptionValidCues(result) ? ([kind isEqual:@"asr"] ? DGCaptionCoalesceShortCues(result) : result) : nil;
 }

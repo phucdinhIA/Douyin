@@ -10,8 +10,8 @@ NSDictionary *DGBackendConfig(void) {
 static id DGBackendJSON(NSData *data) {return data.length && data.length<=8*1024*1024 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL] : nil;}
 static NSString *DGBackendFailure(NSInteger status) {
     if (status==401 || status==403) return @"Tài khoản dịch chưa được cấp quyền. Kiểm tra đăng nhập và quyền sử dụng.";
-    if (status==429 || status==402) return @"Dịch/lồng tiếng đang bị giới hạn hoặc hết hạn mức. Không tự gửi lại yêu cầu.";
-    return @"Dịch/lồng tiếng chưa trả kết quả hợp lệ. Bấm thử lại khi kết nối ổn định.";
+    if (status==429 || status==402) return @"Dịch đang bị giới hạn hoặc hết hạn mức. Không tự gửi lại yêu cầu.";
+    return @"Dịch chưa trả kết quả hợp lệ. Bấm thử lại khi kết nối ổn định.";
 }
 NSDictionary *DGClaudeBody(NSArray *cues,NSString *videoID,NSString *title) {
     if (!DGCaptionValidCues(cues) || !DGBackendString(videoID,160)) return nil;
