@@ -18,7 +18,7 @@ NSString *DGSourceAssetFailure(AVAsset *asset) {
 @property(nonatomic,strong) NSURLSession *session;
 @property(nonatomic,strong) AVAssetExportSession *exporter;
 @property(nonatomic,strong) NSURL *file;
-@property(nonatomic) BOOL cancelled;
+@property(atomic) BOOL cancelled;
 @property(nonatomic,readwrite) double duration;
 @end
 @implementation DGSourceDownload
@@ -28,9 +28,9 @@ NSString *DGSourceAssetFailure(AVAsset *asset) {
 - (void)start:(NSURL *)url configuration:(NSURLSessionConfiguration *)configuration {
     if (!DGSourceURLAllowed(url)) {[self finish:nil failure:@"Nguồn video không hợp lệ."];return;}
     NSURLSessionConfiguration *cfg=configuration ? [configuration copy] : NSURLSessionConfiguration.ephemeralSessionConfiguration;
-    cfg.HTTPCookieStorage=nil;cfg.URLCredentialStorage=nil;cfg.URLCache=nil;cfg.HTTPShouldSetCookies=NO;cfg.timeoutIntervalForResource=180;
+    cfg.HTTPCookieStorage=nil;cfg.URLCredentialStorage=nil;cfg.URLCache=nil;cfg.HTTPShouldSetCookies=NO;cfg.timeoutIntervalForResource=self.resourceTimeout>0 ? MIN(180,self.resourceTimeout) : 180;
     self.session=[NSURLSession sessionWithConfiguration:cfg delegate:self delegateQueue:nil];
-    NSMutableURLRequest *request=[NSMutableURLRequest requestWithURL:url];request.timeoutInterval=60;
+    NSMutableURLRequest *request=[NSMutableURLRequest requestWithURL:url];request.timeoutInterval=MIN(60,cfg.timeoutIntervalForResource);
     request.HTTPShouldHandleCookies=NO;
     [request setValue:@"Mozilla/5.0" forHTTPHeaderField:@"User-Agent"];
     [[self.session downloadTaskWithRequest:request] resume];

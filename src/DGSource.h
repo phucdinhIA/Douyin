@@ -5,6 +5,7 @@ FOUNDATION_EXPORT NSString *DGSourceAssetFailure(AVAsset *asset);
 @interface DGSourceDownload : NSObject <NSURLSessionDownloadDelegate>
 @property(nonatomic,copy) void (^completion)(NSURL *,NSString *);
 @property(nonatomic,readonly) double duration;
+@property(nonatomic) NSTimeInterval resourceTimeout;
 - (void)start:(NSURL *)url configuration:(NSURLSessionConfiguration *)configuration;
 - (void)cancel;
 @end

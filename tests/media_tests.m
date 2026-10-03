@@ -45,6 +45,7 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
         else data=json(transcript());
     } else if ([host isEqual:@"www.douyin.com"]) {
         atomic_fetch_add(&sourceCalls,1);data=[NSData dataWithContentsOfFile:@"tests/fixtures/source-audio.mp4"];
+        if ([request.URL.path containsString:@"expired-native"]) {status=403;data=json(@{});}
         if ([request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || [request valueForHTTPHeaderField:@"Ck"]) atomic_fetch_add(&unsafeHeaders,1);
     } else if ([host isEqual:@"yd.transduck.com"]) {
         if ([request.URL.path isEqual:@"/login"]) {atomic_fetch_add(&loginCalls,1);headers=@{@"Set-Cookie":@"SESSION=fresh-backend; Path=/; Secure; HttpOnly"};data=json(@{@"message":@"ok"});}
@@ -216,6 +217,10 @@ int main(void) {@autoreleasepool {
     [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/verified-source.wav"] title:@"fixture title"];
     waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
     check([stage isEqual:@"ready"] && atomic_load(&deepgramCalls)==beforeASR+1 && atomic_load(&apifyCalls)==apify,@"native verified source bypasses the entire actor and sends just one fixed-Mandarin audio upload");
+    stage=nil;apify=atomic_load(&apifyCalls);beforeASR=atomic_load(&deepgramCalls);client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
+    client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;(void)failure;stage=state;};
+    [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/expired-native.mp4"] title:nil];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
+    check([stage isEqual:@"ready"] && atomic_load(&apifyCalls)==apify+2 && atomic_load(&deepgramCalls)==beforeASR+2,@"expired native source falls back once to the actor before any ASR charge and still completes bounded recovery");
     stage=nil;__block BOOL staleNative=NO;[client cancel];client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)state;(void)track;(void)failure;staleNative=YES;};
     [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/verified-source.wav"] title:nil];staleNative=NO;[client cancel];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];
     check(!staleNative,@"native download cancellation cannot update a different video");asrMode=0;

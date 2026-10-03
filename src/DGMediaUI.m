@@ -366,7 +366,7 @@ void DGMediaInstall(void (^record)(NSString *,NSUInteger)) {
     if (player && [player isSubclassOfClass:UIViewController.class]) {
         DGMediaHook(player,@"viewDidAppear:",@"v20@0:8B16",^id(IMP original) {return ^(UIViewController *owner,BOOL animated) {((void (*)(id,SEL,BOOL))original)(owner,@selector(viewDidAppear:),animated);if (NSThread.isMainThread) DGAttachCaption(owner);};});
         DGMediaHook(player,@"viewWillDisappear:",@"v20@0:8B16",^id(IMP original) {return ^(UIViewController *owner,BOOL animated) {DGCaptionEntry *entry=objc_getAssociatedObject(owner,&DGCaptionKey);[entry stop];DGAudioLeave(owner);entry.button.hidden=YES;entry.status.hidden=YES;((void (*)(id,SEL,BOOL))original)(owner,@selector(viewWillDisappear:),animated);};});
-        DGMediaHook(player,@"setModel:",@"v24@0:8@16",^id(IMP original) {return ^(UIViewController *owner,id model) {[objc_getAssociatedObject(owner,&DGCaptionKey) stop];((void (*)(id,SEL,id))original)(owner,NSSelectorFromString(@"setModel:"),model);};});
+        DGMediaHook(player,@"setModel:",@"v24@0:8@16",^id(IMP original) {return ^(UIViewController *owner,id model) {[objc_getAssociatedObject(owner,&DGCaptionKey) stop];DGAudioLeave(owner);((void (*)(id,SEL,id))original)(owner,NSSelectorFromString(@"setModel:"),model);if (owner.isViewLoaded && owner.view.window && !owner.view.hidden) DGAudioOwner(owner);};});
     }
     for (NSString *name in @[@"AWECommentContainerViewController",@"AWECommentFullScreenContainerViewController",@"AWECommentTreeContainerViewController",@"_TtC33AWECommentPanelContainerSwiftImpl35CommentContainerInnerViewController"]) {
         Class cls=NSClassFromString(name);if (!cls || ![cls isSubclassOfClass:UIViewController.class]) continue;

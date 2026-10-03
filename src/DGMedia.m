@@ -412,6 +412,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 }
 - (void)uploadSource:(NSURL *)url duration:(double)duration {
     [self emit:@"download" failure:nil];self.download=[DGSourceDownload new];
+    if (!isfinite(duration)) self.download.resourceTimeout=20; // Native shortcut must not delay actor fallback on a slow/expired CDN.
     NSUInteger generation=self.generation;__weak DGMediaClient *weakSelf=self;
     self.download.completion=^(NSURL *file,NSString *failure) {
         DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;

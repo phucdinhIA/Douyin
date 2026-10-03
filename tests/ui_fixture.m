@@ -313,7 +313,7 @@ static UIView *findID(UIView *root,NSString *identifier) {
 @end
 static atomic_int mediaRequests,commentRequests;
 static atomic_bool gtxThrottle;
-static atomic_bool longComments;
+static atomic_bool longComments,longVideo;
 static NSData *mediaJSON(id value) {return [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];}
 static NSData *mediaBody(NSURLRequest *request) {
     if (request.HTTPBody) return request.HTTPBody;
@@ -321,28 +321,34 @@ static NSData *mediaBody(NSURLRequest *request) {
     while ((count=[stream read:bytes maxLength:sizeof(bytes)])>0) [result appendBytes:bytes length:(NSUInteger)count];[stream close];return result;
 }
 @interface MediaFixtureProtocol : NSURLProtocol
+@property(atomic) BOOL stopped;
 @end
 @implementation MediaFixtureProtocol
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {(void)request;return YES;}
 + (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request {return request;}
 - (void)startLoading {
-    atomic_fetch_add(&mediaRequests,1);NSURLRequest *request=self.request;NSInteger status=200;NSData *data;
+    atomic_fetch_add(&mediaRequests,1);NSURLRequest *request=self.request;NSInteger status=200;NSData *data;BOOL delayed=NO;
     if ([request.URL.host isEqual:@"api.apify.com"]) {
         if ([request.URL.path containsString:@"/runs"]) {status=201;data=mediaJSON(@{@"data":@{@"id":@"run1",@"status":@"SUCCEEDED",@"defaultDatasetId":@"data1"}});}
-        else data=mediaJSON(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"duration":@10,@"errMsg":@""}]);
-    } else if ([request.URL.host isEqual:@"api.deepgram.com"]) data=mediaJSON(@{@"metadata":@{@"duration":@10},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[@{@"word":@"你",@"start":@0,@"end":@0},@{@"word":@"好",@"start":@0,@"end":@1},@{@"word":@"中国",@"start":@2,@"end":@3},@{@"word":@"谢谢",@"start":@5,@"end":@6}]}]}]}});
+        else data=mediaJSON(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"duration":atomic_load(&longVideo) ? @640 : @10,@"errMsg":@""}]);
+    } else if ([request.URL.host isEqual:@"api.deepgram.com"]) {
+        if (atomic_load(&longVideo)) {NSMutableArray *words=[NSMutableArray new];for (NSUInteger i=0;i<10;i++) [words addObject:@{@"word":@"\u7532",@"start":@(i*70),@"end":@(i*70+1)}];data=mediaJSON(@{@"metadata":@{@"duration":@640},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":words}]}]}});}
+        else data=mediaJSON(@{@"metadata":@{@"duration":@10},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[@{@"word":@"你",@"start":@0,@"end":@0},@{@"word":@"好",@"start":@0,@"end":@1},@{@"word":@"中国",@"start":@2,@"end":@3},@{@"word":@"谢谢",@"start":@5,@"end":@6}]}]}]}});
+    }
     else if ([request.URL.host isEqual:@"generativelanguage.googleapis.com"]) {
         NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSString *text=body[@"contents"][0][@"parts"][0][@"text"];NSArray *input=[NSJSONSerialization JSONObjectWithData:[text dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];
         for (NSDictionary *cue in input) [rows addObject:@{@"id":cue[@"id"],@"text":atomic_load(&longComments) ? [@"Bản dịch tiếng Việt dài cần xuống dòng đầy đủ, giữ đúng ý của bình luận và đọc rõ trên màn hình nhỏ. " stringByPaddingToLength:1400 withString:@"Nội dung tiếp theo phải được cuộn để đọc, không bị che bởi hàng kế tiếp. " startingAtIndex:0] : @[@"Xin chào",@"Trung Quốc",@"Cảm ơn"][[cue[@"id"] unsignedIntegerValue]]}];
         data=mediaJSON(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":[[NSString alloc] initWithData:mediaJSON(@{@"translations":rows}) encoding:NSUTF8StringEncoding]}]},@"finishReason":@"STOP"}]});
     } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);if (atomic_load(&gtxThrottle)) {status=429;data=mediaJSON(@{});}else data=mediaJSON(@[@[@[@"Video rất hay, cảm ơn bạn!",@"视频很好，谢谢！"]]]);}
     else if ([request.URL.host isEqual:@"yd.transduck.com"]) {
-        NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];for (NSDictionary *cue in body[@"subtitles"]) [rows addObject:@{@"translateResult":@[@"Xin ch\u00e0o",@"Trung Qu\u1ed1c",@"C\u1ea3m \u01a1n"][[cue[@"index"] unsignedIntegerValue]],@"useAiTranslate":@YES}];data=mediaJSON(@{@"subtitleTranslateResults":rows});
+        NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];for (NSDictionary *cue in body[@"subtitles"]) {NSUInteger index=[cue[@"index"] unsignedIntegerValue];NSString *text=index<3 ? @[@"Xin ch\u00e0o",@"Trung Qu\u1ed1c",@"C\u1ea3m \u01a1n"][index] : [NSString stringWithFormat:@"Ph\u1ee5 \u0111\u1ec1 \u0111o\u1ea1n %lu",(unsigned long)index];[rows addObject:@{@"translateResult":text,@"useAiTranslate":@YES}];}data=mediaJSON(@{@"subtitleTranslateResults":rows});
+        delayed=atomic_load(&longVideo) && [body[@"subtitles"][0][@"index"] unsignedIntegerValue]>=8;
     }
     else {status=500;data=mediaJSON(@{});}
-    [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
+    void (^deliver)(void)=^{if (self.stopped) return;[self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];};
+    if (delayed) dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(),deliver);else deliver();
 }
-- (void)stopLoading {}
+- (void)stopLoading {self.stopped=YES;}
 @end
 static void mediaWait(BOOL (^finished)(void)) {NSDate *until=[NSDate dateWithTimeIntervalSinceNow:10];while (!finished() && until.timeIntervalSinceNow>0) [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
 
@@ -476,6 +482,15 @@ static NSUInteger countText(UIView *view, NSString *text) {
     UIViewController *modal=[UIViewController new];[host presentViewController:modal animated:NO completion:nil];mediaWait(^BOOL{return modal.view.window!=nil;});
     check(!DGMediaFixtureShortcut(self.window,CGPointMake(280,300)),@"presented modal prevents resolving underlying player");
     [host dismissViewControllerAnimated:NO completion:nil];
+    atomic_store(&longVideo,YES);DGMediaFixtureConfiguration(cfg,nil);self.window.rootViewController=player;player.model=model;player.playback=0.5;player.playing=YES;[player viewDidAppear:NO];[self.window layoutIfNeeded];
+    check(DGMediaFixtureShortcut(self.window,CGPointMake(280,300)),@"long subtitle-only video starts without voice work");
+    mediaWait(^BOOL {return player.playing && [DGMediaSnapshot()[@"caption_running"] boolValue];});
+    check(player.playing && [DGMediaSnapshot()[@"caption_running"] boolValue],@"first translated scene resumes while later long-video translation is still pending");
+    player.playback=630.5;DGMediaFixtureTick(player);check(!player.playing && [DGMediaSnapshot()[@"caption_waiting"] boolValue],@"seek into pending speech pauses rather than showing another scene's subtitle");
+    mediaWait(^BOOL {return ![DGMediaSnapshot()[@"caption_running"] boolValue];});DGMediaFixtureTick(player);caption=(UILabel *)findID(self.window,@"vietnamese-captions-text");
+    check(player.playing && [caption.text containsString:@"9"] && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"newly translated seek target restores matching subtitle and playback without TTS delay");
+    player.playback=400;DGMediaFixtureTick(player);check(caption.hidden,@"progressive subtitle-only rendering still leaves the original silent gaps empty");
+    atomic_store(&longVideo,NO);player.model=other;
     AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.textLayout=[YYTextLayout layoutWithContainer:[NSObject new] text:[[NSAttributedString alloc] initWithString:@"视频很好，谢谢！"]];[comments.view addSubview:native];
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"隐藏的评论";hidden.hidden=YES;[comments.view addSubview:hidden];
