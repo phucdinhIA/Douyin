@@ -196,7 +196,7 @@ class PackagingTests(unittest.TestCase):
                         self.assertEqual(actual['UISupportedInterfaceOrientations~ipad'],expected['UISupportedInterfaceOrientations~ipad'])
                 self.assertEqual(result.read(untouched_path),untouched)
                 self.assertEqual(json.loads(result.read(patch.APP+'DouyinGuest.bundle/media-private.json')),json.loads(media.read_text()))
-                self.assertEqual(json.loads(result.read(patch.APP+'DouyinGuest.bundle/transduck-private.json')),json.loads(backend.read_text()))
+                self.assertEqual(json.loads(result.read(patch.APP+'DouyinGuest.bundle/transduck-private.json')),{k:v for k,v in json.loads(backend.read_text()).items() if k!='voice'})
                 localized=plistlib.loads(result.read(patch.APP+'en.lproj/InfoPlist.strings'))
                 self.assertEqual(localized['CFBundleDisplayName'],'Douyin')
                 self.assertEqual(localized['CFBundleName'],'Douyin')

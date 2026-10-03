@@ -253,15 +253,16 @@ def private_media_payload(path: pathlib.Path):
 
 def private_transduck_payload(path: pathlib.Path):
     config=json.loads(path.read_text(encoding='utf-8'))
-    if not isinstance(config,dict) or set(config)-{'base_url','email','password','session','model','voice'} or not {'base_url','email','password','model','voice'} <= set(config):
+    if not isinstance(config,dict) or set(config)-{'base_url','email','password','session','model','voice'} or not {'base_url','email','password','model'} <= set(config):
         raise ValueError('Invalid personal backend config')
-    if config['base_url']!='https://yd.transduck.com' or config['model']!='claude-sonnet-5' or config['voice']!='vi-VN-NamMinhNeural':
-        raise ValueError('Unsupported backend provider/model/voice')
+    if config['base_url']!='https://yd.transduck.com' or config['model']!='claude-sonnet-5':
+        raise ValueError('Unsupported backend provider/model')
     for field in ('email','password','session'):
         value=config.get(field)
         if field=='session' and value is None: continue
         if not isinstance(value,str) or not 1<=len(value)<=4096 or any(c in value for c in '\r\n'):
             raise ValueError('Invalid personal backend credential')
+    config.pop('voice',None)  # Strip unused legacy TTS configuration.
     return json.dumps(config,ensure_ascii=True).encode('utf-8')
 
 

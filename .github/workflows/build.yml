@@ -35,14 +35,8 @@ jobs:
       - name: Subtitle and GTX request/cache regressions
         run: |
           clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
-            src/DGGemini.m src/DGTranslation.m src/DGSource.m src/DGNarration.m src/DGTransduck.m src/DGMedia.m tests/media_tests.m -framework Foundation -framework AVFoundation -framework CoreMedia -o build/media_tests
+            src/DGGemini.m src/DGTranslation.m src/DGSource.m src/DGTransduck.m src/DGMedia.m tests/media_tests.m -framework Foundation -framework AVFoundation -framework CoreMedia -o build/media_tests
           build/media_tests
-      - name: Nam Minh audio timeline and cancellation regressions
-        run: |
-          clang -fobjc-arc -fblocks -Wall -Wextra -Werror -Isrc \
-            src/DGGemini.m src/DGTranslation.m src/DGSource.m src/DGMedia.m src/DGNarration.m src/DGTransduck.m tests/audio_tests.m \
-            -framework Foundation -framework AVFoundation -framework CoreMedia -o build/audio_tests
-          build/audio_tests
       - name: UIKit fixture on iPhone 15 Simulator
         run: python3 scripts/test_ui_simulator.py
       - name: Record source and toolchain

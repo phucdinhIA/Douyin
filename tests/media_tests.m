@@ -1,13 +1,13 @@
 #import <Foundation/Foundation.h>
 #import "DGMedia.h"
-#import "DGNarration.h"
 #import "DGTransduck.h"
 #import "DGSource.h"
 #import "DGGemini.h"
 #include <stdatomic.h>
 #include <math.h>
 static NSUInteger checks;
-static atomic_int apifyCalls,deepgramCalls,geminiCalls,claudeCalls,gtxCalls,unsafeHeaders,loginCalls;
+static atomic_int apifyCalls,deepgramCalls,geminiCalls,claudeCalls,gtxCalls,unsafeHeaders,loginCalls,sourceCalls,binaryCalls;
+static NSUInteger asrMode;
 static BOOL sessionRenew;
 static BOOL failGemini;
 static BOOL residueGemini;
@@ -34,11 +34,18 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
     if ([host isEqual:@"api.apify.com"]) {
         atomic_fetch_add(&apifyCalls,1);if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Bearer fixture-apify"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);
         if ([request.URL.path containsString:@"/runs"]) {status=201;data=json(@{@"data":@{@"id":@"run1",@"status":@"SUCCEEDED",@"defaultDatasetId":@"data1"}});}
-        else data=json(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"audioUrl":@"https://wrong-track.example/music.mp3",@"duration":@10,@"errMsg":@""}]);
+        else data=json(@[@{@"url":@"https://www.douyin.com/video/7534679152504376595",@"videoUrl":@"https://www.douyin.com/aweme/v1/play/?file_id=mock",@"audioUrl":@"https://wrong-track.example/music.mp3",@"duration":asrMode ? @2 : @10,@"errMsg":@""}]);
     } else if ([host isEqual:@"api.deepgram.com"]) {
         atomic_fetch_add(&deepgramCalls,1);NSDictionary *body=[NSJSONSerialization JSONObjectWithData:requestData(request) options:0 error:NULL];
-        if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Token fixture-deepgram"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || ![body[@"url"] containsString:@"www.douyin.com/aweme"] || ![request.URL.query containsString:@"language=zh-CN"]) atomic_fetch_add(&unsafeHeaders,1);
-        data=json(transcript());
+        BOOL binary=![[request valueForHTTPHeaderField:@"Content-Type"] isEqual:@"application/json"];
+        if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Token fixture-deepgram"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || (!binary && (![body[@"url"] containsString:@"www.douyin.com/aweme"] || ![request.URL.query containsString:@"language=zh-CN"])) || (binary && ![request.URL.query containsString:@"detect_language=true"])) atomic_fetch_add(&unsafeHeaders,1);
+        if (binary) atomic_fetch_add(&binaryCalls,1);
+        if (asrMode && (!binary || asrMode==2)) data=timedWords(@[],2);
+        else if (asrMode) data=timedWords(@[@{@"word":@"你好",@"start":@0.2,@"end":@1.5}],2);
+        else data=json(transcript());
+    } else if ([host isEqual:@"www.douyin.com"]) {
+        atomic_fetch_add(&sourceCalls,1);data=[NSData dataWithContentsOfFile:@"tests/fixtures/tone.wav"];
+        if ([request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || [request valueForHTTPHeaderField:@"Ck"]) atomic_fetch_add(&unsafeHeaders,1);
     } else if ([host isEqual:@"yd.transduck.com"]) {
         if ([request.URL.path isEqual:@"/login"]) {atomic_fetch_add(&loginCalls,1);headers=@{@"Set-Cookie":@"SESSION=fresh-backend; Path=/; Secure; HttpOnly"};data=json(@{@"message":@"ok"});}
         else {
@@ -64,12 +71,6 @@ int main(void) {@autoreleasepool {
     check(DGDeepgramNeedsUpload(json(@{@"err_code":@"REMOTE_CONTENT_ERROR"}),400),@"verified CDN rejection enables binary fallback");
     check(!DGDeepgramNeedsUpload(json(@{@"err_code":@"REMOTE_CONTENT_ERROR"}),200) && !DGDeepgramNeedsUpload(json(@{@"err_code":@"INVALID_AUTH"}),401) && !DGDeepgramNeedsUpload(json(@{@"err_code":@"INVALID_QUERY_PARAMETER"}),400) && !DGDeepgramNeedsUpload(json(@{}),400),@"successful paid transcription auth quota and invalid language do not trigger fallback");
     check(DGSourceURLAllowed([NSURL URLWithString:@"https://v95-aw.douyinvod.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"https://evil-douyinvod.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"http://www.douyin.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"https://user:pass@www.douyin.com/media"]),@"source download and background player restrict hosts schemes and credentials");
-    NSDictionary *vb=DGNamMinhBody(@"Xin ch\u00e0o");
-    check([vb[@"config"][@"voice"] isEqual:DGNamMinhVoice] && [vb[@"config"][@"skipTranslation"] boolValue] && !vb[@"videoDetails"][@"subtitleLevel"],@"Nam Minh uses verified backend contract without retranslation or guessed subtitle enum");
-    check(!DGNamMinhBody(@""),@"empty voice request is rejected");
-    NSDictionary *voiceResult=@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://static-ja.youtube-dubbing.com/audio/sample.mp3"}]};NSString *voiceFailure=nil;
-    check(DGNamMinhAudioURL(json(voiceResult),200,&voiceFailure)!=nil,@"verified Nam Minh result yields trusted audio URL");
-    check(!DGNamMinhAudioURL(json(@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://evil.example/steal"}]}),200,&voiceFailure) && !DGNamMinhAudioURL(json(voiceResult),401,&voiceFailure),@"voice parser rejects untrusted hosts and auth failures");
     check([DGCaptionVideoURL(@"7683814443658054955").absoluteString isEqual:@"https://www.douyin.com/video/7683814443658054955"],@"native video ID produces canonical HTTPS URL");
     check(!DGCaptionVideoURL(@"../wrong") && !DGCaptionVideoURL(@"123") && !DGCaptionVideoURL(@"７６８３８１４４４３６５８０５４９５５"),@"video ID rejects paths short IDs and non-ASCII digits");
     NSURLRequest *request=DGGTXRequest(@"你好 & + ? 😀");NSURLComponents *components=[NSURLComponents componentsWithURL:request.URL resolvingAgainstBaseURL:NO];NSMutableDictionary *query=[NSMutableDictionary new];for (NSURLQueryItem *item in components.queryItems) query[item.name]=item.value;
@@ -83,6 +84,23 @@ int main(void) {@autoreleasepool {
     check([DGGTXBatchAnswer(commentBatch,200,commentSources,&error) isEqual:@[@"Xin chào",@"Cảm ơn"]],@"GTX markers map a batch to exact source comments");
     check(!DGGTXBatchAnswer(json(@[@[@[@"Cảm ơn, xin chào",@"source"]]]),200,commentSources,&error),@"missing GTX markers cannot put another comment's translation in a cell");
     NSArray *cues=DGCaptionSegments(json(transcript()),&error);check(cues.count==3 && DGCaptionValidCues(cues),@"word gaps create separately timed Chinese cues");
+    NSData *blank=timedWords(@[],37.243);
+    check(!DGCaptionSegments(blank,&error) && [error containsString:@"chưa trả lời nói"] && ![error containsString:@"60 phút"],@"short empty successful ASR is not misreported as a 60-minute video");
+    check(DGDeepgramNeedsUpload(blank,200) && !DGDeepgramNeedsUpload(timedWords(@[],3601),200) && !DGDeepgramNeedsUpload(blank,429),@"only valid empty short ASR allows bounded audio verification recovery");
+    check(!DGCaptionSegments(json(@{@"metadata":@{@"duration":@YES},@"results":@{}}),&error) && [error containsString:@"thời lượng"],@"boolean metadata is rejected with its actual category");
+    check(!DGCaptionSegments(json(@{@"metadata":@{@"duration":@2},@"results":@{}}),&error) && [error containsString:@"cấu trúc"],@"missing channels cannot masquerade as silence");
+    NSMutableDictionary *multi=[transcript() mutableCopy];NSMutableDictionary *multiResults=[multi[@"results"] mutableCopy];multiResults[@"channels"]=@[@{@"alternatives":@[@{@"words":@[]}]},multi[@"results"][@"channels"][0]];multi[@"results"]=multiResults;
+    check(DGCaptionSegments(json(multi),&error).count==3 && !DGDeepgramNeedsUpload(json(multi),200),@"silent first channel does not discard later speech or add a paid recovery");
+    multiResults[@"channels"]=@[@{@"alternatives":@[@{@"words":@[]},transcript()[@"results"][@"channels"][0][@"alternatives"][0]]}];
+    check(DGCaptionSegments(json(multi),&error).count==3,@"empty first alternative does not hide a valid timed alternative");
+    NSDictionary *utterances=@{@"metadata":@{@"duration":@10},@"results":@{@"channels":@[@{@"alternatives":@[@{@"words":@[],@"transcript":@"你好。谢谢。"}]}],@"utterances":@[@{@"transcript":@"你好。",@"start":@1,@"end":@2},@{@"transcript":@"谢谢。",@"start":@5,@"end":@6}]}};
+    NSArray *utteranceCues=DGCaptionSegments(json(utterances),&error);
+    check(utteranceCues.count==2 && [utteranceCues[0][@"timing_utterance"] boolValue] && !DGCaptionTextAt(utteranceCues,3) && !DGDeepgramNeedsUpload(json(utterances),200),@"timed utterances retain provider speech intervals and silence without invented word timings or retry");
+    AVURLAsset *toneAsset=[AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:@"tests/fixtures/tone.wav"] options:nil];
+    check(!DGSourceAssetFailure(toneAsset),@"source verifier accepts a real two-second audio track");
+    AVMutableComposition *silent=[AVMutableComposition composition];[silent insertEmptyTimeRange:CMTimeRangeMake(kCMTimeZero,CMTimeMakeWithSeconds(2,600))];
+    check([DGSourceAssetFailure(silent) containsString:@"track âm thanh"],@"two-second container without audio is rejected before another paid transcription");
+    check([DGSourceAssetFailure(nil) containsString:@"thời lượng"],@"unreadable source reports an asset error instead of silence");
     NSArray *tail=DGCaptionCoalesceShortCues(@[@{@"id":@0,@"start":@0,@"end":@3,@"text":@"这是最后一句"},@{@"id":@1,@"start":@3,@"end":@3.25,@"text":@"谢谢"}]);
     check(tail.count==1 && [tail[0][@"end"] isEqual:@3.25] && [tail[0][@"text"] isEqual:@"这是最后一句谢谢"],@"tiny adjacent tail joins its sentence before translation and TTS instead of demanding impossible speech rate");
     check([cues[0][@"text"] isEqual:@"你好"] && [cues[2][@"start"] doubleValue]==5,@"original speech text and timestamp preserved");
@@ -134,8 +152,6 @@ int main(void) {@autoreleasepool {
     NSDictionary *claudeBody=DGClaudeBody(shortTrack,@"douyin_test",@"Whole context");
     check([claudeBody[@"model"] isEqual:DGClaudeModel] && [claudeBody[@"toLanguage"] isEqual:@"vi-VN"] && [claudeBody[@"subtitles"] count]==150 && [claudeBody[@"subtitles"][149][@"contextBefore"] count]==3,@"Claude receives the entire short track and neighboring context in one fixed-language request");
     check([claudeBody[@"subtitles"][149][@"contextBefore"][0][@"text"] isEqual:shortTrack[146][@"text"]] && [claudeBody[@"subtitles"][0][@"contextAfter"][0][@"text"] isEqual:shortTrack[1][@"text"]],@"live backend context contract uses text objects rather than rejected strings");
-    NSDictionary *echo=@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://static-ja.youtube-dubbing.com/audio/sample.mp3",@"translateResult":@"Expected",@"useAiTranslate":@YES}]};
-    check(DGNamMinhAudioForText(json(echo),200,@"Expected",NULL) && !DGNamMinhAudioForText(json(echo),200,@"Different",NULL),@"voice must echo the exact requested translation before audio can enter its timeline");
     NSArray *one=@[@{@"id":@0,@"start":@0,@"end":@1,@"text":@"你好"}];
     NSArray *parsedClaude=DGClaudeAnswer(json(@{@"subtitleTranslateResults":@[@{@"translateResult":@"Xin chào",@"useAiTranslate":@YES}]}),200,one,&error);
     check([parsedClaude[0][@"id"] isEqual:@0] && [parsedClaude[0][@"start"] isEqual:@0] && [parsedClaude[0][@"end"] isEqual:@1],@"Claude output retains authoritative local IDs and timestamps");
@@ -163,6 +179,25 @@ int main(void) {@autoreleasepool {
     __block BOOL done=NO;[client translateComment:@"你好" completion:^(NSString *answer,NSString *failure) {check([answer isEqual:@"Xin chào"] && !failure,@"comment uses GTX instead of paid providers");done=YES;}];waitFor(^BOOL{return done;});int gtx=atomic_load(&gtxCalls);done=NO;[client translateComment:@"你好" completion:^(NSString *answer,NSString *failure) {(void)answer;(void)failure;done=YES;}];check(done && atomic_load(&gtxCalls)==gtx,@"GTX cache hit makes no request");
     __block BOOL stale=NO;[client translateComment:@"取消" completion:^(NSString *answer,NSString *failure) {(void)answer;(void)failure;stale=YES;}];[client cancel];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.15]];check(!stale,@"cancelled response cannot update newer UI");
     check(atomic_load(&unsafeHeaders)==0,@"all provider credentials isolated no cookies no key-bearing URLs no audio-track mixup");
+    asrMode=1;stage=nil;int beforeASR=atomic_load(&deepgramCalls),beforeBinary=atomic_load(&binaryCalls),beforeSource=atomic_load(&sourceCalls);
+    client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
+    client.update=^(NSString *state,NSArray *track,NSString *failure) {stage=state;result=track;(void)failure;};
+    [client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
+    check([stage isEqual:@"ready"] && result.count==1 && atomic_load(&deepgramCalls)==beforeASR+2 && atomic_load(&binaryCalls)==beforeBinary+1 && atomic_load(&sourceCalls)==beforeSource+1,@"HTTP 200 empty Mandarin result recovers once through verified aligned audio and language detection");
+    asrMode=2;stage=nil;beforeASR=atomic_load(&deepgramCalls);int beforeTranslation=atomic_load(&claudeCalls);
+    client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
+    __block NSString *asrFailure=nil;client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;stage=state;asrFailure=failure;};
+    [client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"failed"];});
+    check([stage isEqual:@"failed"] && [asrFailure containsString:@"vẫn chưa nhận dạng"] && atomic_load(&deepgramCalls)==beforeASR+2 && atomic_load(&claudeCalls)==beforeTranslation,@"second empty result terminates without retry loops translating silence or a false duration message");
+    asrMode=1;stage=nil;beforeASR=atomic_load(&deepgramCalls);apify=atomic_load(&apifyCalls);
+    client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;(void)failure;stage=state;};
+    [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/verified-source.wav"] title:@"fixture title"];
+    waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
+    check([stage isEqual:@"ready"] && atomic_load(&deepgramCalls)==beforeASR+1 && atomic_load(&apifyCalls)==apify,@"native verified source bypasses the entire actor and sends just one detected-language audio upload");
+    stage=nil;__block BOOL staleNative=NO;[client cancel];client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)state;(void)track;(void)failure;staleNative=YES;};
+    [client startVideo:@"7534679152504376595" at:0 sourceURL:[NSURL URLWithString:@"https://www.douyin.com/verified-source.wav"] title:nil];staleNative=NO;[client cancel];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];
+    check(!staleNative,@"native download cancellation cannot update a different video");asrMode=0;
+    check(atomic_load(&unsafeHeaders)==0,@"binary recovery and native downloads never share backend or Google credentials");
     throttleGTX=YES;done=NO;gtx=atomic_load(&gtxCalls);int beforeFallback=atomic_load(&geminiCalls);
     [client translateComments:@[@"第一条",@"第二条"] completion:^(NSDictionary *answers,NSString *failure) {check(answers.count==2 && !failure,@"GTX 429 uses authorized structured Gemini comment fallback");done=YES;}];waitFor(^BOOL{return done;});
     check(done && atomic_load(&gtxCalls)==gtx+1 && atomic_load(&geminiCalls)==beforeFallback+1 && [DGGTXSnapshot()[@"gtx_cooldown_seconds"] doubleValue]>170,@"one throttled GTX batch respects provider Retry-After across clients");

@@ -12,6 +12,7 @@ FOUNDATION_EXPORT NSArray<NSDictionary *> *DGCaptionSegments(NSData *data, NSStr
 FOUNDATION_EXPORT BOOL DGCaptionValidCues(NSArray *cues);
 FOUNDATION_EXPORT NSArray *DGCaptionCoalesceShortCues(NSArray *cues);
 FOUNDATION_EXPORT NSString *DGCaptionTextAt(NSArray<NSDictionary *> *cues, NSTimeInterval time);
+FOUNDATION_EXPORT NSDictionary *DGCaptionCueAt(NSArray<NSDictionary *> *cues, NSTimeInterval time);
 FOUNDATION_EXPORT NSURLRequest *DGCaptionTranslationRequest(NSString *key, NSArray<NSDictionary *> *cues);
 FOUNDATION_EXPORT NSURLRequest *DGCaptionTranslationRequestWithTitle(NSString *key, NSArray<NSDictionary *> *cues, NSString *title);
 FOUNDATION_EXPORT NSArray<NSDictionary *> *DGCaptionTranslationAnswer(NSData *data, NSInteger status, NSArray<NSDictionary *> *source, NSString **failure);
@@ -20,14 +21,16 @@ FOUNDATION_EXPORT NSArray<NSDictionary *> *DGCaptionTranslationAnswer(NSData *da
 @interface DGCaptionStore : DGTranslationStore
 @end
 
-// All public methods and callbacks run on the main thread. No automatic paid retries.
+// Main-thread callbacks. One bounded, source-verified empty-ASR recovery, no retry loop.
 @interface DGMediaClient : NSObject <NSURLSessionTaskDelegate>
 @property(nonatomic,copy) void (^update)(NSString *stage, NSArray<NSDictionary *> *cues, NSString *failure);
 @property(nonatomic,copy) void (^event)(NSString *name);
 - (instancetype)initWithConfig:(NSDictionary *)config geminiKey:(NSString *)key store:(DGTranslationStore *)store configuration:(NSURLSessionConfiguration *)configuration;
 - (void)startVideo:(NSString *)videoID;
 - (void)startVideo:(NSString *)videoID at:(NSTimeInterval)time;
+- (void)startVideo:(NSString *)videoID at:(NSTimeInterval)time sourceURL:(NSURL *)url title:(NSString *)title;
 - (void)prioritizeTime:(NSTimeInterval)time;
+- (BOOL)pendingSpeechAt:(NSTimeInterval)time;
 - (void)translateComment:(NSString *)source completion:(void (^)(NSString *,NSString *))completion;
 - (void)translateComments:(NSArray<NSString *> *)sources completion:(void (^)(NSDictionary<NSString *,NSString *> *,NSString *))completion;
 - (void)cancel;

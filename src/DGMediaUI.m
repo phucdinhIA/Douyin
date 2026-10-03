@@ -1,9 +1,9 @@
 #import "DGMediaUI.h"
 #import "DGMedia.h"
 #import "DGComments.h"
-#import "DGNarration.h"
 #import "DGTransduck.h"
 #import "DGAudioUI.h"
+#import "DGSubtitleUI.h"
 #import <objc/runtime.h>
 #include <math.h>
 
@@ -132,20 +132,25 @@ static void DGAttachComments(UIViewController *owner);
 @property(nonatomic,strong) UILabel *caption;
 @property(nonatomic,strong) DGMediaClient *client;
 @property(nonatomic,strong) NSTimer *timer;
-@property(nonatomic,strong) DGRollingVoice *narration;
-@property(nonatomic) BOOL preparingVoice;
 @property(nonatomic,copy) NSString *videoID;
 @property(nonatomic,strong) NSArray *cues;
 @property(nonatomic) BOOL showing;
 @property(nonatomic) BOOL running;
 @property(nonatomic) BOOL waiting;
 @property(nonatomic) BOOL failed;
+@property(nonatomic,strong) NSArray *pages;
+@property(nonatomic,copy) NSString *pageSource;
+@property(nonatomic) CGFloat pageWidth,pageFont;
+@property(nonatomic) NSUInteger pageLines;
+@property(nonatomic) double readyAt;
+@property(nonatomic,strong) NSLayoutConstraint *buttonTop;
 - (void)open;
 - (void)stop;
 - (void)tick;
 - (void)resumeWaiting;
-- (void)prepareVoice;
 - (void)background;
+- (void)layoutCaption:(NSDictionary *)cue time:(double)time;
+- (void)drag:(UIPanGestureRecognizer *)pan;
 @end
 static __weak DGCaptionEntry *DGActiveCaption;
 static __weak DGCaptionEntry *DGVisibleCaption;
@@ -183,36 +188,17 @@ static BOOL DGMediaPause(UIViewController *owner) {
         entry.status.text=[stage isEqual:@"apify"] ? @"Đang lấy video · Apify" : [stage isEqual:@"deepgram"] ? @"Đang nhận dạng tiếng Trung · Nova-3" : [stage isEqual:@"claude"] ? @"Đang dịch phụ đề · Claude Sonnet 5" : [stage isEqual:@"partial"] ? @"Đã có một phần phụ đề · đang dịch tiếp" : [stage isEqual:@"cached"] ? @"Phụ đề đã lưu · không gọi API lại" : [stage isEqual:@"ready"] ? @"Phụ đề Việt đã sẵn sàng" : failure;
         [entry.button setTitle:entry.running ? @"Hủy phụ đề" : [stage isEqual:@"failed"] ? @"Bỏ qua · phát video" : @"Tắt phụ đề Việt" forState:UIControlStateNormal];
         if ([stage isEqual:@"failed"]) {entry.failed=YES;entry.showing=NO;entry.caption.hidden=YES;DGMediaCount(@"Captions failed waiting for user");}
-        if ([stage isEqual:@"download"]) entry.status.text=@"CDN chặn Deepgram · đang tải âm thanh trực tiếp";
+        if ([stage isEqual:@"download"]) entry.status.text=@"Đang kiểm tra và lấy âm thanh video";
         if ([stage isEqual:@"ready"] || [stage isEqual:@"cached"]) {
-            if ([DGMediaBackend[@"email"] length]) [entry prepareVoice];else [entry resumeWaiting];
+            entry.readyAt=NSProcessInfo.processInfo.systemUptime;
+            entry.status.text=@"Phụ đề đã sẵn sàng · kéo lên/xuống để đổi vị trí";
+            [entry resumeWaiting];
         }
         DGMediaCount([@"Captions stage " stringByAppendingString:stage]);[entry tick];
     };
     SEL timeSelector=NSSelectorFromString(@"currentPlaybackTime");Method timeMethod=class_getInstanceMethod(object_getClass(self.owner),timeSelector);
     double time=DGMediaGetterType(timeMethod,'d') ? ((double (*)(id,SEL))method_getImplementation(timeMethod))(self.owner,timeSelector) : 0;
-    DGMediaCount(@"Captions opt-in");[self.client startVideo:identifier at:time];
-}
-- (void)prepareVoice {
-    if (self.preparingVoice) return;self.preparingVoice=YES;self.running=YES;self.status.text=@"Đang tạo lồng tiếng Việt · Nam Minh";
-    [self.button setTitle:@"Hủy lồng tiếng" forState:UIControlStateNormal];
-    NSMutableDictionary *voiceConfig=[DGMediaBackend mutableCopy];voiceConfig[@"video_id"]=self.videoID;
-    self.narration=[[DGRollingVoice alloc] initWithConfig:voiceConfig configuration:DGMediaConfiguration];self.narration.event=^(NSString *name) {DGMediaCount(name);};
-    NSString *identifier=self.videoID;__weak DGCaptionEntry *weakSelf=self;
-    BOOL started=DGAudioBeginRolling(self.owner,DGVoiceChunks(self.cues),^(BOOL waiting) {
-        DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || ![identifier isEqual:DGVideoID(entry.owner)]) return;
-        entry.running=waiting;
-        if (waiting) {if (!entry.waiting) {entry.waiting=YES;DGMediaPause(entry.owner);DGMediaCount(@"Captions rolling playback paused");}entry.status.text=@"Đang chuẩn bị đoạn lồng tiếng tiếp theo · Nam Minh";}
-        else {entry.status.text=[DGAudioSnapshot()[@"dubbing_active"] boolValue] ? @"Lồng tiếng Việt · đang chuẩn bị tiếp" : @"Đoạn này dùng phụ đề và âm thanh gốc";[entry.button setTitle:@"Tắt phụ đề / lồng tiếng" forState:UIControlStateNormal];[entry resumeWaiting];}
-    });
-    if (!started) {self.running=NO;self.preparingVoice=NO;self.status.text=@"Chưa gắn được giọng đọc vào player · dùng phụ đề";[self resumeWaiting];return;}
-    self.narration.chunkReady=^(NSDictionary *chunk) {
-        DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || ![identifier isEqual:entry.videoID] || ![identifier isEqual:DGVideoID(entry.owner)]) {if (chunk[@"file"]) [NSFileManager.defaultManager removeItemAtURL:chunk[@"file"] error:NULL];return;}
-        DGAudioRollingChunk(entry.owner,chunk);
-        if (chunk[@"failure"]) entry.status.text=@"Nam Minh lỗi một đoạn · dùng phụ đề và âm thanh gốc, tiếp tục tạo đoạn sau";
-    };
-    Method clock=class_getInstanceMethod(object_getClass(self.owner),NSSelectorFromString(@"currentPlaybackTime"));double time=DGMediaGetterType(clock,'d') ? ((double (*)(id,SEL))method_getImplementation(clock))(self.owner,NSSelectorFromString(@"currentPlaybackTime")) : 0;
-    [self.narration start:self.cues at:time];
+    DGMediaCount(@"Captions opt-in");[self.client startVideo:identifier at:time sourceURL:DGAudioSourceURL(self.owner) title:DGMediaGetter(DGMediaGetter(self.owner,@"model"),@"videoTitle")];
 }
 - (void)tick {
     if (UIApplication.sharedApplication.applicationState!=UIApplicationStateActive) return;
@@ -224,12 +210,45 @@ static BOOL DGMediaPause(UIViewController *owner) {
         if (DGMediaGetterType(playing,'B') && ((BOOL (*)(id,SEL))method_getImplementation(playing))(self.owner,NSSelectorFromString(@"isPlaying"))) DGMediaPause(self.owner);
     }
     if (!self.showing || !DGMediaGetterType(method,'d')) {self.caption.hidden=YES;return;}
-    NSTimeInterval time=((double (*)(id,SEL))method_getImplementation(method))(self.owner,selector);if (self.running) [self.client prioritizeTime:time];[self.narration prioritizeTime:time];NSString *text=DGCaptionTextAt(self.cues,time);
-    self.caption.hidden=!text.length;if (![self.caption.text isEqual:text]) self.caption.text=text;
+    NSTimeInterval time=((double (*)(id,SEL))method_getImplementation(method))(self.owner,selector);if (self.running) [self.client prioritizeTime:time];
+    if (self.running && self.cues.count) {
+        if ([self.client pendingSpeechAt:time]) {
+            if (!self.waiting) {self.waiting=YES;DGMediaPause(self.owner);DGMediaCount(@"Captions translation buffer waiting");}
+        }else if (self.waiting) {[self resumeWaiting];DGMediaCount(@"Captions translation buffer ready");}
+    }
+    [self layoutCaption:DGCaptionCueAt(self.cues,time) time:time];
+    self.status.hidden=self.readyAt>0 && NSProcessInfo.processInfo.systemUptime-self.readyAt>4 && !self.running && !self.failed;
+}
+- (void)layoutCaption:(NSDictionary *)cue time:(double)time {
+    UIWindow *surface=self.owner.view.window;if (!surface) return;
+    CGRect safe=UIEdgeInsetsInsetRect(surface.bounds,surface.safeAreaInsets);BOOL vertical=safe.size.height>safe.size.width;NSUInteger lines=vertical ? 3 : 2;
+    self.buttonTop.constant=vertical ? 58 : 8;
+    CGFloat width=MAX(40,safe.size.width-24-(vertical ? 64 : 24));
+    UIFont *font=[[UIFontMetrics metricsForTextStyle:UIFontTextStyleBody] scaledFontForFont:[UIFont systemFontOfSize:19 weight:UIFontWeightMedium] maximumPointSize:24];
+    NSString *source=cue[@"text"];
+    if (![source isEqual:self.pageSource] || fabs(width-self.pageWidth)>0.5 || fabs(font.pointSize-self.pageFont)>0.1 || lines!=self.pageLines) {
+        self.pages=DGSubtitlePages(source,width-24,font,lines);self.pageSource=source;self.pageWidth=width;self.pageFont=font.pointSize;self.pageLines=lines;
+    }
+    self.caption.font=font;self.caption.numberOfLines=lines;self.caption.lineBreakMode=NSLineBreakByWordWrapping;
+    NSString *text=DGSubtitlePageAt(self.pages,time,[cue[@"start"] doubleValue],[cue[@"end"] doubleValue]);self.caption.text=text;self.caption.accessibilityLabel=source;self.caption.hidden=!text.length;
+    CGFloat height=ceil([text boundingRectWithSize:CGSizeMake(width-24,CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName:font} context:nil].size.height)+14;
+    height=MIN(ceil(font.lineHeight*lines)+14,MAX(font.lineHeight+14,height));
+    CGFloat top=CGRectGetMinY(safe)+(vertical ? 164 : 62),bottom=CGRectGetMaxY(safe)-(vertical ? MIN(230,MAX(144,safe.size.height*0.22)) : 48);
+    double position=[NSUserDefaults.standardUserDefaults objectForKey:@"DGSubtitlePosition"] ? [NSUserDefaults.standardUserDefaults doubleForKey:@"DGSubtitlePosition"] : 1;
+    if (!isfinite(position)) position=1;position=MAX(0,MIN(1,position));
+    CGFloat y=top+MAX(0,bottom-height-top)*position;
+    self.caption.frame=CGRectMake(CGRectGetMinX(safe)+12,y,width,height);
+}
+- (void)drag:(UIPanGestureRecognizer *)pan {
+    if (!self.showing || self.caption.hidden) return;
+    UIWindow *surface=self.owner.view.window;CGRect safe=UIEdgeInsetsInsetRect(surface.bounds,surface.safeAreaInsets);BOOL vertical=safe.size.height>safe.size.width;
+    CGFloat top=CGRectGetMinY(safe)+(vertical ? 164 : 62),bottom=CGRectGetMaxY(safe)-(vertical ? MIN(230,MAX(144,safe.size.height*0.22)) : 48),range=MAX(1,bottom-self.caption.bounds.size.height-top);
+    CGFloat y=self.caption.frame.origin.y+[pan translationInView:surface].y;
+    [NSUserDefaults.standardUserDefaults setDouble:MAX(0,MIN(1,(y-top)/range)) forKey:@"DGSubtitlePosition"];[pan setTranslation:CGPointZero inView:surface];[self tick];
 }
 - (void)stop {
-    [self.narration cancel];self.narration=nil;self.preparingVoice=NO;DGAudioStopVoice(self.owner);
     [self.client cancel];self.client=nil;[self.timer invalidate];self.timer=nil;self.running=NO;self.showing=NO;self.waiting=NO;self.failed=NO;self.caption.hidden=YES;self.cues=@[];self.status.text=@"";[self.button setTitle:@"Phụ đề Việt" forState:UIControlStateNormal];
+    self.pages=nil;self.pageSource=nil;self.readyAt=0;
 }
 - (void)background {if (self.running) [self stop];self.caption.hidden=YES;}
 - (void)dealloc {[_client cancel];[_timer invalidate];[_button removeFromSuperview];[_status removeFromSuperview];[_caption removeFromSuperview];[NSNotificationCenter.defaultCenter removeObserver:self];}
@@ -243,12 +262,12 @@ static void DGAttachCaption(UIViewController *owner) {
         entry=[DGCaptionEntry new];entry.owner=owner;entry.button=[UIButton buttonWithType:UIButtonTypeCustom];entry.button.accessibilityIdentifier=@"vietnamese-captions-button";[entry.button setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];[entry.button setTitle:@"Phụ đề Việt" forState:UIControlStateNormal];[entry.button addTarget:entry action:@selector(open) forControlEvents:UIControlEventTouchUpInside];
         entry.button.backgroundColor=[UIColor.blackColor colorWithAlphaComponent:0.65];entry.button.tintColor=UIColor.whiteColor;entry.button.layer.cornerRadius=12;entry.button.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
         entry.status=[UILabel new];entry.status.accessibilityIdentifier=@"vietnamese-captions-status";entry.status.numberOfLines=0;entry.status.font=[UIFont systemFontOfSize:12];entry.status.textColor=UIColor.whiteColor;entry.status.backgroundColor=[UIColor.blackColor colorWithAlphaComponent:0.5];
-        entry.caption=[UILabel new];entry.caption.accessibilityIdentifier=@"vietnamese-captions-text";entry.caption.numberOfLines=0;entry.caption.font=[UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];entry.caption.textAlignment=NSTextAlignmentCenter;entry.caption.textColor=UIColor.whiteColor;entry.caption.backgroundColor=[UIColor.blackColor colorWithAlphaComponent:0.75];entry.caption.layer.cornerRadius=8;entry.caption.clipsToBounds=YES;entry.caption.hidden=YES;
-        entry.status.userInteractionEnabled=NO;entry.caption.userInteractionEnabled=NO;
-        for (UIView *view in @[entry.button,entry.status,entry.caption]) {view.translatesAutoresizingMaskIntoConstraints=NO;[surface addSubview:view];}
-        [NSLayoutConstraint activateConstraints:@[[entry.button.topAnchor constraintEqualToAnchor:surface.safeAreaLayoutGuide.topAnchor constant:58],[entry.button.leadingAnchor constraintEqualToAnchor:surface.safeAreaLayoutGuide.leadingAnchor constant:12],[entry.button.widthAnchor constraintEqualToConstant:156],[entry.button.heightAnchor constraintEqualToConstant:36],
-            [entry.status.topAnchor constraintEqualToAnchor:entry.button.bottomAnchor constant:4],[entry.status.leadingAnchor constraintEqualToAnchor:entry.button.leadingAnchor],[entry.status.widthAnchor constraintEqualToConstant:230],
-            [entry.caption.leadingAnchor constraintEqualToAnchor:surface.safeAreaLayoutGuide.leadingAnchor constant:18],[entry.caption.trailingAnchor constraintEqualToAnchor:surface.safeAreaLayoutGuide.trailingAnchor constant:-66],[entry.caption.centerYAnchor constraintEqualToAnchor:surface.centerYAnchor constant:90]]];
+        entry.caption=[DGSubtitleLabel new];entry.caption.accessibilityIdentifier=@"vietnamese-captions-text";entry.caption.textAlignment=NSTextAlignmentCenter;entry.caption.textColor=UIColor.whiteColor;entry.caption.backgroundColor=[UIColor.blackColor colorWithAlphaComponent:0.82];entry.caption.layer.cornerRadius=8;entry.caption.clipsToBounds=YES;entry.caption.hidden=YES;
+        entry.status.userInteractionEnabled=NO;entry.caption.userInteractionEnabled=YES;[entry.caption addGestureRecognizer:[[UIPanGestureRecognizer alloc] initWithTarget:entry action:@selector(drag:)]];
+        for (UIView *view in @[entry.button,entry.status]) {view.translatesAutoresizingMaskIntoConstraints=NO;[surface addSubview:view];}[surface addSubview:entry.caption];
+        entry.buttonTop=[entry.button.topAnchor constraintEqualToAnchor:surface.safeAreaLayoutGuide.topAnchor constant:58];
+        [NSLayoutConstraint activateConstraints:@[entry.buttonTop,[entry.button.leadingAnchor constraintEqualToAnchor:surface.safeAreaLayoutGuide.leadingAnchor constant:12],[entry.button.widthAnchor constraintEqualToConstant:156],[entry.button.heightAnchor constraintEqualToConstant:36],
+            [entry.status.topAnchor constraintEqualToAnchor:entry.button.bottomAnchor constant:4],[entry.status.leadingAnchor constraintEqualToAnchor:entry.button.leadingAnchor],[entry.status.widthAnchor constraintEqualToConstant:230]]];
         objc_setAssociatedObject(owner,&DGCaptionKey,entry,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         [NSNotificationCenter.defaultCenter addObserver:entry selector:@selector(background) name:UIApplicationDidEnterBackgroundNotification object:nil];
     }
@@ -282,6 +301,7 @@ static BOOL DGMediaBlockedTouch(UIView *hit,UIWindow *window) {
     for (UIView *node=hit;node && node!=window;node=node.superview) {
         if ([node isKindOfClass:UIControl.class] || [node isKindOfClass:UITextView.class] || [node isKindOfClass:UINavigationBar.class] || [node isKindOfClass:UITabBar.class]) return YES;
         NSString *name=NSStringFromClass(node.class);
+        if ([node.accessibilityIdentifier isEqual:@"vietnamese-captions-text"]) return YES;
         if ([name containsString:@"Comment"] || [name containsString:@"Keyboard"] || [name containsString:@"AISummary"] || [name containsString:@"Serval"]) return YES;
     }return NO;
 }
@@ -355,12 +375,12 @@ void DGMediaInstall(void (^record)(NSString *,NSUInteger)) {
     }
 }
 NSDictionary *DGMediaSnapshot(void) {
-    NSMutableDictionary *snapshot=[@{@"caption_configured":@([DGMediaConfig[@"apify_api_key"] length]>0 && [DGMediaConfig[@"deepgram_api_key"] length]>0 && [DGMediaBackend[@"email"] length]>0),@"actor":@"apple_yang/douyin-video-audio-downloader",@"asr_model":@"nova-3",@"source_language":@"zh-CN",@"target_language":@"vi",@"translation_model":DGClaudeModel,@"hooks_installed":@(DGMediaHooks.count),@"four_tap_windows":@(DGMediaWindowCount),@"caption_waiting":@(DGActiveCaption.waiting),@"caption_shortcut_taps":@4,@"caption_running":@(DGActiveCaption.running),@"caption_showing":@(DGActiveCaption.showing),@"automatic_retries":@0,@"maximum_video_seconds":@3600,@"gtx_automatic_visible":@YES,@"deepgram_upload_fallback":@YES,@"narration_configured":@([DGMediaBackend[@"email"] length]>0),@"narration_voice":DGNamMinhVoice,@"narration_concurrency":@3} mutableCopy];
-    [snapshot addEntriesFromDictionary:DGAudioSnapshot()];[snapshot addEntriesFromDictionary:DGGTXSnapshot()];snapshot[@"caption_full_context_seconds"]=@600;snapshot[@"narration_chunk_cues"]=@3;snapshot[@"narration_prefetch_seconds"]=@60;return snapshot;
+    NSMutableDictionary *snapshot=[@{@"caption_configured":@([DGMediaConfig[@"apify_api_key"] length]>0 && [DGMediaConfig[@"deepgram_api_key"] length]>0 && [DGMediaBackend[@"email"] length]>0),@"actor":@"apple_yang/douyin-video-audio-downloader",@"asr_model":@"nova-3",@"source_language":@"zh-CN",@"target_language":@"vi",@"translation_model":DGClaudeModel,@"hooks_installed":@(DGMediaHooks.count),@"four_tap_windows":@(DGMediaWindowCount),@"caption_waiting":@(DGActiveCaption.waiting),@"caption_shortcut_taps":@4,@"caption_running":@(DGActiveCaption.running),@"caption_showing":@(DGActiveCaption.showing),@"automatic_retries":@0,@"maximum_video_seconds":@3600,@"gtx_automatic_visible":@YES,@"deepgram_upload_fallback":@YES,@"tts_enabled":@NO,@"deepgram_empty_recovery_max":@1,@"native_source_fast_path":@YES} mutableCopy];
+    [snapshot addEntriesFromDictionary:DGAudioSnapshot()];[snapshot addEntriesFromDictionary:DGGTXSnapshot()];snapshot[@"caption_full_context_seconds"]=@600;return snapshot;
 }
 #ifdef DG_GEMINI_FIXTURE
 void DGMediaFixtureConfiguration(NSURLSessionConfiguration *configuration,NSURL *cacheURL) {DGMediaConfiguration=configuration;DGMediaCache=[[DGCaptionStore alloc] initWithURL:cacheURL];DGGTXCache=[[DGTranslationStore alloc] initWithURL:nil];}
 void DGMediaFixtureTick(UIViewController *owner) {[objc_getAssociatedObject(owner,&DGCaptionKey) tick];}
 BOOL DGMediaFixtureShortcut(UIWindow *window,CGPoint point) {return DGMediaStartShortcut(window,point);}
-void DGMediaFixtureNarration(NSDictionary *config) {DGMediaBackend=config;}
+void DGMediaFixtureBackend(NSDictionary *config) {DGMediaBackend=config;}
 #endif

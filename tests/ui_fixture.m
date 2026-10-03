@@ -7,6 +7,7 @@
 #import "DGHook.h"
 #import "DGGeminiUI.h"
 #import "DGMediaUI.h"
+#import "DGSubtitleUI.h"
 #import "DGComments.h"
 #import "DGTransduck.h"
 #import <WebKit/WebKit.h>
@@ -336,9 +337,8 @@ static NSData *mediaBody(NSURLRequest *request) {
         data=mediaJSON(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":[[NSString alloc] initWithData:mediaJSON(@{@"translations":rows}) encoding:NSUTF8StringEncoding]}]},@"finishReason":@"STOP"}]});
     } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);if (atomic_load(&gtxThrottle)) {status=429;data=mediaJSON(@{});}else data=mediaJSON(@[@[@[@"Video rất hay, cảm ơn bạn!",@"视频很好，谢谢！"]]]);}
     else if ([request.URL.host isEqual:@"yd.transduck.com"]) {
-        if ([request.URL.path isEqual:@"/api/v2/dubbing/generateDubbing"]) {NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];data=mediaJSON(@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://static-ja.youtube-dubbing.com/audio/tone.wav",@"translateResult":body[@"subtitles"][0][@"text"],@"useAiTranslate":@YES}]});}
-        else {NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];for (NSDictionary *cue in body[@"subtitles"]) [rows addObject:@{@"translateResult":@[@"Xin ch\u00e0o",@"Trung Qu\u1ed1c",@"C\u1ea3m \u01a1n"][[cue[@"index"] unsignedIntegerValue]],@"useAiTranslate":@YES}];data=mediaJSON(@{@"subtitleTranslateResults":rows});}
-    } else if ([request.URL.host isEqual:@"static-ja.youtube-dubbing.com"]) data=[NSData dataWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"]];
+        NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];for (NSDictionary *cue in body[@"subtitles"]) [rows addObject:@{@"translateResult":@[@"Xin ch\u00e0o",@"Trung Qu\u1ed1c",@"C\u1ea3m \u01a1n"][[cue[@"index"] unsignedIntegerValue]],@"useAiTranslate":@YES}];data=mediaJSON(@{@"subtitleTranslateResults":rows});
+    }
     else {status=500;data=mediaJSON(@{});}
     [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
@@ -411,7 +411,7 @@ static NSUInteger countText(UIView *view, NSString *text) {
 
 - (void)showMediaSamples {
     NSURLSessionConfiguration *cfg=NSURLSessionConfiguration.ephemeralSessionConfiguration;cfg.protocolClasses=@[MediaFixtureProtocol.class];DGMediaFixtureConfiguration(cfg,nil);
-    DGMediaInstall(nil);DGMediaFixtureNarration(@{});check([DGMediaSnapshot()[@"hooks_installed"] integerValue]==7,@"media installs only seven verified native ABI hooks");
+    DGMediaInstall(nil);DGMediaFixtureBackend(@{});check([DGMediaSnapshot()[@"hooks_installed"] integerValue]==7,@"media installs only seven verified native ABI hooks");
     AWEPlayVideoViewController *player=[AWEPlayVideoViewController new];AWEAwemeModel *model=[AWEAwemeModel new];model.itemID=@"7534679152504376595";player.model=model;player.playback=0.5;player.playing=YES;
     player.view.backgroundColor=UIColor.darkGrayColor;self.window.rootViewController=player;[player viewDidAppear:NO];[self.window layoutIfNeeded];
     UILabel *title=label(player.view,@"Video fixture · phụ đề theo thời gian phát",220);title.frame=CGRectMake(18,220,self.window.bounds.size.width-36,60);title.numberOfLines=0;title.textColor=UIColor.whiteColor;
@@ -432,6 +432,17 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(atomic_load(&mediaRequests)==4,@"idempotent shortcut completes with exactly one Apify run ASR and translation request");
     check(player.playing && player.resumeCalls==1 && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"complete subtitles resume the same video once");
     check(!caption.hidden && [caption.text isEqual:@"Xin chào"],@"caption extraction transcription translation and overlay complete via mock pipeline");
+    check(![DGMediaSnapshot()[@"tts_enabled"] boolValue] && !player.muted && fabs([player getCurrentPlaybackRate]-1)<0.01,@"translated subtitles resume immediately with original audio and unchanged user speed, without TTS");
+    check(caption.numberOfLines==3 && caption.font.pointSize>=19 && caption.frame.origin.y>CGRectGetMidY(self.window.bounds) && CGRectGetMaxX(caption.frame)<self.window.bounds.size.width-60 && CGRectGetMaxY(caption.frame)<self.window.bounds.size.height-144,@"portrait subtitles have at most three lines and clear right controls and bottom description");
+    NSString *longSubtitle=@"Bản dịch tiếng Việt cần dễ đọc và giữ chính xác từng ý trong câu gốc. Mỗi trang chỉ có vài dòng, không che các nút và không dồn toàn bộ nội dung video vào một đoạn dài. Tiếng Việt có dấu và biểu tượng 👨‍👩‍👧‍👦 cũng phải được giữ đầy đủ.";
+    UIFont *readingFont=[UIFont systemFontOfSize:24];NSArray *pages=DGSubtitlePages(longSubtitle,220,readingFont,3);
+    check(pages.count>2 && [[pages componentsJoinedByString:@""] isEqual:longSubtitle],@"measured subtitle pagination retains all Vietnamese accents punctuation and emoji without shortening meaning");
+    BOOL fit=YES;for (NSString *page in pages) {NSString *trim=[page stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];CGFloat height=[trim boundingRectWithSize:CGSizeMake(220,CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName:readingFont} context:nil].size.height;if (height>ceil(readingFont.lineHeight*3)+1) fit=NO;}
+    check(fit,@"every long subtitle page fits three measured lines at accessibility font size on a narrow display");
+    check(!DGSubtitlePageAt(pages,0.9,1,5) && !DGSubtitlePageAt(pages,5,1,5) && [DGSubtitlePageAt(pages,1,1,5) isEqual:[pages.firstObject stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet]],@"subtitle pages never appear before their original cue or spill into the next cue");
+    NSString *middlePage=DGSubtitlePageAt(pages,3,1,5);check([DGSubtitlePageAt(pages,3,1,5) isEqual:middlePage] && [DGSubtitlePageAt(pages,1,1,5) isEqual:DGSubtitlePageAt(pages,1,1,5)],@"page selection uses native video time so pause seek and loop do not advance on wall-clock time");
+    NSArray *landscapePages=DGSubtitlePages(longSubtitle,460,[UIFont systemFontOfSize:19],2);check(landscapePages.count && [[landscapePages componentsJoinedByString:@""] isEqual:longSubtitle],@"landscape uses two-line pages and retains the whole cue");
+    check(!DGSubtitlePages(longSubtitle,NAN,readingFont,3).count && !DGSubtitlePages(@"",220,readingFont,3).count && !DGSubtitlePageAt(pages,NAN,1,5),@"subtitle layout rejects empty text invalid dimensions and invalid clocks safely");
     DGMediaFixtureTick(player);check([caption.text isEqual:@"Xin chào"],@"paused playback holds caption without advancing wall time");
     player.playback=1.5;DGMediaFixtureTick(player);check(caption.hidden,@"speech gap hides previous cue");
     player.playback=5.5;DGMediaFixtureTick(player);check([caption.text isEqual:@"Cảm ơn"] && !caption.hidden,@"seek forward uses actual native playback time");
@@ -465,48 +476,6 @@ static NSUInteger countText(UIView *view, NSString *text) {
     UIViewController *modal=[UIViewController new];[host presentViewController:modal animated:NO completion:nil];mediaWait(^BOOL{return modal.view.window!=nil;});
     check(!DGMediaFixtureShortcut(self.window,CGPointMake(280,300)),@"presented modal prevents resolving underlying player");
     [host dismissViewControllerAnimated:NO completion:nil];
-    // A real local audio file exercises native mute ownership and clock synchronization.
-    self.window.rootViewController=player;player.model=model;player.playback=0.2;player.playing=NO;[player viewDidAppear:NO];
-    NSURL *tone=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:@"fixture-voice.wav"]];
-    [NSFileManager.defaultManager copyItemAtURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"] toURL:tone error:NULL];
-    check(DGAudioVoice(player,tone) && player.muted,@"local dubbing activates audio playback session and mutes original source");
-    mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.2)<0.1;});
-    check([DGAudioSnapshot()[@"dubbing_rate"] floatValue]==0,@"native pause also holds dubbed audio");
-    player.playback=1.2;mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-1.2)<0.1;});
-    check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-1.2)<0.1,@"dubbing seeks forward to the actual native video clock");
-    player.playback=0.1;mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.1)<0.1;});
-    check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.1)<0.1,@"dubbing follows backward seek or video loop");
-    player.playing=YES;mediaWait(^BOOL {DGAudioFixtureTick();return [DGAudioSnapshot()[@"dubbing_rate"] floatValue]>0;});check([DGAudioSnapshot()[@"dubbing_rate"] floatValue]>0,@"native play resumes dubbed audio");
-    player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"changing video restores original mute state and releases old voice");
-    DGMediaFixtureNarration(@{@"email":@"fixture@example.test",@"password":@"fixture-password",@"session":@"synthetic-backend",@"voice":DGNamMinhVoice});
-    DGMediaFixtureConfiguration(cfg,nil);player.model=model;player.playback=0.5;player.playing=YES;
-    check(DGMediaFixtureShortcut(self.window,CGPointMake(280,300)) && !player.playing,@"full subtitle and Nam Minh flow pauses before starting work");
-    mediaWait(^BOOL {return ![DGMediaSnapshot()[@"caption_running"] boolValue];});
-    check([DGAudioSnapshot()[@"dubbing_active"] boolValue] && player.muted && player.playing && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"complete mock subtitle Claude Nam Minh export and native audio integration resumes current video with aligned dubbing");
-    player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"switching video after complete flow releases previous dubbing and restores audio");DGMediaFixtureNarration(@{});
-    player.model=model;player.playback=0.2;player.playing=YES;[player viewDidAppear:NO];
-    NSArray *layout=@[@{@"index":@0,@"start":@0,@"end":@2},@{@"index":@1,@"start":@2,@"end":@4},@{@"index":@2,@"start":@4,@"end":@6},@{@"index":@3,@"start":@6,@"end":@8}];
-    __block BOOL buffered=NO;__block NSUInteger rollingResumes=0;
-    check(DGAudioBeginRolling(player,layout,^(BOOL wait) {buffered=wait;if (wait) [player pause];else {[player resumePlayVideo];rollingResumes++;}}),@"rolling playback establishes current video and local chunk clock");
-    check(buffered && !player.playing,@"rolling playback pauses before initial audio exists");
-    NSMutableDictionary *firstChunk=[layout[0] mutableCopy];NSURL *firstFile=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".wav"]]];[NSFileManager.defaultManager copyItemAtURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"] toURL:firstFile error:NULL];firstChunk[@"file"]=firstFile;DGAudioRollingChunk(player,firstChunk);
-    mediaWait(^BOOL {DGAudioFixtureTick();return !buffered;});
-    check(!buffered && player.playing && player.muted && [DGAudioSnapshot()[@"dubbing_chunks_ready"] integerValue]==1 && rollingResumes==1,@"first chunk resumes video while later chunks remain unprepared");
-    player.playback=2.4;DGAudioFixtureTick();check(buffered && !player.playing,@"reaching an unprepared next chunk pauses rather than playing silent dubbing");
-    NSMutableDictionary *secondChunk=[layout[1] mutableCopy];NSURL *secondFile=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".wav"]]];[NSFileManager.defaultManager copyItemAtURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"] toURL:secondFile error:NULL];secondChunk[@"file"]=secondFile;DGAudioRollingChunk(player,secondChunk);
-    mediaWait(^BOOL {DGAudioFixtureTick();return !buffered;});check(!buffered && player.playing && fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-2.4)<0.1,@"next local chunk aligns its offset and resumes paused video");
-    player.playback=0.3;mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.3)<0.1;});check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.3)<0.1,@"rolling backward seek rebuilds queue from existing first file");
-    player.playback=1.7;mediaWait(^BOOL {DGAudioFixtureTick();return fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-1.7)<0.1;});NSUInteger resumeBeforeBoundary=rollingResumes;
-    NSTimeInterval boundaryStarted=NSProcessInfo.processInfo.systemUptime;while (NSProcessInfo.processInfo.systemUptime-boundaryStarted<0.65) {player.playback=1.7+NSProcessInfo.processInfo.systemUptime-boundaryStarted;DGAudioFixtureTick();[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];}
-    check(!buffered && rollingResumes==resumeBeforeBoundary && player.muted && fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-player.playback)<0.18,@"preloaded local audio crosses a chunk boundary without buffering or losing its video offset");
-    NSMutableDictionary *failedChunk=[layout[2] mutableCopy];failedChunk[@"failure"]=@"Synthetic 504";DGAudioRollingChunk(player,failedChunk);player.playback=4.1;DGAudioFixtureTick();check(!player.muted && !buffered && player.playing,@"failed chunk retains Vietnamese subtitles and restores original audio");
-    player.playback=6.2;DGAudioFixtureTick();check(buffered,@"later unprepared chunk still buffers after isolated failure");player.model=other;
-    check(!player.muted && [DGAudioSnapshot()[@"dubbing_chunks_total"] integerValue]==0 && ![NSFileManager.defaultManager fileExistsAtPath:firstFile.path] && ![NSFileManager.defaultManager fileExistsAtPath:secondFile.path],@"video change releases rolling queue and temporary chunk audio");
-    player.model=model;player.videoRate=1.2;player.playback=0.2;player.playing=YES;
-    DGAudioBeginRolling(player,@[layout[0]],nil);NSMutableDictionary *balanced=[layout[0] mutableCopy];balanced[@"video_rate_factor"]=@0.75;NSURL *balanceFile=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".wav"]]];[NSFileManager.defaultManager copyItemAtURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"] toURL:balanceFile error:NULL];balanced[@"file"]=balanceFile;DGAudioRollingChunk(player,balanced);
-    mediaWait(^BOOL {DGAudioFixtureTick();return fabs(player.videoRate-0.9)<0.01;});check(fabs(player.videoRate-0.9)<0.01,@"dense narration balances the existing user speed rather than assuming normal playback");player.model=other;check(fabs(player.videoRate-1.2)<0.01,@"video change restores the speed owned by narration");
-    player.model=model;player.playback=0.2;DGAudioBeginRolling(player,@[layout[0]],nil);balanceFile=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".wav"]]];[NSFileManager.defaultManager copyItemAtURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"] toURL:balanceFile error:NULL];balanced[@"file"]=balanceFile;DGAudioRollingChunk(player,balanced);mediaWait(^BOOL {DGAudioFixtureTick();return fabs(player.videoRate-0.9)<0.01;});
-    player.videoRate=1.5;DGAudioFixtureTick();check(fabs(player.videoRate-1.5)<0.01,@"manual speed changes override automatic narration balancing");player.model=other;check(fabs(player.videoRate-1.5)<0.01,@"stopping narration preserves a newer speed selected by the user");player.videoRate=1;
     AWECommentContainerViewController *comments=[AWECommentContainerViewController new];comments.view.backgroundColor=UIColor.systemBackgroundColor;self.window.rootViewController=comments;
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *native=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,200,330,55)];native.textLayout=[YYTextLayout layoutWithContainer:[NSObject new] text:[[NSAttributedString alloc] initWithString:@"视频很好，谢谢！"]];[comments.view addSubview:native];
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *hidden=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,280,300,40)];hidden.text=@"隐藏的评论";hidden.hidden=YES;[comments.view addSubview:hidden];

@@ -6,11 +6,20 @@ BOOL DGSourceURLAllowed(NSURL *url) {
     return [url.scheme isEqual:@"https"] && !url.user && !url.password &&
         ([h isEqual:@"www.douyin.com"] || [h hasSuffix:@".douyinvod.com"] || [h hasSuffix:@".douyinstatic.com"] || [h hasSuffix:@".bytecdn.cn"]);
 }
+NSString *DGSourceAssetFailure(AVAsset *asset) {
+    double duration=asset ? CMTimeGetSeconds(asset.duration) : NAN;
+    if (!isfinite(duration) || duration<=0) return @"Tệp video tải về không có thời lượng hợp lệ.";
+    if (duration>3600) return @"Video vượt giới hạn 60 phút.";
+    BOOL hasAudio=NO;for (AVAssetTrack *track in [asset tracksWithMediaType:AVMediaTypeAudio]) if (CMTimeGetSeconds(track.timeRange.duration)>0) hasAudio=YES;
+    if (!hasAudio) return @"Nguồn video tải về không có track âm thanh; không gửi tệp câm để nhận dạng.";
+    return nil;
+}
 @interface DGSourceDownload ()
 @property(nonatomic,strong) NSURLSession *session;
 @property(nonatomic,strong) AVAssetExportSession *exporter;
 @property(nonatomic,strong) NSURL *file;
 @property(nonatomic) BOOL cancelled;
+@property(nonatomic,readwrite) double duration;
 @end
 @implementation DGSourceDownload
 - (void)finish:(NSURL *)url failure:(NSString *)failure {
@@ -32,11 +41,15 @@ BOOL DGSourceURLAllowed(NSURL *url) {
     (void)session;(void)bytes;if (total>256LL*1024*1024 || expected>256LL*1024*1024) [task cancel];
 }
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)task didFinishDownloadingToURL:(NSURL *)location {
+    if (self.cancelled) return;
     NSInteger status=[(NSHTTPURLResponse *)task.response statusCode];
     if (status!=200 || !DGSourceURLAllowed(task.response.URL)) {[self finish:nil failure:@"CDN không cho tải video. Hãy thử lại thủ công."];return;}
     NSURL *file=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".mp4"]]];
     if (![NSFileManager.defaultManager moveItemAtURL:location toURL:file error:NULL]) {[self finish:nil failure:@"Không lưu được video tạm."];return;}
     self.file=file;AVURLAsset *asset=[AVURLAsset URLAssetWithURL:file options:nil];
+    self.duration=CMTimeGetSeconds(asset.duration);
+    NSString *failure=DGSourceAssetFailure(asset);
+    if (failure) {[self finish:nil failure:failure];[session finishTasksAndInvalidate];return;}
     AVAssetExportSession *exporter=[[AVAssetExportSession alloc] initWithAsset:asset presetName:AVAssetExportPresetAppleM4A];self.exporter=exporter;
     if (!exporter) {[self finish:file failure:nil];[session finishTasksAndInvalidate];return;}
     NSURL *audio=[NSURL fileURLWithPath:[file.path stringByAppendingString:@".m4a"]];exporter.outputURL=audio;exporter.outputFileType=AVFileTypeAppleM4A;

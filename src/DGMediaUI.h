@@ -8,5 +8,5 @@ FOUNDATION_EXPORT NSArray<NSString *> *DGMediaReadVisibleComments(UIView *root);
 FOUNDATION_EXPORT void DGMediaFixtureConfiguration(NSURLSessionConfiguration *configuration,NSURL *cacheURL);
 FOUNDATION_EXPORT void DGMediaFixtureTick(UIViewController *owner);
 FOUNDATION_EXPORT BOOL DGMediaFixtureShortcut(UIWindow *window,CGPoint point);
-FOUNDATION_EXPORT void DGMediaFixtureNarration(NSDictionary *config);
+FOUNDATION_EXPORT void DGMediaFixtureBackend(NSDictionary *config);
 #endif
