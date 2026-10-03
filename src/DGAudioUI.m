@@ -168,12 +168,14 @@ static DGAudioController *DGAudio;
         if (self.record) self.record(@"Dubbing rolling playback failed",1);[self rollingTick:time playing:playing foreground:foreground];return;
     }
     [self rollingMute:YES];double local=MAX(0,time-self.voiceOffset);double actual=CMTimeGetSeconds(self.voice.currentTime);double delta=fabs(actual-local);
-    if ((!isfinite(actual) || delta>0.18) && !self.seeking) {
+    if ((!isfinite(actual) || delta>(self.rollingWaiting ? 0.08 : 0.65)) && !self.seeking) {
         self.seeking=YES;NSUInteger generation=self.voiceGeneration;__weak DGAudioController *weakSelf=self;
         [self.voice seekToTime:CMTimeMakeWithSeconds(local,600) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(__unused BOOL done) {dispatch_async(dispatch_get_main_queue(),^{DGAudioController *owner=weakSelf;if (owner.voiceGeneration==generation) owner.seeking=NO;});}];
     }
     float rate=1;Method nativeRate=DGAMethod(self.owner,@"getCurrentPlaybackRate",@"f16@0:8");if (foreground && nativeRate) rate=((float (*)(id,SEL))method_getImplementation(nativeRate))(self.owner,NSSelectorFromString(@"getCurrentPlaybackRate"));if (!isfinite(rate) || rate<=0 || rate>3) rate=1;
-    if (playing && !self.seeking && self.voice.currentItem.status==AVPlayerItemStatusReadyToPlay) self.voice.rate=rate;else [self.voice pause];
+    // Small native-clock jitter is corrected gradually, without restarting speech.
+    float correction=isfinite(actual) && delta>0.12 && delta<0.65 && !self.rollingWaiting ? (float)MAX(0.97,MIN(1.03,1+(local-actual)*0.10)) : 1;
+    if (playing && !self.seeking && self.voice.currentItem.status==AVPlayerItemStatusReadyToPlay) self.voice.rate=rate*correction;else [self.voice pause];
     if (foreground && self.voice.currentItem.status==AVPlayerItemStatusReadyToPlay && !self.seeking && isfinite(delta) && delta<0.1) [self rollingReport:NO];
 }
 - (void)ended:(NSNotification *)note {

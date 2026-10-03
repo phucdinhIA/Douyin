@@ -600,7 +600,7 @@ static void DGInstallNative(void) {
         }]];
     }
     [sheet addAction:[UIAlertAction actionWithTitle:@"Copy diagnostics" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        NSMutableDictionary *report = [@{@"patch_version": @"0.17.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
+        NSMutableDictionary *report = [@{@"patch_version": @"0.18.0-test", @"app_version": @"40.6.0", @"build": @"406019", @"ios": UIDevice.currentDevice.systemVersion, @"native_hooks_installed": @(installed.count), @"native_hooks_expected": @(hookSpecs.count), @"translation_entries": @(translations.count), @"counters": DGCounterSnapshot()} mutableCopy];
         report[@"gemini"]=DGGeminiSnapshot();
         report[@"media"]=DGMediaSnapshot();
         report[@"options"] = @{@"guest": @(atomic_load(&guestEnabled)), @"ads": @(atomic_load(&adsEnabled)), @"english": @(atomic_load(&englishEnabled)), @"search": @(atomic_load(&searchEnabled)), @"background_audio": @(atomic_load(&backgroundEnabled)), @"feed_compatibility": @(atomic_load(&feedCompatEnabled))};

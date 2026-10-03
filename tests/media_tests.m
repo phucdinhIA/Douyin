@@ -1,12 +1,13 @@
 #import <Foundation/Foundation.h>
 #import "DGMedia.h"
-#import "DGVbee.h"
+#import "DGNarration.h"
+#import "DGTransduck.h"
 #import "DGSource.h"
 #import "DGGemini.h"
 #include <stdatomic.h>
 #include <math.h>
 static NSUInteger checks;
-static atomic_int apifyCalls,deepgramCalls,geminiCalls,gtxCalls,unsafeHeaders;
+static atomic_int apifyCalls,deepgramCalls,geminiCalls,claudeCalls,gtxCalls,unsafeHeaders;
 static BOOL failGemini;
 static BOOL residueGemini;
 static BOOL throttleGTX;
@@ -36,6 +37,10 @@ static NSData *translated(NSArray *rows,NSString *finish) {return json(@{@"candi
         atomic_fetch_add(&deepgramCalls,1);NSDictionary *body=[NSJSONSerialization JSONObjectWithData:requestData(request) options:0 error:NULL];
         if (![[request valueForHTTPHeaderField:@"Authorization"] isEqual:@"Token fixture-deepgram"] || [request valueForHTTPHeaderField:@"x-goog-api-key"] || ![body[@"url"] containsString:@"www.douyin.com/aweme"] || ![request.URL.query containsString:@"language=zh-CN"]) atomic_fetch_add(&unsafeHeaders,1);
         data=json(transcript());
+    } else if ([host isEqual:@"yd.transduck.com"]) {
+        atomic_fetch_add(&claudeCalls,1);if (![[request valueForHTTPHeaderField:@"Ck"] isEqual:@"synthetic-backend"] || [request valueForHTTPHeaderField:@"Authorization"] || [request valueForHTTPHeaderField:@"x-goog-api-key"]) atomic_fetch_add(&unsafeHeaders,1);
+        NSDictionary *body=[NSJSONSerialization JSONObjectWithData:requestData(request) options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];for (NSDictionary *cue in body[@"subtitles"]) [rows addObject:@{@"translateResult":residueGemini && cue==[body[@"subtitles"] lastObject] ? @"Xin ch\u00e0o \u4e2d\u56fd" : @"Xin ch\u00e0o Vi\u1ec7t Nam",@"useAiTranslate":@YES}];
+        status=failGemini ? 429 : 200;data=json(@{@"subtitleTranslateResults":rows});
     } else if ([host isEqual:@"generativelanguage.googleapis.com"]) {
         atomic_fetch_add(&geminiCalls,1);if (![[request valueForHTTPHeaderField:@"x-goog-api-key"] isEqual:@"fixture-gemini"] || [request valueForHTTPHeaderField:@"Authorization"]) atomic_fetch_add(&unsafeHeaders,1);
         if (failGemini) {status=429;data=json(@{@"error":@{@"message":@"must not show raw credentials"}});}
@@ -55,14 +60,12 @@ int main(void) {@autoreleasepool {
     check(DGDeepgramNeedsUpload(json(@{@"err_code":@"REMOTE_CONTENT_ERROR"}),400),@"verified CDN rejection enables binary fallback");
     check(!DGDeepgramNeedsUpload(json(@{@"err_code":@"REMOTE_CONTENT_ERROR"}),200) && !DGDeepgramNeedsUpload(json(@{@"err_code":@"INVALID_AUTH"}),401) && !DGDeepgramNeedsUpload(json(@{@"err_code":@"INVALID_QUERY_PARAMETER"}),400) && !DGDeepgramNeedsUpload(json(@{}),400),@"successful paid transcription auth quota and invalid language do not trigger fallback");
     check(DGSourceURLAllowed([NSURL URLWithString:@"https://v95-aw.douyinvod.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"https://evil-douyinvod.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"http://www.douyin.com/media"]) && !DGSourceURLAllowed([NSURL URLWithString:@"https://user:pass@www.douyin.com/media"]),@"source download and background player restrict hosts schemes and credentials");
-    NSDictionary *voice=@{@"app_id":@"00000000-0000-0000-0000-000000000001",@"token":@"synthetic-vbee",@"voice_code":@"hn_male_manhdung_news_48k-fhg"};
-    NSURLRequest *vr=DGVbeeRequest(voice,@"Xin chào");NSDictionary *vb=[NSJSONSerialization JSONObjectWithData:vr.HTTPBody options:0 error:NULL];
-    check([vr.URL.absoluteString isEqual:@"https://vbee.vn/api/v1/tts"] && [vb[@"response_type"] isEqual:@"direct"] && [vb[@"voice_code"] isEqual:voice[@"voice_code"]] && !vr.HTTPShouldHandleCookies && !vb[@"callback_url"],@"Vbee uses validated direct mode male Vietnamese voice and isolated credentials");
-    check(!DGVbeeRequest(voice,@"") && !DGVbeeRequest(@{},@"Xin chào"),@"unconfigured Vbee never makes a request");
-    NSDictionary *voiceResult=@{@"status":@1,@"result":@{@"status":@"SUCCESS",@"app_id":voice[@"app_id"],@"voice_code":voice[@"voice_code"],@"audio_link":@"https://vbee.vn/audio/sample.mp3"}};NSString *voiceFailure=nil;
-    check(DGVbeeAudioURL(json(voiceResult),200,voice,&voiceFailure)!=nil,@"verified direct Vbee success yields audio URL");
-    NSMutableDictionary *badVoice=[voiceResult mutableCopy];NSMutableDictionary *badResult=[voiceResult[@"result"] mutableCopy];badResult[@"audio_link"]=@"https://evil.example/steal";badVoice[@"result"]=badResult;
-    check(!DGVbeeAudioURL(json(badVoice),200,voice,&voiceFailure) && !DGVbeeAudioURL(json(voiceResult),401,voice,&voiceFailure),@"Vbee rejects untrusted audio host and auth failures without leaking response text");
+    NSDictionary *vb=DGNamMinhBody(@"Xin ch\u00e0o");
+    check([vb[@"config"][@"voice"] isEqual:DGNamMinhVoice] && [vb[@"config"][@"skipTranslation"] boolValue] && !vb[@"videoDetails"][@"subtitleLevel"],@"Nam Minh uses verified backend contract without retranslation or guessed subtitle enum");
+    check(!DGNamMinhBody(@""),@"empty voice request is rejected");
+    NSDictionary *voiceResult=@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://static-ja.youtube-dubbing.com/audio/sample.mp3"}]};NSString *voiceFailure=nil;
+    check(DGNamMinhAudioURL(json(voiceResult),200,&voiceFailure)!=nil,@"verified Nam Minh result yields trusted audio URL");
+    check(!DGNamMinhAudioURL(json(@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://evil.example/steal"}]}),200,&voiceFailure) && !DGNamMinhAudioURL(json(voiceResult),401,&voiceFailure),@"voice parser rejects untrusted hosts and auth failures");
     check([DGCaptionVideoURL(@"7683814443658054955").absoluteString isEqual:@"https://www.douyin.com/video/7683814443658054955"],@"native video ID produces canonical HTTPS URL");
     check(!DGCaptionVideoURL(@"../wrong") && !DGCaptionVideoURL(@"123") && !DGCaptionVideoURL(@"７６８３８１４４４３６５８０５４９５５"),@"video ID rejects paths short IDs and non-ASCII digits");
     NSURLRequest *request=DGGTXRequest(@"你好 & + ? 😀");NSURLComponents *components=[NSURLComponents componentsWithURL:request.URL resolvingAgainstBaseURL:NO];NSMutableDictionary *query=[NSMutableDictionary new];for (NSURLQueryItem *item in components.queryItems) query[item.name]=item.value;
@@ -109,23 +112,22 @@ int main(void) {@autoreleasepool {
     check([DGGeminiTranslationAnswerLimit(largeData,200,500000,&error) length]==40000 && !DGGeminiTranslationAnswer(largeData,200,&error),@"subtitle output beyond 32k is complete while AI-analysis limit stays bounded");
     NSURL *cacheURL=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString]];DGCaptionStore *large=[[DGCaptionStore alloc] initWithURL:cacheURL];NSString *longText=[@"x" stringByPaddingToLength:40000 withString:@"x" startingAtIndex:0];[large saveTranslation:longText source:@"long-video"];
     DGCaptionStore *reopened=[[DGCaptionStore alloc] initWithURL:cacheURL];check([[reopened translationForSource:@"long-video"] isEqual:longText],@"long transcript beyond old 32k cache limit persists");[NSFileManager.defaultManager removeItemAtURL:cacheURL error:NULL];
-    NSURLSessionConfiguration *config=NSURLSessionConfiguration.ephemeralSessionConfiguration;config.protocolClasses=@[MediaMock.class];DGCaptionStore *store=[[DGCaptionStore alloc] initWithURL:nil];NSDictionary *keys=@{@"apify_api_key":@"fixture-apify",@"deepgram_api_key":@"fixture-deepgram",@"apify_actor":@"apple_yang~douyin-video-audio-downloader"};
+    NSURLSessionConfiguration *config=NSURLSessionConfiguration.ephemeralSessionConfiguration;config.protocolClasses=@[MediaMock.class];DGCaptionStore *store=[[DGCaptionStore alloc] initWithURL:nil];NSDictionary *keys=@{@"apify_api_key":@"fixture-apify",@"deepgram_api_key":@"fixture-deepgram",@"apify_actor":@"apple_yang~douyin-video-audio-downloader",@"backend":@{@"email":@"fixture@example.test",@"session":@"synthetic-backend"}};
     DGMediaClient *client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:store configuration:config];__block NSString *stage=nil;__block NSArray *result=nil;
     client.update=^(NSString *state,NSArray *track,NSString *failure) {stage=state;result=track;check(!failure || [state isEqual:@"failed"],@"errors remain explicit stages");};
     check(atomic_load(&apifyCalls)==0 && atomic_load(&deepgramCalls)==0 && atomic_load(&geminiCalls)==0,@"constructing client makes no API requests");
     [client startVideo:@"7534679152504376595" at:5];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});
-    check([stage isEqual:@"ready"] && result.count==3 && atomic_load(&apifyCalls)==2 && atomic_load(&deepgramCalls)==1 && atomic_load(&geminiCalls)==1,@"explicit opt-in runs extraction ASR one full-context translation and full track through mock transport");
+    check([stage isEqual:@"ready"] && result.count==3 && atomic_load(&apifyCalls)==2 && atomic_load(&deepgramCalls)==1 && atomic_load(&claudeCalls)==1,@"explicit opt-in runs extraction ASR one full-context translation and full track through mock transport");
     int paid=atomic_load(&deepgramCalls)+atomic_load(&geminiCalls),apify=atomic_load(&apifyCalls);[client startVideo:@"7534679152504376595"];
     check([stage isEqual:@"cached"] && atomic_load(&deepgramCalls)+atomic_load(&geminiCalls)==paid && atomic_load(&apifyCalls)==apify,@"completed cache skips every cloud provider");
     DGCaptionStore *retryStore=[[DGCaptionStore alloc] initWithURL:nil];client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:retryStore configuration:config];client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)track;(void)failure;stage=state;};failGemini=YES;stage=nil;[client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"failed"];});
     check([stage isEqual:@"failed"],@"Gemini quota failure surfaces without retry");paid=atomic_load(&deepgramCalls);apify=atomic_load(&apifyCalls);failGemini=NO;[client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"ready"];});
     check([stage isEqual:@"ready"] && atomic_load(&deepgramCalls)==paid && atomic_load(&apifyCalls)==apify,@"manual retry reuses ASR and does not repeat extraction/transcription");
-    int geminiBefore=atomic_load(&geminiCalls),gtxBefore=atomic_load(&gtxCalls);residueGemini=YES;stage=nil;
+    int geminiBefore=atomic_load(&claudeCalls),gtxBefore=atomic_load(&gtxCalls);residueGemini=YES;stage=nil;
     client=[[DGMediaClient alloc] initWithConfig:keys geminiKey:@"fixture-gemini" store:[[DGCaptionStore alloc] initWithURL:nil] configuration:config];
     client.update=^(NSString *state,NSArray *track,NSString *failure) {(void)failure;stage=state;result=track;};
     [client startVideo:@"7534679152504376595"];waitFor(^BOOL{return [stage isEqual:@"ready"] || [stage isEqual:@"failed"];});residueGemini=NO;
-    check([stage isEqual:@"ready"] && [result.lastObject[@"text"] isEqual:@"Xin chào"] && !result.lastObject[@"needs_gtx"] && [result.lastObject[@"start"] isEqual:@5],@"free GTX repairs Chinese residue from original cue without changing timestamps");
-    check(atomic_load(&geminiCalls)==geminiBefore+1 && atomic_load(&gtxCalls)==gtxBefore+1,@"language fallback sends one free request only for affected cue and never repeats paid Gemini");
+    check([stage isEqual:@"failed"] && atomic_load(&claudeCalls)==geminiBefore+1 && atomic_load(&gtxCalls)==gtxBefore,@"Chinese residue is rejected without a hidden paid retry or timing mutation");
     __block BOOL done=NO;[client translateComment:@"你好" completion:^(NSString *answer,NSString *failure) {check([answer isEqual:@"Xin chào"] && !failure,@"comment uses GTX instead of paid providers");done=YES;}];waitFor(^BOOL{return done;});int gtx=atomic_load(&gtxCalls);done=NO;[client translateComment:@"你好" completion:^(NSString *answer,NSString *failure) {(void)answer;(void)failure;done=YES;}];check(done && atomic_load(&gtxCalls)==gtx,@"GTX cache hit makes no request");
     __block BOOL stale=NO;[client translateComment:@"取消" completion:^(NSString *answer,NSString *failure) {(void)answer;(void)failure;stale=YES;}];[client cancel];[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.15]];check(!stale,@"cancelled response cannot update newer UI");
     check(atomic_load(&unsafeHeaders)==0,@"all provider credentials isolated no cookies no key-bearing URLs no audio-track mixup");

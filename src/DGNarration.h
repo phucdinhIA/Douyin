@@ -1,7 +1,5 @@
 #import <Foundation/Foundation.h>
-FOUNDATION_EXPORT NSURLRequest *DGVbeeRequest(NSDictionary *config,NSString *text);
-FOUNDATION_EXPORT NSURL *DGVbeeAudioURL(NSData *data,NSInteger status,NSDictionary *config,NSString **failure);
-@interface DGVbee : NSObject <NSURLSessionTaskDelegate>
+@interface DGNarration : NSObject <NSURLSessionTaskDelegate>
 @property(nonatomic,copy) void (^event)(NSString *);
 @property(nonatomic,copy) void (^completion)(NSURL *,NSString *);
 @property(nonatomic) NSTimeInterval timelineDuration;

@@ -1,6 +1,9 @@
 #import "DGGeminiUI.h"
 #import "DGGemini.h"
 #import "DGTranslation.h"
+#import "DGTransduck.h"
+#import <WebKit/WebKit.h>
+#import <Vision/Vision.h>
 #import <objc/runtime.h>
 #include <string.h>
 
@@ -8,6 +11,7 @@ static NSDictionary *DGConfig;
 static void (^DGRecordAI)(NSString *,NSUInteger);
 static BOOL DGSendHookInstalled, DGEntryHookInstalled, DGLeaveHookInstalled, DGDisappearHookInstalled, DGAppearHookInstalled;
 static char DGEntryKey;
+static char DGCapturedSourceKey;
 static DGTranslationStore *DGTranslationCache;
 #ifdef DG_GEMINI_FIXTURE
 static NSURLSessionConfiguration *DGTranslationConfiguration;
@@ -66,8 +70,13 @@ static NSString *DGReadSummary(UIView *root,BOOL *complete) {
     NSUInteger visited=0,total=0;BOOL allComplete=YES;
     while (pending.count && visited++<1200 && total<24000) {
         UIView *node=pending.lastObject;[pending removeLastObject];
-        if (node.hidden || node.alpha<0.01 || !CGRectIntersectsRect([node convertRect:node.bounds toView:root],root.bounds)) continue;
+        if (node.hidden || node.alpha<0.01) continue;
+        BOOL visible=CGRectIntersectsRect([node convertRect:node.bounds toView:root],root.bounds);
+        // Layout wrappers can have zero bounds while unclipped descendants draw normally.
+        if (!visible && node.clipsToBounds) continue;
+        if ([node.accessibilityIdentifier isEqual:@"gemini-translation-panel"]) continue;
         BOOL rendererComplete=NO;NSString *text=DGRendererText(node,&rendererComplete);
+        if (!visible) text=nil;
         if (text.length) {
             text=DGGeminiBoundText(text,24000-total);
             if (![seen containsObject:text]) {[segments addObject:text];[seen addObject:text];total+=text.length+2;allComplete=allComplete && rendererComplete;}
@@ -75,7 +84,7 @@ static NSString *DGReadSummary(UIView *root,BOOL *complete) {
             continue; // Do not duplicate a renderer's internal text nodes.
         }
         // For the legacy markdown renderer, read only its text descendants, never arbitrary comments/cards.
-        if (DGIsNative(node,@"LynxMarkdownView")) {
+        if (visible && (DGIsNative(node,@"LynxMarkdownView") || DGIsNative(node,@"LynxMarkdownViewV2") || DGIsNative(node,@"ServalMarkdownView"))) {
             NSMutableArray *children=[NSMutableArray arrayWithArray:node.subviews.reverseObjectEnumerator.allObjects];NSUInteger read=0;
             while (children.count && read++<200 && total<24000) {
                 UIView *child=children.lastObject;[children removeLastObject];
@@ -95,20 +104,21 @@ NSString *DGGeminiReadSummary(UIView *root) {BOOL complete;return DGReadSummary(
 
 static UIViewController *DGFindCommentAI(UIViewController *node,NSUInteger depth) {
     if (!node || depth>12) return nil;
-    if (DGIsNative(node,DGCommentAIClass) && node.isViewLoaded && node.view.window && !node.view.hidden) return node;
+    if ((DGIsNative(node,DGCommentAIClass) || DGIsNative(node,@"AWESearchCommentAIParseViewController")) && node.isViewLoaded && node.view.window && !node.view.hidden) return node;
     for (UIViewController *child in node.childViewControllers) {UIViewController *found=DGFindCommentAI(child,depth+1);if (found) return found;}
     return nil;
 }
 static NSString *DGSummaryForControllerReady(UIViewController *controller,BOOL *complete) {
     *complete=NO;
-    if (!DGIsNative(controller,DGCommentAIClass)) return @"";
-    id content=DGAIGetter(controller,@"contentVC");
+    if (!DGIsNative(controller,DGCommentAIClass) && !DGIsNative(controller,@"AWESearchCommentAIParseViewController")) return @"";
+    id content=DGAIGetter(controller,@"contentVC");if (![content isKindOfClass:UIViewController.class]) content=DGAIGetter(controller,@"getCurrentViewController");
     UIView *root=[content isKindOfClass:UIViewController.class] && [content isViewLoaded] ? [content view] : controller.viewIfLoaded;
     NSString *summary=DGReadSummary(root,complete);
     if (!summary.length && root!=controller.viewIfLoaded) {
         summary=DGReadSummary(controller.viewIfLoaded,complete);
         if (summary.length && DGRecordAI) DGRecordAI(@"Gemini capture owner fallback",1);
     }
+    if (!summary.length) summary=objc_getAssociatedObject(controller,&DGCapturedSourceKey) ?: @"";
     if (DGRecordAI) DGRecordAI(summary.length ? @"Gemini summary captured" : @"Gemini summary unavailable",1);
     return summary;
 }
@@ -243,7 +253,11 @@ void DGGeminiPresentFrom(UIViewController *presenter) {
 @property(nonatomic,strong) NSTimer *timer;
 @property(nonatomic,strong) DGTranslationSession *session;
 @property(nonatomic,strong) DGGeminiClient *client;
+@property(nonatomic,strong) DGTransduckClient *translator;
 @property(nonatomic) BOOL hadWindow;
+@property(nonatomic) BOOL capturePending;
+@property(nonatomic) NSUInteger captureGeneration,captureAttempts;
+@property(nonatomic) NSTimeInterval nextCapture;
 @property(nonatomic) BOOL tabEntered;
 @property(nonatomic) BOOL automaticSpent;
 @property(nonatomic) BOOL hasTranslation;
@@ -252,9 +266,48 @@ void DGGeminiPresentFrom(UIViewController *presenter) {
 - (void)start;
 - (void)stop;
 - (void)tickAt:(NSTimeInterval)time;
+- (void)captureDrawnAnalysis;
 @end
 static __weak DGGeminiEntry *DGActiveTranslation;
 @implementation DGGeminiEntry
+- (void)captureDrawnAnalysis {
+    id content=DGAIGetter(self.owner,@"contentVC");
+    if (![content isKindOfClass:UIViewController.class]) content=DGAIGetter(self.owner,@"getCurrentViewController");
+    UIView *root=[content isKindOfClass:UIViewController.class] ? [content viewIfLoaded] : self.owner.viewIfLoaded;
+    id analysis=DGAIGetter(content,@"analysisView");if ([analysis isKindOfClass:UIView.class] && [analysis window] && [analysis bounds].size.width>=40 && [analysis bounds].size.height>=40) root=analysis;
+    if (!root.window || root.hidden || root.bounds.size.width<40 || root.bounds.size.height<40) return;
+    self.capturePending=YES;self.captureAttempts++;self.nextCapture=NSProcessInfo.processInfo.systemUptime+3;
+    NSUInteger generation=self.captureGeneration;__weak DGGeminiEntry *weakSelf=self;
+    void (^finish)(NSString *)=^(NSString *text) {
+        DGGeminiEntry *entry=weakSelf;if (!entry || entry.captureGeneration!=generation || !entry.tabEntered || !entry.session.waiting || !entry.owner.view.window) return;
+        entry.capturePending=NO;NSString *bounded=DGGeminiBoundText(text,24000);
+        if ([bounded stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length) {objc_setAssociatedObject(entry.owner,&DGCapturedSourceKey,bounded,OBJC_ASSOCIATION_COPY_NONATOMIC);if (DGRecordAI) DGRecordAI(@"AI rendered source captured",1);}
+    };
+    NSMutableArray *nodes=[NSMutableArray arrayWithObject:root];WKWebView *web=nil;NSUInteger visited=0;
+    while (nodes.count && visited++<1200) {UIView *view=nodes.lastObject;[nodes removeLastObject];if (view.hidden || view.alpha<0.01 || view==self.panel || view==self.button) continue;
+        if ([view isKindOfClass:WKWebView.class]) {web=(id)view;break;}[nodes addObjectsFromArray:view.subviews];
+    }
+    if (web) {
+        if (DGRecordAI) DGRecordAI(@"AI scoped web capture",1);
+        [web evaluateJavaScript:@"(()=>{const a=document.querySelector('[data-ai-analysis],.markdown-body,.markdown-content,[role=article],article,main');return (a||document.body)?.innerText?.slice(0,24000)||''})()" completionHandler:^(id text,__unused NSError *error) {finish([text isKindOfClass:NSString.class] ? text : @"");}];return;
+    }
+    // OCR runs locally on the original AI surface only; the app's translation UI
+    // is hidden synchronously for the snapshot and restored before returning.
+    BOOL panelHidden=self.panel.hidden,buttonHidden=self.button.hidden;self.panel.hidden=YES;self.button.hidden=YES;
+    UIGraphicsImageRendererFormat *format=[UIGraphicsImageRendererFormat defaultFormat];format.scale=MIN(2,UIScreen.mainScreen.scale);
+    UIGraphicsImageRenderer *renderer=[[UIGraphicsImageRenderer alloc] initWithSize:root.bounds.size format:format];
+    UIImage *snapshot=[renderer imageWithActions:^(__unused UIGraphicsImageRendererContext *context) {[root drawViewHierarchyInRect:root.bounds afterScreenUpdates:NO];}];
+    self.panel.hidden=panelHidden;self.button.hidden=buttonHidden;if (DGRecordAI) DGRecordAI(@"AI local OCR started",1);
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0),^{
+        VNRecognizeTextRequest *request=[VNRecognizeTextRequest new];request.recognitionLevel=VNRequestTextRecognitionLevelAccurate;request.recognitionLanguages=@[@"zh-Hans",@"en-US"];request.usesLanguageCorrection=YES;
+        VNImageRequestHandler *handler=[[VNImageRequestHandler alloc] initWithCGImage:snapshot.CGImage options:@{}];NSError *error=nil;BOOL ok=[handler performRequests:@[request] error:&error];
+        NSArray *results=ok ? request.results : @[];results=[results sortedArrayUsingComparator:^NSComparisonResult(VNRecognizedTextObservation *a,VNRecognizedTextObservation *b) {
+            CGFloat row=CGRectGetMidY(b.boundingBox)-CGRectGetMidY(a.boundingBox);if (fabs(row)>0.015) return row>0 ? NSOrderedAscending : NSOrderedDescending;return CGRectGetMinX(a.boundingBox)<CGRectGetMinX(b.boundingBox) ? NSOrderedAscending : NSOrderedDescending;
+        }];NSMutableArray *lines=[NSMutableArray new];NSUInteger length=0;
+        for (VNRecognizedTextObservation *observation in results) {VNRecognizedText *text=[observation topCandidates:1].firstObject;if (text.confidence<0.35 || !text.string.length) continue;length+=text.string.length;if (length>24000) break;[lines addObject:text.string];}
+        NSString *source=[lines componentsJoinedByString:@"\n"];dispatch_async(dispatch_get_main_queue(),^{finish(source);});
+    });
+}
 - (void)open {if (DGOn()) DGPresentChat(self.owner,DGSummaryForController(self.owner),nil);}
 - (void)languageChanged {
     self.userChoseLanguage=YES;[self renderLanguage];
@@ -271,48 +324,56 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     if (DGActiveTranslation!=self) [DGActiveTranslation stop];DGActiveTranslation=self;
     if (!DGTranslationCache) {
         NSURL *base=[NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
-        DGTranslationCache=[[DGTranslationStore alloc] initWithURL:[base URLByAppendingPathComponent:@"DouyinGuest/ai-vi-v1.json"]];
+        DGTranslationCache=[[DGTranslationStore alloc] initWithURL:[base URLByAppendingPathComponent:@"DouyinGuest/ai-claude-vi-v1.json"]];
     }
     __weak DGGeminiEntry *weakSelf=self;
     self.session=[[DGTranslationSession alloc] initWithStore:DGTranslationCache sender:^(NSString *source,void (^completion)(NSString *,NSString *)) {
         DGGeminiEntry *entry=weakSelf;
         if (entry.automaticSpent) {completion(nil,@"Yêu cầu trước đã dừng. Bấm Dịch lại nếu bạn muốn thử thêm một lượt.");return;}
         entry.automaticSpent=YES;
-        entry.client=[[DGGeminiClient alloc] initWithKey:DGConfig[@"api_key"] model:DGGeminiFastModel
+        entry.translator=[[DGTransduckClient alloc] initWithConfig:DGBackendConfig() configuration:
 #ifdef DG_GEMINI_FIXTURE
-            configuration:DGTranslationConfiguration
+            DGTranslationConfiguration
+#else
+            nil
 #endif
         ];
-        if (DGRecordAI) DGRecordAI(@"Gemini translation sent",1);
-        [entry.client translateSource:source completion:^(NSString *answer,NSString *failure) {
-            DGGeminiEntry *current=weakSelf;
+        NSMutableArray *cues=[NSMutableArray new];NSUInteger offset=0;
+        while (offset<source.length) {
+            NSUInteger length=MIN((NSUInteger)400,source.length-offset);NSRange range=[source rangeOfComposedCharacterSequencesForRange:NSMakeRange(offset,length)];
+            NSUInteger index=cues.count;[cues addObject:@{@"id":@(index),@"start":@(index),@"end":@(index+1),@"text":[source substringWithRange:range]}];offset=NSMaxRange(range);
+        }
+        if (DGRecordAI) DGRecordAI(@"AI Claude translation sent",1);
+        [entry.translator post:@"/api/v2/ai-translate/translate" body:DGClaudeBody(cues,@"douyin_ai_analysis",@"Douyin AI analysis") completion:^(NSData *data,NSInteger status,NSString *failure) {
+            NSArray *translated=failure ? nil : DGClaudeAnswer(data,status,cues,&failure);NSMutableArray *pieces=[NSMutableArray new];for (NSDictionary *cue in translated) [pieces addObject:cue[@"text"]];NSString *answer=translated ? [pieces componentsJoinedByString:@"\n\n"] : nil;
+            DGGeminiEntry *current=weakSelf;[current.translator cancel];current.translator=nil;
             if (!DGOn() || !current.tabEntered || !current.owner.view.window || current.owner.view.hidden) {[current stop];return;}
             if (![DGSummaryForController(current.owner) isEqualToString:source]) {
                 completion(nil,@"Phân tích đã thay đổi trong lúc dịch. Bấm Dịch lại để dịch nội dung mới.");return;
             }
             completion(answer,failure);
         }];
-    } cancel:^{[weakSelf.client cancel];weakSelf.client=nil;}];
+    } cancel:^{[weakSelf.translator cancel];weakSelf.translator=nil;}];
     self.session.update=^(NSString *state,NSString *text) {
         DGGeminiEntry *entry=weakSelf;if (!entry) return;
         BOOL ready=[state isEqual:@"ready"] || [state isEqual:@"cached"];
         entry.hasTranslation=ready;
         if (ready && !entry.userChoseLanguage) entry.language.selectedSegmentIndex=0;
-        entry.status.text=ready ? ([state isEqual:@"cached"] ? @"Bản dịch đã lưu · Không gọi API lại" : @"Đã dịch · Gemini 3.5 Flash-Lite") : text;
+        entry.status.text=ready ? ([state isEqual:@"cached"] ? @"Bản dịch đã lưu · Không gọi API lại" : @"Đã dịch · Claude Sonnet 5") : text;
         // The renderer supplies HTML highlight markers; UITextView displays plain text.
         NSString *plain=text;
         if (ready) {
             NSRegularExpression *marks=[NSRegularExpression regularExpressionWithPattern:@"</?mark\\b[^>]*>" options:NSRegularExpressionCaseInsensitive error:NULL];
             plain=[marks stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0,text.length) withTemplate:@""];
         }
-        entry.translation.text=ready ? plain : @"Chỉ dịch phần phân tích AI đang mở. Nội dung được gửi tới Google Gemini bằng API của bạn.\n\nChọn Bản gốc để xem nội dung của Douyin trong lúc chờ.";
+        entry.translation.text=ready ? plain : @"Chỉ dịch phần phân tích AI đang mở. Nội dung được gửi tới Claude qua tài khoản dịch của bạn.\n\nChọn Bản gốc để xem nội dung của Douyin trong lúc chờ.";
         entry.retry.accessibilityValue=[state isEqual:@"failed"] ? @"available" : @"unavailable";
         [entry.retry setTitle:[state isEqual:@"failed"] && [text containsString:@"chưa đọc được"] ? @"Đọc lại" : @"Dịch lại" forState:UIControlStateNormal];
         [entry renderLanguage];
         if (DGRecordAI && ([state isEqual:@"cached"] || [state isEqual:@"ready"] || [state isEqual:@"failed"])) DGRecordAI([@"Gemini translation " stringByAppendingString:state],1);
         if (!entry.session.waiting) {[entry.timer invalidate];entry.timer=nil;}
     };
-    self.hadWindow=NO;self.hasTranslation=NO;self.userChoseLanguage=NO;self.panel.hidden=NO;self.button.hidden=NO;self.language.selectedSegmentIndex=1;
+    self.hadWindow=NO;self.captureAttempts=0;self.nextCapture=NSProcessInfo.processInfo.systemUptime+3;objc_setAssociatedObject(self.owner,&DGCapturedSourceKey,nil,OBJC_ASSOCIATION_COPY_NONATOMIC);self.hasTranslation=NO;self.userChoseLanguage=NO;self.panel.hidden=NO;self.button.hidden=NO;self.language.selectedSegmentIndex=1;
     [self.session enterAt:NSProcessInfo.processInfo.systemUptime];
 #ifdef DG_GEMINI_FIXTURE
     if (DGFixtureTranslationTimers) {
@@ -334,6 +395,7 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     if (DGRecordAI) DGRecordAI(@"Gemini translation poll",1);
     BOOL complete=NO;NSString *source=DGSummaryForControllerReady(self.owner,&complete);
     if (complete && DGRecordAI) DGRecordAI(@"Gemini capture complete",1);
+    if (!source.length && !self.capturePending && self.captureAttempts<3 && time>=self.nextCapture) [self captureDrawnAnalysis];
     [self.session observeSource:source complete:complete at:time];
 }
 - (void)retryTranslation {
@@ -344,6 +406,7 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     (void)notification;if (self.tabEntered && self.owner.view.window && !self.owner.view.hidden) [self start];
 }
 - (void)stop {
+    self.captureGeneration++;self.capturePending=NO;
     [self.timer invalidate];self.timer=nil;[self.session leave];self.panel.hidden=YES;self.button.hidden=YES;
     [NSNotificationCenter.defaultCenter removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
 }
@@ -399,8 +462,10 @@ void DGGeminiInstall(void (^record)(NSString *,NSUInteger)) {
         id config=data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL] : nil;
         DGConfig=[config isKindOfClass:NSDictionary.class] ? config : @{};
     }
-    Class cls=NSClassFromString(DGCommentAIClass);if (!cls || ![cls isSubclassOfClass:UIViewController.class]) return;
-    if (!DGSendHookInstalled) DGSendHookInstalled=DGOverride(cls,@"inputViewSendQueryContext:sourceFrom:",@"v32@0:8@16q24",^id(IMP original) {
+    static NSMutableSet *installed;if (!installed) installed=[NSMutableSet new];
+    for (NSString *name in @[DGCommentAIClass,@"AWESearchCommentAIParseViewController"]) {
+    Class cls=NSClassFromString(name);if (!cls || ![cls isSubclassOfClass:UIViewController.class] || [installed containsObject:name]) continue;[installed addObject:name];
+    DGSendHookInstalled=DGSendHookInstalled | DGOverride(cls,@"inputViewSendQueryContext:sourceFrom:",@"v32@0:8@16q24",^id(IMP original) {
         return ^(UIViewController *owner,id context,NSInteger source) {
             if (!DGOn() || !NSThread.isMainThread || !owner.view.window || owner.presentedViewController) {((void (*)(id,SEL,id,NSInteger))original)(owner,NSSelectorFromString(@"inputViewSendQueryContext:sourceFrom:"),context,source);return;}
             NSString *query=nil;
@@ -411,19 +476,21 @@ void DGGeminiInstall(void (^record)(NSString *,NSUInteger)) {
             DGPresentChat(owner,DGSummaryForController(owner),query);
         };
     });
-    if (!DGEntryHookInstalled) DGEntryHookInstalled=DGOverride(cls,@"commentAIParseTabDidEnter",@"v16@0:8",^id(IMP original) {
+    DGEntryHookInstalled=DGEntryHookInstalled | DGOverride(cls,@"commentAIParseTabDidEnter",@"v16@0:8",^id(IMP original) {
         return ^(UIViewController *owner) {((void (*)(id,SEL))original)(owner,NSSelectorFromString(@"commentAIParseTabDidEnter"));DGAttachEntry(owner);};
     });
-    if (!DGLeaveHookInstalled) DGLeaveHookInstalled=DGOverride(cls,@"commentAIParseTabWillLeave",@"v16@0:8",^id(IMP original) {
-        return ^(UIViewController *owner) {DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);entry.tabEntered=NO;[entry stop];((void (*)(id,SEL))original)(owner,NSSelectorFromString(@"commentAIParseTabWillLeave"));};
+    NSString *leave=class_getInstanceMethod(cls,NSSelectorFromString(@"commentAIParseTabWillLeave")) ? @"commentAIParseTabWillLeave" : @"commentAIParseTabDidLeave";
+    DGLeaveHookInstalled=DGLeaveHookInstalled | DGOverride(cls,leave,@"v16@0:8",^id(IMP original) {
+        return ^(UIViewController *owner) {DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);entry.tabEntered=NO;[entry stop];((void (*)(id,SEL))original)(owner,NSSelectorFromString(leave));};
     });
-    if (!DGDisappearHookInstalled) DGDisappearHookInstalled=DGOverride(cls,@"viewWillDisappear:",@"v20@0:8B16",^id(IMP original) {
+    DGDisappearHookInstalled=DGDisappearHookInstalled | DGOverride(cls,@"viewWillDisappear:",@"v20@0:8B16",^id(IMP original) {
         return ^(UIViewController *owner,BOOL animated) {DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);[entry stop];((void (*)(id,SEL,BOOL))original)(owner,@selector(viewWillDisappear:),animated);};
     });
-    if (!DGAppearHookInstalled) DGAppearHookInstalled=DGOverride(cls,@"viewDidAppear:",@"v20@0:8B16",^id(IMP original) {
+    DGAppearHookInstalled=DGAppearHookInstalled | DGOverride(cls,@"viewDidAppear:",@"v20@0:8B16",^id(IMP original) {
         return ^(UIViewController *owner,BOOL animated) {((void (*)(id,SEL,BOOL))original)(owner,@selector(viewDidAppear:),animated);DGGeminiEntry *entry=objc_getAssociatedObject(owner,&DGEntryKey);if (entry.tabEntered) DGAttachEntry(owner);};
     });
+    }
 }
 NSDictionary *DGGeminiSnapshot(void) {
-    return @{@"configured":@([DGConfig[@"api_key"] isKindOfClass:NSString.class] && [DGConfig[@"api_key"] length]>0),@"enabled":@(DGOn()),@"native_send_hook":@(DGSendHookInstalled),@"native_entry_hook":@(DGEntryHookInstalled),@"native_leave_hook":@(DGLeaveHookInstalled),@"translation_disappear_hook":@(DGDisappearHookInstalled),@"translation_active":@(DGActiveTranslation.session.active),@"translation_model":DGGeminiFastModel,@"translation_cache_entries_max":@32,@"translation_automatic_retries":@0,@"model":[NSUserDefaults.standardUserDefaults boolForKey:@"DGGeminiFast"] ? DGGeminiFastModel : DGGeminiQualityModel};
+    return @{@"configured":@([DGConfig[@"api_key"] isKindOfClass:NSString.class] && [DGConfig[@"api_key"] length]>0),@"enabled":@(DGOn()),@"native_send_hook":@(DGSendHookInstalled),@"native_entry_hook":@(DGEntryHookInstalled),@"native_leave_hook":@(DGLeaveHookInstalled),@"translation_disappear_hook":@(DGDisappearHookInstalled),@"translation_active":@(DGActiveTranslation.session.active),@"translation_model":DGClaudeModel,@"translation_cache_entries_max":@32,@"translation_automatic_retries":@0,@"model":[NSUserDefaults.standardUserDefaults boolForKey:@"DGGeminiFast"] ? DGGeminiFastModel : DGGeminiQualityModel};
 }

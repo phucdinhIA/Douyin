@@ -10,11 +10,11 @@ def run(*args,timeout=180):
     return subprocess.check_output(list(args),text=True,timeout=timeout).strip()
 
 sdk=run('xcrun','--sdk','iphonesimulator','--show-sdk-path')
-sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DGGemini.m','DGTranslation.m','DGGeminiUI.m','DGSource.m','DGVbee.m','DGComments.m','DGAudioUI.m','DGMedia.m','DGMediaUI.m','DouyinGuest.m']]
+sources=[str(ROOT/'src'/name) for name in ['DGPolicy.m','DGHook.m','DGGemini.m','DGTranslation.m','DGGeminiUI.m','DGSource.m','DGNarration.m','DGTransduck.m','DGComments.m','DGAudioUI.m','DGMedia.m','DGMediaUI.m','DouyinGuest.m']]
 sources.append(str(ROOT/'tests/ui_fixture.m'))
 run('xcrun','--sdk','iphonesimulator','clang','-target','arm64-apple-ios15.0-simulator',
     '-isysroot',sdk,'-fobjc-arc','-fblocks','-O1','-Wall','-Wextra','-Werror','-DDG_GEMINI_FIXTURE=1','-I'+str(ROOT/'src'),
-    *sources,'-framework','Foundation','-framework','UIKit','-framework','CoreGraphics','-framework','AVFoundation','-framework','CoreMedia','-framework','MediaPlayer','-o',str(APP/'FixtureApp'))
+    *sources,'-framework','Foundation','-framework','UIKit','-framework','CoreGraphics','-framework','AVFoundation','-framework','CoreMedia','-framework','MediaPlayer','-framework','WebKit','-framework','Vision','-o',str(APP/'FixtureApp'))
 info={'CFBundleIdentifier':IDENTIFIER,'CFBundleExecutable':'FixtureApp','CFBundlePackageType':'APPL',
       'CFBundleName':'DGFixture','CFBundleDisplayName':'UIKit Fixture',
       'CFBundleShortVersionString':'40.6.0','CFBundleVersion':'406019','MinimumOSVersion':'15.0',
@@ -27,6 +27,7 @@ for name in ['hooks.json','translations.json']:shutil.copy2(ROOT/'resources'/nam
 # Synthetic key used only by mock/local fixtures. Never load personal build config in CI.
 (resources/'gemini-private.json').write_text(json.dumps({'api_key':'fixture-key-no-network'}))
 (resources/'media-private.json').write_text(json.dumps({'apify_api_key':'fixture-apify-no-network','deepgram_api_key':'fixture-deepgram-no-network','apify_actor':'apple_yang~douyin-video-audio-downloader'}))
+(resources/'transduck-private.json').write_text(json.dumps({'base_url':'https://yd.transduck.com','email':'fixture@example.test','password':'fixture-password','session':'synthetic-backend','model':'claude-sonnet-5','voice':'vi-VN-NamMinhNeural'}))
 sdk_fixture=APP/'AWEFixtureSDK.bundle'
 sdk_fixture.mkdir(exist_ok=True)
 (sdk_fixture/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':'local.fixture.sdk','CFBundlePackageType':'BNDL'}))

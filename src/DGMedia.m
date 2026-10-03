@@ -1,5 +1,6 @@
 #import "DGMedia.h"
 #import "DGSource.h"
+#import "DGTransduck.h"
 #import "DGGemini.h"
 #include <math.h>
 #import <CommonCrypto/CommonDigest.h>
@@ -185,6 +186,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 @property(nonatomic,strong) DGTranslationStore *store;
 @property(nonatomic,strong) NSURLSessionConfiguration *configuration;
 @property(nonatomic,strong) NSURLSession *session;
+@property(nonatomic,strong) DGTransduckClient *backend;
 @property(nonatomic,strong) NSURLSessionDataTask *task;
 @property(nonatomic) NSUInteger generation;
 @property(nonatomic,copy) NSString *runID;
@@ -245,7 +247,7 @@ static NSString *DGCaptionDigest(NSString *source) {
 - (NSURLRequest *)apify:(NSString *)path method:(NSString *)method body:(id)body {
     return DGRequest([@"https://api.apify.com/v2/" stringByAppendingString:path],method,body,[@"Bearer " stringByAppendingString:self.config[@"apify_api_key"]],@"Authorization");
 }
-- (NSString *)cacheKey:(NSString *)kind {return [NSString stringWithFormat:@"caption-v2|nova-3|zh-CN|%@|%@|%@",DGGeminiFastModel,kind,self.videoID];}
+- (NSString *)cacheKey:(NSString *)kind {return [NSString stringWithFormat:@"caption-v3|nova-3|zh-CN|%@|%@|%@",[kind isEqual:@"asr"] ? @"asr" : DGClaudeModel,kind,self.videoID];}
 - (NSArray *)cached:(NSString *)kind {
     NSString *text=[self.store translationForSource:[self cacheKey:kind]];id result=text ? DGJSON([text dataUsingEncoding:NSUTF8StringEncoding]) : nil;return DGCaptionValidCues(result) ? result : nil;
 }
@@ -262,7 +264,7 @@ static NSString *DGCaptionDigest(NSString *source) {
     [self cancel];self.videoID=videoID;self.translated=[NSMutableArray new];
     self.preferredTime=isfinite(time) && time>0 ? time : 0;
     self.videoTitle=[self.store translationForSource:[self cacheKey:@"title"]];
-    if (!DGCaptionVideoURL(videoID) || !DGKey(self.config[@"apify_api_key"]) || !DGKey(self.config[@"deepgram_api_key"]) || !DGKey(self.geminiKey) || ![self.config[@"apify_actor"] isEqual:@"apple_yang~douyin-video-audio-downloader"]) {[self fail:@"Chưa cấu hình đủ Apify, Deepgram và Gemini cho phụ đề."];return;}
+    if (!DGCaptionVideoURL(videoID) || !DGKey(self.config[@"apify_api_key"]) || !DGKey(self.config[@"deepgram_api_key"]) || ![(self.config[@"backend"] ?: DGBackendConfig())[@"email"] length] || ![self.config[@"apify_actor"] isEqual:@"apple_yang~douyin-video-audio-downloader"]) {[self fail:@"Chưa cấu hình đủ Apify, Deepgram và Gemini cho phụ đề."];return;}
     self.source=[self cached:@"asr"];NSArray *saved=[self cached:@"vi"];
     BOOL matched=self.source && saved.count<=self.source.count;
     if (matched) for (NSDictionary *cue in saved) {NSUInteger i=[cue[@"id"] unsignedIntegerValue];if (i>=self.source.count || ![cue[@"start"] isEqual:self.source[i][@"start"]] || ![cue[@"end"] isEqual:self.source[i][@"end"]]) matched=NO;}
@@ -357,24 +359,28 @@ static NSString *DGCaptionDigest(NSString *source) {
 }
 - (void)translateNext {
     if (self.translated.count==self.source.count) {[self emit:@"ready" failure:nil];[self.session finishTasksAndInvalidate];self.session=nil;return;}
-    [self emit:@"gemini" failure:nil];NSMutableSet *done=[NSMutableSet new];for (NSDictionary *cue in self.translated) [done addObject:cue[@"id"]];
+    [self emit:@"claude" failure:nil];NSMutableSet *done=[NSMutableSet new];for (NSDictionary *cue in self.translated) [done addObject:cue[@"id"]];
     NSUInteger preferred=0;for (NSUInteger i=0;i<self.source.count;i++) if ([self.source[i][@"start"] doubleValue]<=self.preferredTime) preferred=i;else break;
     NSMutableArray *batch=[NSMutableArray new];
     // A small first batch makes the current scene visible sooner. Subsequent
     // batches amortize network overhead while retaining context across sentences.
     BOOL whole=[self.source.lastObject[@"end"] doubleValue]<=600;
     NSUInteger limit=whole ? self.source.count : self.translated.count ? 16 : 8;if (whole) preferred=0;
-    if (whole && self.event) self.event(@"Captions Gemini full context");
+    if (whole && self.event) self.event(@"Captions Claude full context");
     for (NSUInteger step=0;step<self.source.count && batch.count<limit;step++) {NSUInteger i=(preferred+step)%self.source.count;if (!i && batch.count) break;if (![done containsObject:self.source[i][@"id"]]) [batch addObject:self.source[i]];}
     if (whole) batch=[self.source mutableCopy];
     // Keep a batch in timeline order even when selection wraps to the beginning.
     [batch sortUsingComparator:^NSComparisonResult(NSDictionary *a,NSDictionary *b) {return [a[@"id"] compare:b[@"id"]];}];
-    [self request:DGCaptionTranslationRequestWithTitle(self.geminiKey,batch,self.videoTitle) completion:^(NSData *data,NSInteger status,NSString *failure) {
-        NSArray *result=failure ? nil : DGCaptionTranslationAnswer(data,status,batch,&failure);
-        if (!result) {[self fail:failure];return;}
-        [self repairBatch:[result mutableCopy] source:batch at:0 completion:^(NSArray *repaired,NSString *repairFailure) {
-            if (!repaired) {[self fail:repairFailure];return;}if (whole) self.translated=[repaired mutableCopy];else [self.translated addObjectsFromArray:repaired];[self.translated sortUsingComparator:^NSComparisonResult(NSDictionary *a,NSDictionary *b) {return [a[@"id"] compare:b[@"id"]];}];[self save:self.translated kind:@"vi"];[self emit:@"partial" failure:nil];[self translateNext];
-        }];
+    self.backend=[[DGTransduckClient alloc] initWithConfig:self.config[@"backend"] ?: DGBackendConfig() configuration:self.configuration];self.backend.event=self.event;
+    NSUInteger generation=self.generation;__weak DGMediaClient *weakSelf=self;
+    [self.backend post:@"/api/v2/ai-translate/translate" body:DGClaudeBody(batch,[@"douyin_" stringByAppendingString:self.videoID],self.videoTitle) completion:^(NSData *data,NSInteger status,NSString *failure) {
+        DGMediaClient *owner=weakSelf;if (!owner || owner.generation!=generation) return;
+        [owner.backend cancel];owner.backend=nil;
+        NSArray *result=failure ? nil : DGClaudeAnswer(data,status,batch,&failure);
+        if (!result) {[owner fail:failure];return;}
+        if (whole) owner.translated=[result mutableCopy];else [owner.translated addObjectsFromArray:result];
+        [owner.translated sortUsingComparator:^NSComparisonResult(NSDictionary *a,NSDictionary *b) {return [a[@"id"] compare:b[@"id"]];}];
+        [owner save:owner.translated kind:@"vi"];[owner emit:@"partial" failure:nil];[owner translateNext];
     }];
 }
 - (void)repairBatch:(NSMutableArray *)result source:(NSArray *)source at:(NSUInteger)index completion:(void (^)(NSArray *,NSString *))completion {
@@ -422,12 +428,12 @@ static NSString *DGCaptionDigest(NSString *source) {
 - (void)cancel {
     if (DGGTXOwner==self) DGGTXOwner=nil;
     [self.download cancel];self.download=nil;
-    ++self.generation;[self.task cancel];[self.session invalidateAndCancel];self.task=nil;self.session=nil;
+    ++self.generation;[self.backend cancel];self.backend=nil;[self.task cancel];[self.session invalidateAndCancel];self.task=nil;self.session=nil;
     if (self.runID) {
         NSURLSessionConfiguration *cfg=[self.configuration copy];cfg.HTTPCookieStorage=nil;cfg.URLCredentialStorage=nil;cfg.URLCache=nil;
         NSURLSession *abort=[NSURLSession sessionWithConfiguration:cfg delegate:self delegateQueue:nil];NSURLRequest *request=[self apify:[NSString stringWithFormat:@"actor-runs/%@/abort?gracefully=false",self.runID] method:@"POST" body:nil];
         [[abort dataTaskWithRequest:request] resume];[abort finishTasksAndInvalidate];self.runID=nil;
     }
 }
-- (void)dealloc {[_task cancel];[_session invalidateAndCancel];}
+- (void)dealloc {[_backend cancel];[_task cancel];[_session invalidateAndCancel];}
 @end

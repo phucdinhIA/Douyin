@@ -1,12 +1,13 @@
 #import "DGMediaUI.h"
 #import "DGMedia.h"
 #import "DGComments.h"
-#import "DGVbee.h"
+#import "DGNarration.h"
+#import "DGTransduck.h"
 #import "DGAudioUI.h"
 #import <objc/runtime.h>
 #include <math.h>
 
-static NSDictionary *DGMediaConfig,*DGMediaGemini,*DGMediaVbee;
+static NSDictionary *DGMediaConfig,*DGMediaGemini,*DGMediaBackend;
 static DGTranslationStore *DGMediaCache;
 static DGTranslationStore *DGGTXCache;
 static NSURLSessionConfiguration *DGMediaConfiguration;
@@ -131,7 +132,7 @@ static void DGAttachComments(UIViewController *owner);
 @property(nonatomic,strong) UILabel *caption;
 @property(nonatomic,strong) DGMediaClient *client;
 @property(nonatomic,strong) NSTimer *timer;
-@property(nonatomic,strong) DGRollingVoice *vbee;
+@property(nonatomic,strong) DGRollingVoice *narration;
 @property(nonatomic) BOOL preparingVoice;
 @property(nonatomic,copy) NSString *videoID;
 @property(nonatomic,strong) NSArray *cues;
@@ -179,12 +180,12 @@ static BOOL DGMediaPause(UIViewController *owner) {
     self.client.update=^(NSString *stage,NSArray *cues,NSString *failure) {
         DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || !entry.owner.view.window || ![entry.videoID isEqual:DGVideoID(entry.owner)]) {[entry stop];return;}
         entry.cues=cues;entry.running=!([stage isEqual:@"ready"] || [stage isEqual:@"cached"] || [stage isEqual:@"failed"]);
-        entry.status.text=[stage isEqual:@"apify"] ? @"Đang lấy video · Apify" : [stage isEqual:@"deepgram"] ? @"Đang nhận dạng tiếng Trung · Nova-3" : [stage isEqual:@"gemini"] ? @"Đang dịch phụ đề · Gemini" : [stage isEqual:@"partial"] ? @"Đã có một phần phụ đề · đang dịch tiếp" : [stage isEqual:@"cached"] ? @"Phụ đề đã lưu · không gọi API lại" : [stage isEqual:@"ready"] ? @"Phụ đề Việt đã sẵn sàng" : failure;
+        entry.status.text=[stage isEqual:@"apify"] ? @"Đang lấy video · Apify" : [stage isEqual:@"deepgram"] ? @"Đang nhận dạng tiếng Trung · Nova-3" : [stage isEqual:@"claude"] ? @"Đang dịch phụ đề · Claude Sonnet 5" : [stage isEqual:@"partial"] ? @"Đã có một phần phụ đề · đang dịch tiếp" : [stage isEqual:@"cached"] ? @"Phụ đề đã lưu · không gọi API lại" : [stage isEqual:@"ready"] ? @"Phụ đề Việt đã sẵn sàng" : failure;
         [entry.button setTitle:entry.running ? @"Hủy phụ đề" : [stage isEqual:@"failed"] ? @"Bỏ qua · phát video" : @"Tắt phụ đề Việt" forState:UIControlStateNormal];
         if ([stage isEqual:@"failed"]) {entry.failed=YES;entry.showing=NO;entry.caption.hidden=YES;DGMediaCount(@"Captions failed waiting for user");}
         if ([stage isEqual:@"download"]) entry.status.text=@"CDN chặn Deepgram · đang tải âm thanh trực tiếp";
         if ([stage isEqual:@"ready"] || [stage isEqual:@"cached"]) {
-            if ([DGMediaVbee[@"token"] length]) [entry prepareVoice];else [entry resumeWaiting];
+            if ([DGMediaBackend[@"email"] length]) [entry prepareVoice];else [entry resumeWaiting];
         }
         DGMediaCount([@"Captions stage " stringByAppendingString:stage]);[entry tick];
     };
@@ -193,24 +194,24 @@ static BOOL DGMediaPause(UIViewController *owner) {
     DGMediaCount(@"Captions opt-in");[self.client startVideo:identifier at:time];
 }
 - (void)prepareVoice {
-    if (self.preparingVoice) return;self.preparingVoice=YES;self.running=YES;self.status.text=@"Đang tạo lồng tiếng Việt · Vbee";
+    if (self.preparingVoice) return;self.preparingVoice=YES;self.running=YES;self.status.text=@"Đang tạo lồng tiếng Việt · Nam Minh";
     [self.button setTitle:@"Hủy lồng tiếng" forState:UIControlStateNormal];
-    self.vbee=[[DGRollingVoice alloc] initWithConfig:DGMediaVbee configuration:DGMediaConfiguration];self.vbee.event=^(NSString *name) {DGMediaCount(name);};
+    self.narration=[[DGRollingVoice alloc] initWithConfig:DGMediaBackend configuration:DGMediaConfiguration];self.narration.event=^(NSString *name) {DGMediaCount(name);};
     NSString *identifier=self.videoID;__weak DGCaptionEntry *weakSelf=self;
     BOOL started=DGAudioBeginRolling(self.owner,DGVoiceChunks(self.cues),^(BOOL waiting) {
         DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || ![identifier isEqual:DGVideoID(entry.owner)]) return;
         entry.running=waiting;
-        if (waiting) {if (!entry.waiting) {entry.waiting=YES;DGMediaPause(entry.owner);DGMediaCount(@"Captions rolling playback paused");}entry.status.text=@"Đang chuẩn bị đoạn lồng tiếng tiếp theo · Vbee";}
+        if (waiting) {if (!entry.waiting) {entry.waiting=YES;DGMediaPause(entry.owner);DGMediaCount(@"Captions rolling playback paused");}entry.status.text=@"Đang chuẩn bị đoạn lồng tiếng tiếp theo · Nam Minh";}
         else {entry.status.text=[DGAudioSnapshot()[@"dubbing_active"] boolValue] ? @"Lồng tiếng Việt · đang chuẩn bị tiếp" : @"Đoạn này dùng phụ đề và âm thanh gốc";[entry.button setTitle:@"Tắt phụ đề / lồng tiếng" forState:UIControlStateNormal];[entry resumeWaiting];}
     });
     if (!started) {self.running=NO;self.preparingVoice=NO;self.status.text=@"Chưa gắn được giọng đọc vào player · dùng phụ đề";[self resumeWaiting];return;}
-    self.vbee.chunkReady=^(NSDictionary *chunk) {
+    self.narration.chunkReady=^(NSDictionary *chunk) {
         DGCaptionEntry *entry=weakSelf;if (!entry || !entry.showing || ![identifier isEqual:entry.videoID] || ![identifier isEqual:DGVideoID(entry.owner)]) {if (chunk[@"file"]) [NSFileManager.defaultManager removeItemAtURL:chunk[@"file"] error:NULL];return;}
         DGAudioRollingChunk(entry.owner,chunk);
-        if (chunk[@"failure"]) entry.status.text=@"Vbee lỗi một đoạn · dùng phụ đề và âm thanh gốc, tiếp tục tạo đoạn sau";
+        if (chunk[@"failure"]) entry.status.text=@"Nam Minh lỗi một đoạn · dùng phụ đề và âm thanh gốc, tiếp tục tạo đoạn sau";
     };
     Method clock=class_getInstanceMethod(object_getClass(self.owner),NSSelectorFromString(@"currentPlaybackTime"));double time=DGMediaGetterType(clock,'d') ? ((double (*)(id,SEL))method_getImplementation(clock))(self.owner,NSSelectorFromString(@"currentPlaybackTime")) : 0;
-    [self.vbee start:self.cues at:time];
+    [self.narration start:self.cues at:time];
 }
 - (void)tick {
     if (UIApplication.sharedApplication.applicationState!=UIApplicationStateActive) return;
@@ -222,11 +223,11 @@ static BOOL DGMediaPause(UIViewController *owner) {
         if (DGMediaGetterType(playing,'B') && ((BOOL (*)(id,SEL))method_getImplementation(playing))(self.owner,NSSelectorFromString(@"isPlaying"))) DGMediaPause(self.owner);
     }
     if (!self.showing || !DGMediaGetterType(method,'d')) {self.caption.hidden=YES;return;}
-    NSTimeInterval time=((double (*)(id,SEL))method_getImplementation(method))(self.owner,selector);if (self.running) [self.client prioritizeTime:time];[self.vbee prioritizeTime:time];NSString *text=DGCaptionTextAt(self.cues,time);
+    NSTimeInterval time=((double (*)(id,SEL))method_getImplementation(method))(self.owner,selector);if (self.running) [self.client prioritizeTime:time];[self.narration prioritizeTime:time];NSString *text=DGCaptionTextAt(self.cues,time);
     self.caption.hidden=!text.length;if (![self.caption.text isEqual:text]) self.caption.text=text;
 }
 - (void)stop {
-    [self.vbee cancel];self.vbee=nil;self.preparingVoice=NO;DGAudioStopVoice(self.owner);
+    [self.narration cancel];self.narration=nil;self.preparingVoice=NO;DGAudioStopVoice(self.owner);
     [self.client cancel];self.client=nil;[self.timer invalidate];self.timer=nil;self.running=NO;self.showing=NO;self.waiting=NO;self.failed=NO;self.caption.hidden=YES;self.cues=@[];self.status.text=@"";[self.button setTitle:@"Phụ đề Việt" forState:UIControlStateNormal];
 }
 - (void)background {if (self.running) [self stop];self.caption.hidden=YES;}
@@ -254,20 +255,7 @@ static void DGAttachCaption(UIViewController *owner) {
 }
 static void DGAttachComments(UIViewController *owner) {
     DGVisibleCaption.button.hidden=YES;DGVisibleCaption.status.hidden=YES;DGVisibleCaption.caption.hidden=YES;
-    DGCommentEntry *entry=objc_getAssociatedObject(owner,&DGCommentKey);
-    if (!entry) {
-        entry=[DGCommentEntry new];entry.owner=owner;[NSNotificationCenter.defaultCenter addObserver:entry selector:@selector(provider:) name:@"DGCommentProviderStatus" object:nil];entry.button=[UIButton buttonWithType:UIButtonTypeSystem];entry.button.accessibilityIdentifier=@"gtx-comments-button";entry.button.backgroundColor=UIColor.secondarySystemBackgroundColor;entry.button.layer.cornerRadius=10;entry.button.titleLabel.font=[UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];[entry.button setTitle:@"Dịch bình luận" forState:UIControlStateNormal];[entry.button addTarget:entry action:@selector(open) forControlEvents:UIControlEventTouchUpInside];entry.button.translatesAutoresizingMaskIntoConstraints=NO;[owner.view addSubview:entry.button];
-        [NSLayoutConstraint activateConstraints:@[[entry.button.topAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.topAnchor constant:50],[entry.button.trailingAnchor constraintEqualToAnchor:owner.view.safeAreaLayoutGuide.trailingAnchor constant:-12],[entry.button.widthAnchor constraintEqualToConstant:132],[entry.button.heightAnchor constraintEqualToConstant:34]]];objc_setAssociatedObject(owner,&DGCommentKey,entry,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }entry.button.hidden=NO;[owner.view bringSubviewToFront:entry.button];
-    __weak DGCommentEntry *weakEntry=entry;
-    DGCommentsStart(owner,DGNewMediaClient(YES),^(NSString *name,NSUInteger count) {
-        if (DGMediaRecord) DGMediaRecord(name,count);
-        if ([name isEqual:@"GTX visible source captured"]) weakEntry.gemini=NO;
-        NSString *title=[name isEqual:@"GTX visible source captured"] ? @"GTX · đang dịch" : [name isEqual:@"GTX automatic ready"] ? @"GTX · đã dịch" : [name isEqual:@"GTX automatic failed"] ? @"GTX lỗi · thử lại" : [name isEqual:@"GTX automatic rate limited"] ? @"GTX giới hạn · thử lại" : nil;
-        if (weakEntry.gemini && [name isEqual:@"GTX automatic ready"]) title=@"Gemini · đã dịch";
-        if (weakEntry.gemini && [name isEqual:@"GTX automatic failed"]) title=@"Gemini lỗi · thử lại";
-        if (title) [weakEntry.button setTitle:title forState:UIControlStateNormal];
-    });
+    DGCommentsStart(owner,DGNewMediaClient(YES),^(NSString *name,NSUInteger count) {if (DGMediaRecord) DGMediaRecord(name,count);});
 }
 static BOOL DGMediaNativeController(UIViewController *owner,BOOL comments) {
     for (NSString *name in comments ? @[@"AWECommentContainerViewController",@"AWECommentFullScreenContainerViewController",@"AWECommentTreeContainerViewController",@"_TtC33AWECommentPanelContainerSwiftImpl35CommentContainerInnerViewController"] : @[@"AWEPlayVideoViewController"]) {
@@ -352,7 +340,7 @@ static BOOL DGMediaHook(Class cls,NSString *name,NSString *types,id (^factory)(I
 }
 void DGMediaInstall(void (^record)(NSString *,NSUInteger)) {
     DGMediaRecord=[record copy];if (!DGMediaConfig) DGMediaConfig=DGMediaResource(@"media-private");if (!DGMediaGemini) DGMediaGemini=DGMediaResource(@"gemini-private");if (!DGMediaHooks) DGMediaHooks=[NSMutableSet new];
-    if (!DGMediaVbee) DGMediaVbee=DGMediaResource(@"vbee-private");DGAudioInstall(record);
+    if (!DGMediaBackend) DGMediaBackend=DGBackendConfig();DGAudioInstall(record);
     DGCommentsInstall();Class player=NSClassFromString(@"AWEPlayVideoViewController");
     if (player && [player isSubclassOfClass:UIViewController.class]) {
         DGMediaHook(player,@"viewDidAppear:",@"v20@0:8B16",^id(IMP original) {return ^(UIViewController *owner,BOOL animated) {((void (*)(id,SEL,BOOL))original)(owner,@selector(viewDidAppear:),animated);if (NSThread.isMainThread) DGAttachCaption(owner);};});
@@ -366,12 +354,12 @@ void DGMediaInstall(void (^record)(NSString *,NSUInteger)) {
     }
 }
 NSDictionary *DGMediaSnapshot(void) {
-    NSMutableDictionary *snapshot=[@{@"caption_configured":@([DGMediaConfig[@"apify_api_key"] length]>0 && [DGMediaConfig[@"deepgram_api_key"] length]>0 && [DGMediaGemini[@"api_key"] length]>0),@"actor":@"apple_yang/douyin-video-audio-downloader",@"asr_model":@"nova-3",@"source_language":@"zh-CN",@"target_language":@"vi",@"translation_model":@"gemini-3.5-flash-lite",@"hooks_installed":@(DGMediaHooks.count),@"four_tap_windows":@(DGMediaWindowCount),@"caption_waiting":@(DGActiveCaption.waiting),@"caption_shortcut_taps":@4,@"caption_running":@(DGActiveCaption.running),@"caption_showing":@(DGActiveCaption.showing),@"automatic_retries":@0,@"maximum_video_seconds":@3600,@"gtx_automatic_visible":@YES,@"deepgram_upload_fallback":@YES,@"vbee_configured":@([DGMediaVbee[@"token"] length]>0),@"vbee_voice":@"hn_male_manhdung_news_48k-fhg",@"vbee_concurrency":@3} mutableCopy];
-    [snapshot addEntriesFromDictionary:DGAudioSnapshot()];[snapshot addEntriesFromDictionary:DGGTXSnapshot()];snapshot[@"caption_full_context_seconds"]=@600;snapshot[@"vbee_chunk_cues"]=@3;snapshot[@"vbee_prefetch_seconds"]=@60;return snapshot;
+    NSMutableDictionary *snapshot=[@{@"caption_configured":@([DGMediaConfig[@"apify_api_key"] length]>0 && [DGMediaConfig[@"deepgram_api_key"] length]>0 && [DGMediaBackend[@"email"] length]>0),@"actor":@"apple_yang/douyin-video-audio-downloader",@"asr_model":@"nova-3",@"source_language":@"zh-CN",@"target_language":@"vi",@"translation_model":DGClaudeModel,@"hooks_installed":@(DGMediaHooks.count),@"four_tap_windows":@(DGMediaWindowCount),@"caption_waiting":@(DGActiveCaption.waiting),@"caption_shortcut_taps":@4,@"caption_running":@(DGActiveCaption.running),@"caption_showing":@(DGActiveCaption.showing),@"automatic_retries":@0,@"maximum_video_seconds":@3600,@"gtx_automatic_visible":@YES,@"deepgram_upload_fallback":@YES,@"narration_configured":@([DGMediaBackend[@"email"] length]>0),@"narration_voice":DGNamMinhVoice,@"narration_concurrency":@3} mutableCopy];
+    [snapshot addEntriesFromDictionary:DGAudioSnapshot()];[snapshot addEntriesFromDictionary:DGGTXSnapshot()];snapshot[@"caption_full_context_seconds"]=@600;snapshot[@"narration_chunk_cues"]=@3;snapshot[@"narration_prefetch_seconds"]=@60;return snapshot;
 }
 #ifdef DG_GEMINI_FIXTURE
 void DGMediaFixtureConfiguration(NSURLSessionConfiguration *configuration,NSURL *cacheURL) {DGMediaConfiguration=configuration;DGMediaCache=[[DGCaptionStore alloc] initWithURL:cacheURL];DGGTXCache=[[DGTranslationStore alloc] initWithURL:nil];}
 void DGMediaFixtureTick(UIViewController *owner) {[objc_getAssociatedObject(owner,&DGCaptionKey) tick];}
 BOOL DGMediaFixtureShortcut(UIWindow *window,CGPoint point) {return DGMediaStartShortcut(window,point);}
-void DGMediaFixtureVbee(NSDictionary *config) {DGMediaVbee=config;}
+void DGMediaFixtureNarration(NSDictionary *config) {DGMediaBackend=config;}
 #endif

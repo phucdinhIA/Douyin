@@ -8,17 +8,18 @@
 #import "DGGeminiUI.h"
 #import "DGMediaUI.h"
 #import "DGComments.h"
+#import "DGTransduck.h"
 #import "DGAudioUI.h"
 static atomic_int translationRequests;
 @interface TranslationFixtureProtocol : NSURLProtocol
 @end
 @implementation TranslationFixtureProtocol
-+ (BOOL)canInitWithRequest:(NSURLRequest *)request {return [request.URL.host isEqualToString:@"generativelanguage.googleapis.com"];}
++ (BOOL)canInitWithRequest:(NSURLRequest *)request {return [request.URL.host isEqualToString:@"generativelanguage.googleapis.com"] || [request.URL.host isEqualToString:@"yd.transduck.com"];}
 + (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request {return request;}
 - (void)startLoading {
     atomic_fetch_add(&translationRequests,1);
     NSHTTPURLResponse *response=[[NSHTTPURLResponse alloc] initWithURL:self.request.URL statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:@{@"Content-Type":@"application/json"}];
-    NSData *data=[NSJSONSerialization dataWithJSONObject:@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":@"Nội dung do AI tạo.\n\nVideo này bàn về các <mark class=\"highlight\">kỹ thuật chụp ảnh</mark>.\n\nBản dịch minh họa trong fixture, không phải kết quả kiểm tra trên Douyin thật."}]},@"finishReason":@"STOP"}]} options:0 error:NULL];
+    NSData *data=[NSJSONSerialization dataWithJSONObject:@{@"subtitleTranslateResults":@[@{@"translateResult":@"Nội dung do AI tạo.\n\nVideo này bàn về các <mark class=\"highlight\">kỹ thuật chụp ảnh</mark>.\n\nBản dịch minh họa trong fixture, không phải kết quả kiểm tra trên Douyin thật.",@"useAiTranslate":@YES}]} options:0 error:NULL];
     [self.client URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
 - (void)stopLoading {}
@@ -329,10 +330,10 @@ static NSData *mediaBody(NSURLRequest *request) {
         for (NSDictionary *cue in input) [rows addObject:@{@"id":cue[@"id"],@"text":@[@"Xin chào",@"Trung Quốc",@"Cảm ơn"][[cue[@"id"] unsignedIntegerValue]]}];
         data=mediaJSON(@{@"candidates":@[@{@"content":@{@"parts":@[@{@"text":[[NSString alloc] initWithData:mediaJSON(@{@"translations":rows}) encoding:NSUTF8StringEncoding]}]},@"finishReason":@"STOP"}]});
     } else if ([request.URL.host isEqual:@"translate.googleapis.com"]) {atomic_fetch_add(&commentRequests,1);if (atomic_load(&gtxThrottle)) {status=429;data=mediaJSON(@{});}else data=mediaJSON(@[@[@[@"Video rất hay, cảm ơn bạn!",@"视频很好，谢谢！"]]]);}
-    else if ([request.URL.host isEqual:@"vbee.vn"]) {
-        if ([request.URL.path isEqual:@"/api/v1/tts"]) data=mediaJSON(@{@"status":@1,@"result":@{@"status":@"SUCCESS",@"app_id":@"00000000-0000-0000-0000-000000000001",@"voice_code":@"hn_male_manhdung_news_48k-fhg",@"audio_link":@"https://vbee.vn/audio/tone.wav"}});
-        else data=[NSData dataWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"]];
-    }
+    else if ([request.URL.host isEqual:@"yd.transduck.com"]) {
+        if ([request.URL.path isEqual:@"/api/v2/dubbing/generateDubbing"]) data=mediaJSON(@{@"subtitleDubbingResults":@[@{@"ttsUrl":@"https://static-ja.youtube-dubbing.com/audio/tone.wav",@"translateResult":@"Fixture",@"useAiTranslate":@YES}]});
+        else {NSDictionary *body=[NSJSONSerialization JSONObjectWithData:mediaBody(request) options:0 error:NULL];NSMutableArray *rows=[NSMutableArray new];for (NSDictionary *cue in body[@"subtitles"]) [rows addObject:@{@"translateResult":@[@"Xin ch\u00e0o",@"Trung Qu\u1ed1c",@"C\u1ea3m \u01a1n"][[cue[@"index"] unsignedIntegerValue]],@"useAiTranslate":@YES}];data=mediaJSON(@{@"subtitleTranslateResults":rows});}
+    } else if ([request.URL.host isEqual:@"static-ja.youtube-dubbing.com"]) data=[NSData dataWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"tone" withExtension:@"wav"]];
     else {status=500;data=mediaJSON(@{});}
     [self.client URLProtocol:self didReceiveResponse:[[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:status HTTPVersion:@"HTTP/1.1" headerFields:nil] cacheStoragePolicy:NSURLCacheStorageNotAllowed];[self.client URLProtocol:self didLoadData:data];[self.client URLProtocolDidFinishLoading:self];
 }
@@ -472,12 +473,12 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check(fabs([DGAudioSnapshot()[@"dubbing_time"] doubleValue]-0.1)<0.1,@"dubbing follows backward seek or video loop");
     player.playing=YES;mediaWait(^BOOL {DGAudioFixtureTick();return [DGAudioSnapshot()[@"dubbing_rate"] floatValue]>0;});check([DGAudioSnapshot()[@"dubbing_rate"] floatValue]>0,@"native play resumes dubbed audio");
     player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"changing video restores original mute state and releases old voice");
-    DGMediaFixtureVbee(@{@"app_id":@"00000000-0000-0000-0000-000000000001",@"token":@"synthetic-vbee",@"voice_code":@"hn_male_manhdung_news_48k-fhg"});
+    DGMediaFixtureNarration(@{@"email":@"fixture@example.test",@"password":@"fixture-password",@"session":@"synthetic-backend",@"voice":DGNamMinhVoice});
     DGMediaFixtureConfiguration(cfg,nil);player.model=model;player.playback=0.5;player.playing=YES;
-    check(DGMediaFixtureShortcut(self.window,CGPointMake(280,300)) && !player.playing,@"full subtitle and Vbee flow pauses before starting work");
+    check(DGMediaFixtureShortcut(self.window,CGPointMake(280,300)) && !player.playing,@"full subtitle and Nam Minh flow pauses before starting work");
     mediaWait(^BOOL {return ![DGMediaSnapshot()[@"caption_running"] boolValue];});
-    check([DGAudioSnapshot()[@"dubbing_active"] boolValue] && player.muted && player.playing && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"complete mock subtitle Gemini Vbee export and native audio integration resumes current video with aligned dubbing");
-    player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"switching video after complete flow releases previous dubbing and restores audio");DGMediaFixtureVbee(@{});
+    check([DGAudioSnapshot()[@"dubbing_active"] boolValue] && player.muted && player.playing && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"complete mock subtitle Claude Nam Minh export and native audio integration resumes current video with aligned dubbing");
+    player.model=other;check(!player.muted && ![DGAudioSnapshot()[@"dubbing_active"] boolValue],@"switching video after complete flow releases previous dubbing and restores audio");DGMediaFixtureNarration(@{});
     player.model=model;player.playback=0.2;player.playing=YES;[player viewDidAppear:NO];
     NSArray *layout=@[@{@"index":@0,@"start":@0,@"end":@2},@{@"index":@1,@"start":@2,@"end":@4},@{@"index":@2,@"start":@4,@"end":@6},@{@"index":@3,@"start":@6,@"end":@8}];
     __block BOOL buffered=NO;__block NSUInteger rollingResumes=0;
@@ -506,27 +507,31 @@ static NSUInteger countText(UIView *view, NSString *text) {
     check([DGMediaReadVisibleComments(comments.view) containsObject:commentModel.content],@"GTX reads audited model from custom-drawn cell inside zero-size non-clipping wrapper");
     wrapper.clipsToBounds=YES;check(![DGMediaReadVisibleComments(comments.view) containsObject:commentModel.content],@"GTX respects clipping wrappers and does not send invisible comment model");wrapper.clipsToBounds=NO;
     drawn.frame=CGRectMake(18,-100,310,45);check(![DGMediaReadVisibleComments(comments.view) containsObject:commentModel.content],@"GTX excludes offscreen model cells");[wrapper removeFromSuperview];
-    mediaWait(^BOOL{return [native.text containsString:@"Video r\u1ea5t hay"];});
-    check([native.text containsString:@"Video r\u1ea5t hay"] && atomic_load(&commentRequests)==1,@"opening ordinary comments automatically translates visible native text in place");
+    mediaWait(^BOOL{return countText(comments.view,@"Video rất hay, cảm ơn bạn!")>0;});
+    check(countText(comments.view,@"Video rất hay, cảm ơn bạn!")>0 && atomic_load(&commentRequests)==1,@"opening comments automatically displays translations in measured rows preserving native text");
     check([name.text isEqual:@"Username must not be captured"] && [hidden.text isEqual:@"\u9690\u85cf\u7684\u8bc4\u8bba"],@"automatic GTX preserves author name and hidden text");
+    check([DGCommentVisibleText(native) isEqual:@"视频很好，谢谢！"],@"original fixed-frame comment and rich text remain unchanged");
+    UITableView *translatedTable=(id)findID(comments.view,@"comments-vietnamese-table");
+    check(translatedTable.rowHeight==UITableViewAutomaticDimension && translatedTable.visibleCells.firstObject.textLabel.numberOfLines==0,@"Vietnamese comment rows wrap at their own measured height");
+    UISegmentedControl *commentLanguage=(id)findID(comments.view,@"comments-language");commentLanguage.selectedSegmentIndex=1;[commentLanguage sendActionsForControlEvents:UIControlEventValueChanged];check(translatedTable.hidden,@"original mode exposes native comment controls and media");commentLanguage.selectedSegmentIndex=0;[commentLanguage sendActionsForControlEvents:UIControlEventValueChanged];
     int translatedRequests=atomic_load(&commentRequests);
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
     check(atomic_load(&commentRequests)==translatedRequests,@"translated visible cells are not sent again on subsequent scans");
     native.textLayout=nil;native.text=@"\u65b0\u7684\u8bc4\u8bba";
-    mediaWait(^BOOL{return atomic_load(&commentRequests)>translatedRequests && [native.text containsString:@"Video r\u1ea5t hay"];});
-    check(atomic_load(&commentRequests)==translatedRequests+1 && [native.text containsString:@"Video r\u1ea5t hay"],@"reused native cell is translated for its new source");
+    mediaWait(^BOOL{return atomic_load(&commentRequests)>translatedRequests && countText(comments.view,@"Video rất hay, cảm ơn bạn!")>0;});
+    check(atomic_load(&commentRequests)==translatedRequests+1 && countText(comments.view,@"Video rất hay, cảm ơn bạn!")>0,@"reused native cell is translated for its new source");
     _TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel *offscreen=[[_TtC28AWECommentPanelListSwiftImpl20BaseCellCommentLabel alloc] initWithFrame:CGRectMake(18,1500,320,40)];offscreen.text=@"\u8fd8\u6709\u4e00\u6761";[comments.view addSubview:offscreen];
     translatedRequests=atomic_load(&commentRequests);[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
     check(atomic_load(&commentRequests)==translatedRequests,@"offscreen comment is not translated or charged a request");
-    offscreen.frame=CGRectMake(18,300,320,40);mediaWait(^BOOL{return [offscreen.text containsString:@"Video r\u1ea5t hay"];});
+    offscreen.frame=CGRectMake(18,300,320,40);mediaWait(^BOOL{return countText(comments.view,@"Video rất hay, cảm ơn bạn!")>0;});
     check(atomic_load(&commentRequests)==translatedRequests+1,@"scrolling another comment into view starts automatic GTX");
     DGCommentsStop(comments);translatedRequests=atomic_load(&commentRequests);native.text=@"\u505c\u6b62\u540e\u4e0d\u53d1\u9001";
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
     check(atomic_load(&commentRequests)==translatedRequests,@"closing comment session cancels automatic work");
     [self saveWindowImage:@"ui-gtx-comments.png"];
-    atomic_store(&gtxThrottle,YES);native.textLayout=nil;native.text=@"额度限制测试";int before429=atomic_load(&commentRequests);UIButton *commentButton=(UIButton *)findID(self.window,@"gtx-comments-button");[commentButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-    mediaWait(^BOOL {return [native.text containsString:@"Xin chào"];});check([native.text containsString:@"Xin chào"] && atomic_load(&commentRequests)==before429+1,@"ordinary comment automatically uses Gemini when GTX returns 429");
-    native.text=@"另一个限制测试";mediaWait(^BOOL {return [native.text containsString:@"Xin chào"];});check([native.text containsString:@"Xin chào"] && atomic_load(&commentRequests)==before429+1,@"new visible comment uses authorized fallback during shared cooldown without repeated GTX calls");
+    atomic_store(&gtxThrottle,YES);native.textLayout=nil;native.text=@"额度限制测试";int before429=atomic_load(&commentRequests);[comments viewDidAppear:NO];UIButton *commentButton=(UIButton *)findID(self.window,@"gtx-comments-button");
+    mediaWait(^BOOL {return countText(comments.view,@"Xin chào")>0;});check(countText(comments.view,@"Xin chào")>0 && atomic_load(&commentRequests)==before429+1,@"ordinary comment automatically uses Gemini when GTX returns 429");
+    native.text=@"另一个限制测试";mediaWait(^BOOL {return countText(comments.view,@"Xin chào")>0;});check(countText(comments.view,@"Xin chào")>0 && atomic_load(&commentRequests)==before429+1,@"new visible comment uses authorized fallback during shared cooldown without repeated GTX calls");
     check([commentButton.currentTitle containsString:@"Gemini"],@"comment status names the paid fallback provider instead of claiming GTX success");
     DGCommentsStop(comments);atomic_store(&gtxThrottle,NO);
 
