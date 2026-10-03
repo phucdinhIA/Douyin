@@ -293,7 +293,7 @@ static __weak DGGeminiEntry *DGActiveTranslation;
     id content=DGAIGetter(self.owner,@"contentVC");
     if (![content isKindOfClass:UIViewController.class]) content=DGAIGetter(self.owner,@"getCurrentViewController");
     UIView *root=[content isKindOfClass:UIViewController.class] ? [content viewIfLoaded] : self.owner.viewIfLoaded;
-    if (!root.window) root=self.owner.viewIfLoaded;
+    if (!root.window || root.bounds.size.width<40 || root.bounds.size.height<40) root=self.owner.viewIfLoaded;
     id analysis=DGAIGetter(content,@"analysisView");if ([analysis isKindOfClass:UIView.class] && [analysis window] && [analysis bounds].size.width>=40 && [analysis bounds].size.height>=40) root=analysis;
     if (!root.window || root.hidden || root.bounds.size.width<40 || root.bounds.size.height<40) return;
     self.capturePending=YES;self.captureAttempts++;self.nextCapture=NSProcessInfo.processInfo.systemUptime+3;
