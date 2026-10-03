@@ -493,7 +493,8 @@ static NSUInteger countText(UIView *view, NSString *text) {
     mediaWait(^BOOL {return player.playing && [DGMediaSnapshot()[@"caption_running"] boolValue];});
     check(player.playing && [DGMediaSnapshot()[@"caption_running"] boolValue],@"first translated scene resumes while later long-video translation is still pending");
     player.playback=630.5;DGMediaFixtureTick(player);check(!player.playing && [DGMediaSnapshot()[@"caption_waiting"] boolValue],@"seek into pending speech pauses rather than showing another scene's subtitle");
-    mediaWait(^BOOL {return ![DGMediaSnapshot()[@"caption_running"] boolValue];});DGMediaFixtureTick(player);caption=(UILabel *)findID(self.window,@"vietnamese-captions-text");
+    mediaWait(^BOOL {return ![DGMediaSnapshot()[@"caption_running"] boolValue];});DGMediaFixtureTick(player);
+    // Keep the label owned by this player; other inactive fixture players also have hidden window overlays.
     check(player.playing && [caption.text containsString:@"9"] && ![DGMediaSnapshot()[@"caption_waiting"] boolValue],@"newly translated seek target restores matching subtitle and playback without TTS delay");
     player.playback=400;DGMediaFixtureTick(player);check(caption.hidden,@"progressive subtitle-only rendering still leaves the original silent gaps empty");
     atomic_store(&longVideo,NO);player.model=other;
